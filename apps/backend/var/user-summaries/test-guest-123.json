@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0",
+  "guestId": "test-guest-123",
+  "updatedAt": "2026-06-08T01:17:29.330Z",
+  "sessionsCount": 1,
+  "agentDisagreeCounts": {},
+  "takeaways": [
+    "Day 1: no strong opinions yet."
+  ]
+}

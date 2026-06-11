@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0",
+  "guestId": "d79a3143-96c2-430d-8680-c66e5f4d4b91",
+  "updatedAt": "2026-06-08T11:26:12.311Z",
+  "sessionsCount": 1,
+  "agentDisagreeCounts": {
+    "sofia_mendes": 12,
+    "madame_pythia": 33
+  },
+  "takeaways": [
+    "Bias locked in: you almost always argue with sofia_mendes.",
+    "Pattern detected: you keep disagreeing with sofia_mendes.",
+    "Bias locked in: you almost always argue with madame_pythia.",
+    "Pattern detected: you keep disagreeing with madame_pythia.",
+    "You disagreed with madame_pythia for the first time.",
+    "You disagreed with sofia_mendes for the first time.",
+    "Day 1: no strong opinions yet."
+  ],
+  "lastAgentId": "sofia_mendes"
+}
