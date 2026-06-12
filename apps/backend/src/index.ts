@@ -17,6 +17,14 @@ import { registerAdminRoutes } from './http/adminRoutes'
 import { registerAuthRoutes } from './http/authRoutes'
 import { optionalJwt } from './http/jwtMiddleware'
 import { registerAgentEventRoutes } from './http/agentEventRoutes'
+import { registerMatchRoutes } from './http/matchRoutes'
+import { AgentEventService } from './agents/agentEventService'
+import { SleepService } from './agents/sleepService'
+import { FootballDataProvider } from './matches/footballDataProvider'
+import { ManualMatchProvider } from './matches/manualProvider'
+import { MatchWorker } from './matches/matchWorker'
+import type { AgentMethodology, MethodologyType } from './matches/predictionEngine'
+import agentConfig from './agents/agent-config.v1.json'
 
 function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) return true
@@ -46,7 +54,8 @@ async function main() {
   app.get('/', (_req, res) => res.type('text').send('Moneyball backend: ok'))
 
   registerApiRoutes(app)
-  registerAgentEventRoutes(app)
+  const publicEvents = new AgentEventService()
+  registerAgentEventRoutes(app, publicEvents)
   registerAdminRoutes(app)
 
   const server = http.createServer(app)
@@ -78,6 +87,35 @@ async function main() {
   ])
 
   const socketApi = registerSocket(io, world)
+
+  // ── Match pipeline: real WC2026 → predictions → outcomes → evolution ────
+  const agents: AgentMethodology[] = (agentConfig as any).agents.map((a: any) => ({
+    agentId: a.id as string,
+    type: a.methodology.type as MethodologyType,
+    parameters: (a.methodology.parameters ?? {}) as Record<string, number>,
+  }))
+
+  const sleepService = new SleepService(publicEvents)
+
+  const manual = new ManualMatchProvider()
+  const provider =
+    env.MATCH_SOURCE === 'football-data' && env.FOOTBALL_DATA_TOKEN
+      ? new FootballDataProvider(env.FOOTBALL_DATA_TOKEN)
+      : manual
+
+  const matchWorker = new MatchWorker(provider, agents, sleepService, {
+    pollSeconds: env.MATCH_POLL_SECONDS,
+    predictionLeadHours: env.PREDICTION_LEAD_HOURS,
+    onThought: (agentId, text) => socketApi.broadcastThought(agentId, text),
+  })
+  matchWorker.start()
+
+  registerMatchRoutes(app, {
+    worker: matchWorker,
+    manual,
+    sleep: sleepService,
+    agentIds: agents.map((a) => a.agentId),
+  })
 
   const thoughts = [
     'Scanning markets… recalibrating confidence.',
