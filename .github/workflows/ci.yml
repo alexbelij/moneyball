@@ -1,4 +1,4 @@
-# ci | v0.1.0 | 2026-06-12
+# ci | v0.1.1 | 2026-06-12
 # Typecheck + full test suite on every push/PR. Node 20 + pnpm (vitest needs
 # node to fork workers; local bun users can run `pnpm -C apps/backend test:bun`).
 name: CI
@@ -14,8 +14,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: 20
