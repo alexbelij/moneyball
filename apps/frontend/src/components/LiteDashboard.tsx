@@ -1,14 +1,16 @@
 /**
- * LiteDashboard.tsx | v1.0.0 | 2026-06-12
+ * LiteDashboard.tsx | v1.1.0 | 2026-06-13
  * Purpose: No-canvas dashboard showing live agent data, leaderboard,
  * and match info. Reads from existing zustand stores — no new sockets.
  * Mobile-first, no animations.
+ * T15: embeds StatsReport (predictions table + Brier chart).
  */
 
 import React, { useEffect, useState, useMemo } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import type { WorldAgentState } from '@moneyball/shared/events'
 import { getAgentPredictions, getMatches, getAgentParams } from '@/lib/api'
+import { StatsReport } from '@/components/StatsReport'
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
@@ -348,6 +350,12 @@ export function LiteDashboard() {
       {agents.length > 0 && (
         <Leaderboard agents={agents} predictions={predictions} />
       )}
+
+      {/* T15: Detailed predictions + Brier chart */}
+      <div style={styles.section}>
+        <h2 style={styles.sectionTitle}>📊 Scouting Report</h2>
+        <StatsReport />
+      </div>
 
       {/* Recent results */}
       {matches.recent.length > 0 && (
