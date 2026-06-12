@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:deploy": "DEPLOY_MODE=1 tsc && DEPLOY_MODE=1 vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"lint frontend: TBD\"",
@@ -35,6 +36,7 @@
     "jsdom": "^26.1.0",
     "typescript": "^5.4.0",
     "vite": "^5.2.0",
+    "terser": "^5.31.0",
     "vitest": "^3.2.1"
   }
 }
