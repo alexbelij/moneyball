@@ -1,5 +1,8 @@
 # TASKS-V4 | v1.0.0 | 2026-06-12
 # Frontend polish pack for the second Viktor. Priority: T15 -> T14 -> T13 -> T16.
+# DESIGN: all UI work MUST follow docs/design-spec.md (binding palette/typography/
+# motion/anti-patterns) and use the skills listed in its section 8. UI PRs without
+# screenshots (desktop+mobile, room+Lite) will be rejected.
 # Rules: TypeScript only, file headers (name|version|date), vitest coverage for logic,
 # no new heavy deps, branch per task `task/T1X-...`, do NOT touch .env*/secrets.
 

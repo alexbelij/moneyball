@@ -3,6 +3,9 @@
 # Context: deployed site got 1/10 from the owner. Root causes: base background not used
 # as-is, props were re-cut/re-cropped instead of using the owner-provided cutouts,
 # agents not connected to the live backend.
+# DESIGN: all UI work MUST follow docs/design-spec.md (binding palette/typography/
+# motion/anti-patterns) and use the skills listed in its section 8. UI PRs without
+# screenshots (desktop+mobile, room+Lite) will be rejected.
 # HARD RULES:
 # - The baked background `assets/backgrounds/room_bg_v02_table_clock_pennant.png` is
 #   rendered 1:1 as the bottom layer. NEVER crop, scale-up, recolor or re-cut it.
