@@ -1,8 +1,9 @@
 /**
- * CabinetScene | v0.6.0 | 2026-06-12
+ * CabinetScene | v0.6.1 | 2026-06-13
  * Purpose: Main cabinet scene. Composes the bg-space WorldLayer (background,
  * props.json props, TV states, wall clock, y-sorted table occlusion) with
  * agent sprites, wallet-flow pause and thought bubbles.
+ * T19: cleans up PropStateController on shutdown.
  */
 
 import Phaser from 'phaser'
@@ -92,6 +93,7 @@ export class CabinetScene extends Phaser.Scene {
   shutdown() {
     if (this.onThought) GameEventBus.off('thought:show', this.onThought)
     if (this.onLive) GameEventBus.off('matches:live', this.onLive)
+    this.world?.getStateController()?.destroy()
     this.syncTimer?.remove(false)
     this.unsubAgents?.()
     this.unsubWallet?.()
