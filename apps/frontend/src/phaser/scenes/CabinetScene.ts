@@ -40,6 +40,7 @@ export class CabinetScene extends Phaser.Scene {
       this.worldReady = true
       this.fitWorld()
       this.syncAgents()
+      GameEventBus.emit('scene:ready', undefined)
     })
 
     this.fitWorld()

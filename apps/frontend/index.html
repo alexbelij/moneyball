@@ -4,23 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Moneyball Cabinet</title>
+
+    <!-- T13: preload critical assets -->
+    <link rel="preload" as="image" href="/assets/backgrounds/room_bg_v02_table_clock_pennant.png" />
+    <link rel="preload" as="fetch" href="/assets/props/props.json" crossorigin />
+    <link rel="preload" as="fetch" href="/assets/props/props_manifest.json" crossorigin />
+
+    <!-- T14: pixel fonts (design-spec: Press Start 2P for headers, VT323 for body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { background: #1a1a2e; overflow: hidden; font-family: Inter, system-ui, sans-serif; }
+      body { background: #0c0c0c; overflow: hidden; font-family: 'VT323', 'Press Start 2P', monospace; }
       #root { width: 100vw; height: 100vh; }
       .noscript {
         position: fixed; inset: 0;
         display: flex; align-items: center; justify-content: center;
-        background: #0b1020; color: #e5e7eb;
+        background: #0c0c0c; color: #f4ede2;
         padding: 24px; text-align: center;
-        font-family: system-ui, sans-serif;
+        font-family: 'VT323', monospace;
       }
       .noscript-box {
         max-width: 520px;
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 12px;
+        border: 2px solid #3a3020;
+        border-radius: 0;
         padding: 16px 18px;
-        background: rgba(255,255,255,0.04);
+        background: #181009;
+        box-shadow: 4px 4px 0 #000;
       }
     </style>
   </head>
@@ -28,8 +40,8 @@
     <noscript>
       <div class="noscript">
         <div class="noscript-box">
-          <h1 style="margin: 0 0 8px; font-size: 18px;">JavaScript is required</h1>
-          <p style="margin: 0; opacity: 0.9;">
+          <h1 style="margin: 0 0 8px; font-size: 12px; font-family: 'Press Start 2P', monospace; color: #e8a44a; letter-spacing: -0.5px;">JavaScript is required</h1>
+          <p style="margin: 0; font-size: 18px; color: #d5cec0;">
             Moneyball Cabinet is an interactive web app (React + Phaser). Please enable JavaScript and reload.
           </p>
         </div>

@@ -1,6 +1,7 @@
 /**
- * PhaserGame | v0.3.0 | 2026-06-09
+ * PhaserGame | v0.4.0 | 2026-06-13
  * Purpose: Create Phaser instance once and sleep/wake the main loop during wallet flow.
+ * T13: pixel-art config (pixelArt: true, roundPixels: true, bg #000000 letterbox).
  */
 
 import React, { useEffect, useRef } from 'react'
@@ -21,7 +22,9 @@ export function PhaserGame() {
       parent: ref.current,
       width: '100%',
       height: '100%',
-      backgroundColor: '#16213e',
+      backgroundColor: '#000000',
+      pixelArt: true,
+      roundPixels: true,
       scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
       scene: [CabinetScene],
     })
