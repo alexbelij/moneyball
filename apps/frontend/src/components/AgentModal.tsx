@@ -1,7 +1,7 @@
 /**
- * AgentModal | v0.4.0 | 2026-06-12
+ * AgentModal | v0.5.0 | 2026-06-12
  * Purpose: Agent dossier — Overview (actions) + Predictions / Evolution /
- * Memory tabs backed by public agent endpoints. Admin controls need JWT admin.
+ * Memory tabs. WAI-ARIA dialog + tabs pattern, focus trap, keyboard nav.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -13,8 +13,12 @@ import {
 } from '@/lib/api'
 import { GameEventBus } from '@/events/GameEventBus'
 import { useAuthStore } from '@/store/authStore'
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
+import { useRovingTabs } from '@/lib/a11y/useRovingTabs'
 
 type Tab = 'overview' | 'predictions' | 'evolution' | 'memory'
+const TABS: readonly Tab[] = ['overview', 'predictions', 'evolution', 'memory'] as const
+const MODAL_TITLE_ID = 'agent-modal-title'
 
 export function AgentModal() {
   const selected = useGameStore((s) => s.ui.selectedAgentId)
@@ -28,7 +32,13 @@ export function AgentModal() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
-  // Reset tab when switching agents so each dossier opens on Overview.
+  const trapRef = useFocusTrap<HTMLDivElement>({ onClose: close, active: !!agent })
+  const { getTabProps, getTabPanelProps, getTabListProps } = useRovingTabs({
+    tabs: TABS,
+    activeTab: tab,
+    onSelect: setTab,
+  })
+
   useEffect(() => { setTab('overview'); setErr(null) }, [selected])
 
   if (!agent) return null
@@ -41,9 +51,7 @@ export function AgentModal() {
       GameEventBus.emit('thought:show', { agentId, text: r.text, duration: 3500 })
     } catch (e: any) {
       setErr(e.message ?? String(e))
-    } finally {
-      setBusy(false)
-    }
+    } finally { setBusy(false) }
   }
 
   async function onDisagree() {
@@ -54,9 +62,7 @@ export function AgentModal() {
       GameEventBus.emit('thought:show', { agentId, text: r.text, duration: 3500 })
     } catch (e: any) {
       setErr(e.message ?? String(e))
-    } finally {
-      setBusy(false)
-    }
+    } finally { setBusy(false) }
   }
 
   async function onSimulateDayPlusOne() {
@@ -67,9 +73,7 @@ export function AgentModal() {
       GameEventBus.emit('thought:show', { agentId, text: `[Day+1] ${r.text}`, duration: 4000 })
     } catch (e: any) {
       setErr('Admin action failed (requires admin role).')
-    } finally {
-      setBusy(false)
-    }
+    } finally { setBusy(false) }
   }
 
   return (
@@ -78,6 +82,10 @@ export function AgentModal() {
       style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'flex-end', zIndex: 70 }}
     >
       <div
+        ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={MODAL_TITLE_ID}
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 440, height: '100%', background: '#111827',
@@ -87,24 +95,29 @@ export function AgentModal() {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{agent.name}</div>
+            <div id={MODAL_TITLE_ID} style={{ fontSize: 18, fontWeight: 700 }}>{agent.name}</div>
             <div style={{ fontSize: 13, color: '#9ca3af' }}>{agent.role}</div>
             <div style={{ marginTop: 8, fontSize: 12, color: '#d1d5db' }}>
               Status: <b>{agent.status}</b>
             </div>
           </div>
-          <button onClick={close} style={{ background: 'none', border: 0, color: '#9ca3af', fontSize: 18, cursor: 'pointer' }}>
+          <button
+            onClick={close}
+            aria-label="Close agent modal"
+            style={{ background: 'none', border: 0, color: '#9ca3af', fontSize: 18, cursor: 'pointer' }}
+          >
             ✕
           </button>
         </div>
 
-        <div style={{ marginTop: 14, display: 'flex', gap: 6 }}>
-          {(['overview', 'predictions', 'evolution', 'memory'] as Tab[]).map((t) => (
+        <div style={{ marginTop: 14, display: 'flex', gap: 6 }} {...getTabListProps()}>
+          {TABS.map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
+              {...getTabProps(t)}
               style={{
-                ...btn(tab === t ? '#2563eb' : '#374151', tab === t ? 'rgba(37,99,235,0.2)' : '#1f2937', tab === t ? '#93c5fd' : '#e5e7eb'),
+                ...btnStyle(tab === t ? '#2563eb' : '#374151', tab === t ? 'rgba(37,99,235,0.2)' : '#1f2937', tab === t ? '#93c5fd' : '#e5e7eb'),
                 textTransform: 'capitalize',
               }}
             >
@@ -113,21 +126,21 @@ export function AgentModal() {
           ))}
         </div>
 
-        <div style={{ marginTop: 12, flex: 1, overflowY: 'auto', minHeight: 0 }}>
+        <div style={{ marginTop: 12, flex: 1, overflowY: 'auto', minHeight: 0 }} {...getTabPanelProps(tab)}>
           {tab === 'overview' && (
             <>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button disabled={busy} onClick={onRoast} style={btn()}>Roast me</button>
-                <button disabled={busy} onClick={onDisagree} style={btn('#7c2d12', 'rgba(180, 83, 9, 0.15)', '#fdba74')}>
+                <button disabled={busy} onClick={onRoast} style={btnStyle()}>Roast me</button>
+                <button disabled={busy} onClick={onDisagree} style={btnStyle('#7c2d12', 'rgba(180, 83, 9, 0.15)', '#fdba74')}>
                   Disagree
                 </button>
                 {isAdmin && (
-                  <button disabled={busy} onClick={onSimulateDayPlusOne} style={btn('#1d4ed8', 'rgba(59,130,246,0.15)', '#93c5fd')}>
+                  <button disabled={busy} onClick={onSimulateDayPlusOne} style={btnStyle('#1d4ed8', 'rgba(59,130,246,0.15)', '#93c5fd')}>
                     Simulate Day +1 (admin)
                   </button>
                 )}
               </div>
-              {err && <div style={{ marginTop: 10, color: '#fca5a5', fontSize: 12 }}>{err}</div>}
+              {err && <div role="alert" style={{ marginTop: 10, color: '#fca5a5', fontSize: 12 }}>{err}</div>}
               <div style={{ marginTop: 16, fontSize: 12, color: '#9ca3af' }}>Last thought:</div>
               <div style={{ marginTop: 6, fontSize: 13 }}>{agent.lastThought ?? '—'}</div>
             </>
@@ -166,7 +179,7 @@ function PredictionsTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentPredictions(agentId), [agentId])
   if (loading) return <Hint>Loading predictions…</Hint>
   if (err) return <Hint color="#fca5a5">{err}</Hint>
-  const items = (data?.items ?? []).slice().reverse() // newest first
+  const items = (data?.items ?? []).slice().reverse()
   if (!items.length) return <Hint>No predictions yet — waiting for the next fixture window.</Hint>
 
   const resolved = items.filter((p) => p.outcome)
@@ -188,7 +201,7 @@ function PredictionRow({ p }: { p: PredictionItem }) {
     <div style={card()}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
         <span style={{ color: '#d1d5db' }}>{p.matchId}</span>
-        <span style={{ color: badgeColor, fontWeight: 700 }}>{badge}</span>
+        <span style={{ color: badgeColor, fontWeight: 700 }} aria-label={p.outcome ? (p.outcome.correct ? 'Correct' : 'Incorrect') : 'Pending'}>{badge}</span>
       </div>
       <div style={{ marginTop: 4, fontSize: 13 }}>
         Pick <b>{p.pick}</b> · confidence <b>{Math.round(p.confidence * 100)}%</b>
@@ -270,14 +283,13 @@ function MemoryTab({ agentId }: { agentId: string }) {
   )
 }
 
-/** Signed bar: range maps [-range, +range] → full width; 0 is centered. */
 function ParamBar({ label, value, range }: { label: string; value: number; range: number }) {
-  const pct = Math.max(-1, Math.min(1, value / range)) // [-1, 1]
+  const pct = Math.max(-1, Math.min(1, value / range))
   const half = Math.abs(pct) * 50
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, fontFamily: 'monospace' }}>
       <span style={{ width: 120, color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
-      <div style={{ flex: 1, height: 6, background: '#1f2937', borderRadius: 3, position: 'relative' }}>
+      <div style={{ flex: 1, height: 6, background: '#1f2937', borderRadius: 3, position: 'relative' }} role="meter" aria-label={label} aria-valuenow={value} aria-valuemin={-range} aria-valuemax={range}>
         <div style={{
           position: 'absolute', top: 0, height: 6, borderRadius: 3,
           left: pct >= 0 ? '50%' : `${50 - half}%`, width: `${half}%`,
@@ -303,7 +315,7 @@ function card() {
   } as const
 }
 
-function btn(border = '#374151', bg = '#1f2937', color = '#e5e7eb') {
+function btnStyle(border = '#374151', bg = '#1f2937', color = '#e5e7eb') {
   return {
     padding: '8px 10px',
     borderRadius: 8,

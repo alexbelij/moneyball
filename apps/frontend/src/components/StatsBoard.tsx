@@ -78,7 +78,7 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ fontSize: 15, fontWeight: 700 }}>🏆 Scout Leaderboard</div>
-        <button onClick={onClose} style={{ background: 'none', border: 0, color: '#9ca3af', fontSize: 16, cursor: 'pointer' }}>✕</button>
+        <button onClick={onClose} aria-label="Close leaderboard" style={{ background: 'none', border: 0, color: '#9ca3af', fontSize: 16, cursor: 'pointer' }}>✕</button>
       </div>
 
       {err && <div style={{ marginTop: 10, color: '#fca5a5', fontSize: 12 }}>{err}</div>}

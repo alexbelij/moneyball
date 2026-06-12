@@ -1,8 +1,9 @@
 /**
- * main | v0.2.0 | 2026-06-09
+ * main | v0.3.0 | 2026-06-12
  */
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import '@/lib/a11y/a11y.css'
 import App from '@/App'
 import { SuiProvider } from '@/sui/SuiProvider'
 
