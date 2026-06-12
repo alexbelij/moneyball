@@ -117,23 +117,20 @@
       "interactive": true
     },
     {
-      "id": "dresser_set",
-      "src": "props/dresser_set.png",
-      "src_xy": [
-        21,
-        440
-      ],
-      "w": 261,
-      "h": 245,
+      "id": "dresser",
+      "src": "props/dresser.png",
+      "w": 275,
+      "h": 210,
       "target_xy": [
-        20,
-        385
+        10,
+        475
       ],
       "anchor": [
-        150,
-        630
+        147,
+        685
       ],
-      "interactive": false
+      "interactive": false,
+      "_comment": "replaces stale dresser_set; placement per props_manifest.json (offset 10,475 anchorY 685)"
     },
     {
       "id": "coffee_machine",
@@ -160,12 +157,12 @@
       "w": 28,
       "h": 28,
       "target_xy": [
-        224,
-        424
+        202,
+        496
       ],
       "anchor": [
-        238,
-        452
+        216,
+        524
       ],
       "interactive": false,
       "_comment": "hires: docs/reference/mug_hires_v01.png"
@@ -176,12 +173,12 @@
       "w": 32,
       "h": 71,
       "target_xy": [
-        96,
-        375
+        140,
+        437
       ],
       "anchor": [
-        112,
-        446
+        156,
+        508
       ],
       "interactive": false,
       "_comment": "hires: docs/reference/thermos_hires_v01.png; scale ref: mug=28px vs coffee_machine=103px"
