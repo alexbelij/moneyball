@@ -193,14 +193,14 @@
   "id": "trash_bin",
   "src": "props/trash_bin.png",
   "src_xy": [
-   283,
-   569
+   303,
+   531
   ],
-  "w": 97,
-  "h": 85,
+  "w": 66,
+  "h": 81,
   "target_xy": [
-   283,
-   569
+   303,
+   568
   ],
   "anchor": [
    336,
