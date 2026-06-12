@@ -41,6 +41,28 @@
    "interactive": true
   },
   {
+   "id": "digital_clock",
+   "src": "props/digital_clock.png",
+   "w": 96,
+   "h": 52,
+   "target_xy": [
+    794,
+    128
+   ],
+   "anchor": [
+    842,
+    180
+   ],
+   "interactive": false,
+   "screen_rect": [
+    10,
+    11,
+    76,
+    25
+   ],
+   "note": "wall LCD above board_main, covers baked plate (798,133,89x42); digits drawn at runtime by DigitalClock.ts (local time, 1Hz colon); hires: docs/reference/digital_clock_hires_v01.png"
+  },
+  {
    "id": "board_scout",
    "src": "props/board_scout.png",
    "src_xy": [
@@ -95,7 +117,12 @@
     410,
     159
    ],
-   "interactive": true
+   "interactive": true,
+   "states": {
+    "off": "props/exit_sign_off.png",
+    "on": "props/exit_sign_on.png"
+   },
+   "_comment": "src = on-state by default; swap states in place, identical 71x29 canvases; hires: docs/reference/exit_sign_{off,on}_hires_v01.png"
   },
   {
    "id": "light_switch",
@@ -340,28 +367,6 @@
    "anchor": null,
    "interactive": false,
    "_comment": "spare sprite: scouting pennant (same design already baked into bg at ~(1255,170)); base for per-country club pennant variants (geo-IP idea, V2); hires: docs/reference/pennant_hires_v01.png"
-  },
-  {
-   "id": "digital_clock",
-   "src": "props/digital_clock.png",
-   "w": 96,
-   "h": 52,
-   "target_xy": [
-    794,
-    128
-   ],
-   "anchor": [
-    842,
-    180
-   ],
-   "interactive": false,
-   "screen_rect": [
-    10,
-    11,
-    76,
-    25
-   ],
-   "note": "wall LCD above board_main, covers baked plate (798,133,89x42); digits drawn at runtime by DigitalClock.ts (local time, 1Hz colon); hires: docs/reference/digital_clock_hires_v01.png"
   }
  ]
 }
