@@ -1,11 +1,15 @@
 /**
- * bun-test-runner | v0.2.0 | 2026-06-12
+ * bun-test-runner | v0.2.1 | 2026-06-12
  * Purpose: Run the vitest suites in environments that have bun but no node
  * (vitest's tinypool requires node to fork workers). Provides a minimal
  * vitest-compatible shim (describe/it/expect/vi/beforeEach/afterEach) via a
  * Bun resolver plugin and imports every test file sequentially.
  *
  * Changelog:
+ *   v0.2.1 — (review) Grace ticks in runAllTimersAsync so async chains that
+ *     register fake timers across macrotask turns are not dropped (fixes
+ *     MemWalWriteQueue minIntervalMs test); recursively collect *.test.ts from
+ *     src/ too (worldStateStore.test.ts was silently skipped). 56/56 under bun.
  *   v0.2.0 — Added beforeEach/afterEach, vi.fn (with mockResolvedValue,
  *     mockImplementation, mock.calls), vi.useFakeTimers/useRealTimers/
  *     advanceTimersByTime/runAllTimersAsync, and matchers: toHaveBeenCalledWith,
@@ -142,8 +146,17 @@ function advanceTimersByTime(ms: number) {
 
 async function runAllTimersAsync(maxIter = 100) {
   for (let i = 0; i < maxIter; i++) {
-    const pending = timers.filter((t) => t.fire >= fakeNow).sort((a, b) => a.fire - b.fire)
-    if (pending.length === 0) break
+    let pending = timers.filter((t) => t.fire >= fakeNow).sort((a, b) => a.fire - b.fire)
+    if (pending.length === 0) {
+      // Grace ticks: async chains (e.g. `await remember(); await sleep(ms)`)
+      // may need a few real macrotask turns before they register the next
+      // fake timer. Re-check before declaring the queue drained.
+      for (let g = 0; g < 5 && pending.length === 0; g++) {
+        await new Promise<void>((r) => realSetTimeout(r, 0))
+        pending = timers.filter((t) => t.fire >= fakeNow).sort((a, b) => a.fire - b.fire)
+      }
+      if (pending.length === 0) break
+    }
     const next = pending[0]
     fakeNow = next.fire
     if (next.interval !== null) {
@@ -300,16 +313,26 @@ Bun.plugin({
 
 /* ── Run ─────────────────────────────────────────────────────────────── */
 
-const testDir = join(import.meta.dir, '..', 'test')
-const files = readdirSync(testDir).filter((f) => f.endsWith('.test.ts')).sort()
+// Collect *.test.ts from test/ and recursively from src/ (e.g. src/realtime/*.test.ts)
+function collectTests(dir: string): string[] {
+  const out: string[] = []
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name)
+    if (e.isDirectory()) out.push(...collectTests(p))
+    else if (e.name.endsWith('.test.ts')) out.push(p)
+  }
+  return out
+}
+const root = join(import.meta.dir, '..')
+const files = [...collectTests(join(root, 'test')), ...collectTests(join(root, 'src'))].sort()
 
 for (const f of files) {
-  console.log(`\n${f}`)
+  console.log(`\n${f.slice(root.length + 1)}`)
   _beforeEachHooks = []
   _afterEachHooks = []
 
   try {
-    await import(join(testDir, f))
+    await import(f)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     if (msg.includes('Cannot find module') || msg.includes('SyntaxError')) {
