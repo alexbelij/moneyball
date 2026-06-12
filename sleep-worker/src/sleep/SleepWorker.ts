@@ -1,5 +1,5 @@
 import type { Clock } from '../memory/MemWalClient.js';
-import type { AgentEventReader, PredictionEvent } from '../events/types.js';
+import type { AgentEventReader, PredictionEvent, ResolvedCursor } from '../events/types.js';
 import type { AgentParamsStore } from '../params/AgentParamsStore.js';
 import type { ReflectionEngine } from '../reflection/ReflectionEngine.js';
 import type { EvolutionEngine } from '../evolution/EvolutionEngine.js';
@@ -61,16 +61,23 @@ export class SleepWorker {
 
   /** Entry point for the job consumer. Safe to call at any frequency. */
   async runIfDue(agentId: string): Promise<SleepRunResult> {
-    const state = await this.deps.stateStore.get(agentId);
+    let state = await this.deps.stateStore.get(agentId);
     if (!this.isDue(state)) return { kind: 'not_due' };
 
     // Deterministic runId: same agent + same watermark ⇒ same run identity.
-    const runId = `${agentId}:${state.resolvedWatermark ?? 'genesis'}:${state.paramsVersionAtLastSleep}`;
+    const runId = runIdOf(agentId, state);
 
     const lockHandle = await this.deps.lock.tryAcquire(agentId, runId);
     if (lockHandle === null) return { kind: 'lock_busy' };
 
     try {
+      // FIX 1.3 (TOCTOU): re-read state under the lock. If another worker
+      // committed between our read and acquire, the stale state would burn
+      // cooldowns twice and overwrite lastSleepAt via commitSleep.
+      state = await this.deps.stateStore.get(agentId);
+      if (runIdOf(agentId, state) !== runId || !this.isDue(state)) {
+        return { kind: 'lock_busy' };
+      }
       return await this.run(agentId, runId, state);
     } catch (error) {
       await this.deps.stateStore.recordAbort(agentId);
@@ -109,7 +116,7 @@ export class SleepWorker {
       await stateStore.clearCheckpoint(agentId);
       return { kind: 'noop', runId, reason: 'no newly resolved events' };
     }
-    const newWatermark = maxResolvedAt(events);
+    const newWatermark = maxCursor(events);
     await stateStore.saveCheckpoint({
       agentId,
       runId,
@@ -161,6 +168,7 @@ export class SleepWorker {
       adjustedTopics: reflected.adjustedTopics,
       topicCooldownSleeps: reflection.config.topicCooldownSleeps,
       paramsVersion: committedVersion,
+      processedCount: events.length,
     });
     await stateStore.clearCheckpoint(agentId);
 
@@ -195,11 +203,27 @@ export class SleepWorker {
   }
 }
 
-function maxResolvedAt(events: readonly PredictionEvent[]): string | null {
-  let max: string | null = null;
+function runIdOf(agentId: string, state: SleepState): string {
+  const wm =
+    state.resolvedWatermark === null
+      ? 'genesis'
+      : `${state.resolvedWatermark.resolvedAt}#${state.resolvedWatermark.eventId}`;
+  return `${agentId}:${wm}:${state.paramsVersionAtLastSleep}`;
+}
+
+/** FIX 2.2: watermark is the max composite (resolvedAt, eventId) cursor. */
+function maxCursor(events: readonly PredictionEvent[]): ResolvedCursor | null {
+  let max: ResolvedCursor | null = null;
   for (const e of events) {
     const resolvedAt = e.outcome?.resolvedAt;
-    if (resolvedAt !== undefined && (max === null || resolvedAt > max)) max = resolvedAt;
+    if (resolvedAt === undefined) continue;
+    if (
+      max === null ||
+      resolvedAt > max.resolvedAt ||
+      (resolvedAt === max.resolvedAt && e.id > max.eventId)
+    ) {
+      max = { resolvedAt, eventId: e.id };
+    }
   }
   return max;
 }

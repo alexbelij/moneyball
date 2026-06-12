@@ -22,7 +22,7 @@ import { ReflectionEngine } from './reflection/ReflectionEngine.js';
 import { EvolutionEngine } from './evolution/EvolutionEngine.js';
 import { SleepLock } from './sleep/SleepLock.js';
 import { SleepStateStore } from './sleep/SleepStateStore.js';
-import { SleepWorker } from './sleep/SleepWorker.js';
+import { DEFAULT_SLEEP_CONFIG, SleepWorker, type SleepWorkerConfig } from './sleep/SleepWorker.js';
 
 /**
  * Composition root. Both adapters are implemented in YOUR codebase:
@@ -35,6 +35,7 @@ export function createSleepWorker(deps: {
   readonly memwal: MemWalClient;
   readonly eventReader: AgentEventReader;
   readonly dryRun?: boolean;
+  readonly config?: Partial<SleepWorkerConfig>;
 }): { readonly worker: SleepWorker; readonly paramsStore: AgentParamsStore; readonly stateStore: SleepStateStore } {
   const clock = systemClock;
   const paramsStore = new AgentParamsStore(deps.memwal, clock);
@@ -44,14 +45,17 @@ export function createSleepWorker(deps: {
     maxTotalDelta: reflection.config.maxTotalDelta,
     dryRun: deps.dryRun ?? false,
   });
-  const worker = new SleepWorker({
-    stateStore,
-    lock: new SleepLock(deps.memwal, clock),
-    eventReader: deps.eventReader,
-    paramsStore,
-    reflection,
-    evolution,
-    clock,
-  });
+  const worker = new SleepWorker(
+    {
+      stateStore,
+      lock: new SleepLock(deps.memwal, clock),
+      eventReader: deps.eventReader,
+      paramsStore,
+      reflection,
+      evolution,
+      clock,
+    },
+    { ...DEFAULT_SLEEP_CONFIG, ...deps.config },
+  );
   return { worker, paramsStore, stateStore };
 }
