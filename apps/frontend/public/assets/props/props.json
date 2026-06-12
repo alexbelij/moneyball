@@ -1,196 +1,231 @@
 {
- "base": "assets/backgrounds/room_bg_v02_table_clock_pennant.png",
- "note": "clock+pennant baked into base; table = table_occlusion.png per props_manifest.json",
- "props": [
-  {
-   "id": "board_left",
-   "src": "props/board_left.png",
-   "src_xy": [
-    22,
-    207
-   ],
-   "w": 155,
-   "h": 208,
-   "target_xy": [
-    22,
-    180
-   ],
-   "anchor": [
-    99,
-    388
-   ],
-   "interactive": true
-  },
-  {
-   "id": "board_main",
-   "src": "props/board_main.png",
-   "src_xy": [
-    507,
-    206
-   ],
-   "w": 716,
-   "h": 265,
-   "target_xy": [
-    507,
-    175
-   ],
-   "anchor": [
-    865,
-    440
-   ],
-   "interactive": true
-  },
-  {
-   "id": "board_scout",
-   "src": "props/board_scout.png",
-   "src_xy": [
-    1498,
-    211
-   ],
-   "w": 152,
-   "h": 222,
-   "target_xy": [
-    1498,
-    170
-   ],
-   "anchor": [
-    1574,
-    392
-   ],
-   "interactive": true
-  },
-  {
-   "id": "door",
-   "src": "props/door.png",
-   "src_xy": [
-    333,
-    238
-   ],
-   "w": 144,
-   "h": 334,
-   "target_xy": [
-    333,
-    172
-   ],
-   "anchor": [
-    405,
-    506
-   ],
-   "interactive": true
-  },
-  {
-   "id": "exit_sign",
-   "src": "props/exit_sign.png",
-   "src_xy": [
-    375,
-    196
-   ],
-   "w": 71,
-   "h": 29,
-   "target_xy": [
-    375,
-    130
-   ],
-   "anchor": [
-    410,
-    159
-   ],
-   "interactive": true
-  },
-  {
-   "id": "light_switch",
-   "src": "props/light_switch.png",
-   "src_xy": [
-    306,
-    405
-   ],
-   "w": 16,
-   "h": 23,
-   "target_xy": [
-    306,
-    339
-   ],
-   "anchor": [
-    314,
-    362
-   ],
-   "interactive": true
-  },
-  {
-   "id": "dresser_set",
-   "src": "props/dresser_set.png",
-   "src_xy": [
-    21,
-    440
-   ],
-   "w": 261,
-   "h": 245,
-   "target_xy": [
-    20,
-    385
-   ],
-   "anchor": [
-    150,
-    630
-   ],
-   "interactive": false
-  },
-  {
-   "id": "coffee_machine",
-   "src": "props/coffee_machine.png",
-   "src_xy": [
-    135,
-    393
-   ],
-   "w": 75,
-   "h": 103,
-   "target_xy": [
-    134,
-    338
-   ],
-   "anchor": [
-    171,
-    441
-   ],
-   "interactive": true
-  },
-  {
-   "id": "trash_bin",
-   "src": "props/trash_bin.png",
-   "src_xy": [
-    303,
-    531
-   ],
-   "w": 66,
-   "h": 81,
-   "target_xy": [
-    300,
-    435
-   ],
-   "anchor": [
-    333,
-    516
-   ],
-   "interactive": false
-  },
-  {
-   "id": "tv_set",
-   "src": "props/tv_set.png",
-   "src_xy": [
-    1317,
-    371
-   ],
-   "w": 138,
-   "h": 250,
-   "target_xy": [
-    1325,
-    368
-   ],
-   "anchor": [
-    1394,
-    618
-   ],
-   "interactive": true
-  }
- ]
+  "base": "assets/backgrounds/room_bg_v02_table_clock_pennant.png",
+  "note": "clock+pennant baked into base; table = table_occlusion.png per props_manifest.json",
+  "props": [
+    {
+      "id": "board_left",
+      "src": "props/board_left.png",
+      "src_xy": [
+        22,
+        207
+      ],
+      "w": 155,
+      "h": 208,
+      "target_xy": [
+        22,
+        180
+      ],
+      "anchor": [
+        99,
+        388
+      ],
+      "interactive": true
+    },
+    {
+      "id": "board_main",
+      "src": "props/board_main.png",
+      "src_xy": [
+        507,
+        206
+      ],
+      "w": 716,
+      "h": 265,
+      "target_xy": [
+        507,
+        175
+      ],
+      "anchor": [
+        865,
+        440
+      ],
+      "interactive": true
+    },
+    {
+      "id": "board_scout",
+      "src": "props/board_scout.png",
+      "src_xy": [
+        1498,
+        211
+      ],
+      "w": 152,
+      "h": 222,
+      "target_xy": [
+        1498,
+        170
+      ],
+      "anchor": [
+        1574,
+        392
+      ],
+      "interactive": true
+    },
+    {
+      "id": "door",
+      "src": "props/door.png",
+      "src_xy": [
+        333,
+        238
+      ],
+      "w": 144,
+      "h": 334,
+      "target_xy": [
+        333,
+        172
+      ],
+      "anchor": [
+        405,
+        506
+      ],
+      "interactive": true
+    },
+    {
+      "id": "exit_sign",
+      "src": "props/exit_sign.png",
+      "src_xy": [
+        375,
+        196
+      ],
+      "w": 71,
+      "h": 29,
+      "target_xy": [
+        375,
+        130
+      ],
+      "anchor": [
+        410,
+        159
+      ],
+      "interactive": true
+    },
+    {
+      "id": "light_switch",
+      "src": "props/light_switch.png",
+      "src_xy": [
+        306,
+        405
+      ],
+      "w": 16,
+      "h": 23,
+      "target_xy": [
+        306,
+        339
+      ],
+      "anchor": [
+        314,
+        362
+      ],
+      "interactive": true
+    },
+    {
+      "id": "dresser_set",
+      "src": "props/dresser_set.png",
+      "src_xy": [
+        21,
+        440
+      ],
+      "w": 261,
+      "h": 245,
+      "target_xy": [
+        20,
+        385
+      ],
+      "anchor": [
+        150,
+        630
+      ],
+      "interactive": false
+    },
+    {
+      "id": "coffee_machine",
+      "src": "props/coffee_machine.png",
+      "src_xy": [
+        135,
+        393
+      ],
+      "w": 75,
+      "h": 103,
+      "target_xy": [
+        134,
+        338
+      ],
+      "anchor": [
+        171,
+        441
+      ],
+      "interactive": true
+    },
+    {
+      "id": "trash_bin",
+      "src": "props/trash_bin.png",
+      "src_xy": [
+        303,
+        531
+      ],
+      "w": 66,
+      "h": 81,
+      "target_xy": [
+        300,
+        435
+      ],
+      "anchor": [
+        333,
+        516
+      ],
+      "interactive": false
+    },
+    {
+      "id": "tv_set",
+      "src": "props/tv_set.png",
+      "src_xy": [
+        1317,
+        371
+      ],
+      "w": 138,
+      "h": 250,
+      "target_xy": [
+        1325,
+        368
+      ],
+      "anchor": [
+        1394,
+        618
+      ],
+      "interactive": true,
+      "states": {
+        "_comment": "overlays composited at offset relative to tv_set sprite top-left; base sprite = static frame 0",
+        "overlay_offset": {
+          "x": 38,
+          "y": 14
+        },
+        "overlay_size": {
+          "w": 88,
+          "h": 93
+        },
+        "screen_mask": "props/tv_screen_mask.png",
+        "off": {
+          "overlay": "props/tv_screen_off.png"
+        },
+        "static": {
+          "frames": [
+            null,
+            "props/tv_screen_static_f1.png",
+            "props/tv_screen_static_f2.png"
+          ],
+          "fps": 8,
+          "_comment": "frame 0 = base sprite (no overlay)"
+        },
+        "match": {
+          "_comment": "live: draw content into overlay rect on canvas, clip with screen_mask (destination-in), then fill LED green",
+          "led": {
+            "x": 111,
+            "y": 104,
+            "w": 2,
+            "h": 2,
+            "on": "#39c04a",
+            "off": "#c03030"
+          }
+        }
+      }
+    }
+  ]
 }
