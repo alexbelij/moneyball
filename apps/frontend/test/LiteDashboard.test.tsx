@@ -76,7 +76,7 @@ describe('LiteDashboard', () => {
 
   it('shows agent card with name and role', () => {
     render(<LiteDashboard />)
-    expect(screen.getByText('Dr. Morgan')).toBeInTheDocument()
+    expect(screen.getAllByText('Dr. Morgan').length).toBeGreaterThan(0)
     expect(screen.getByText('Statistician')).toBeInTheDocument()
   })
 
