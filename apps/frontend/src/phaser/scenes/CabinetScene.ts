@@ -1,28 +1,20 @@
 /**
- * CabinetScene | v0.5.0 | 2026-06-12
- * Purpose: Main cabinet scene with robust agent spawn + background cover +
- * wallet-flow pause + wall digital clock (local time, blinking colon).
+ * CabinetScene | v0.6.0 | 2026-06-12
+ * Purpose: Main cabinet scene. Composes the bg-space WorldLayer (background,
+ * props.json props, TV states, wall clock, y-sorted table occlusion) with
+ * agent sprites, wallet-flow pause and thought bubbles.
  */
 
 import Phaser from 'phaser'
 import { useGameStore } from '@/store/gameStore'
 import { AgentSprite } from '@/phaser/sprites/AgentSprite'
 import { GameEventBus } from '@/events/GameEventBus'
-import { DigitalClock } from '@/phaser/objects/DigitalClock'
-
-// Wall LCD clock above the magnetic board. Coordinates are bg-space px
-// (1672x941 reference chain, room_bg_v02); mirrored in assets/props/props.json.
-const CLOCK = {
-  textureKey: 'prop_digital_clock',
-  url: '/assets/props/digital_clock.png',
-  xy: { x: 794, y: 128 },
-  screen: { x: 10, y: 11, w: 76, h: 25 },
-}
+import { WorldLayer } from '@/phaser/world/WorldLayer'
 
 export class CabinetScene extends Phaser.Scene {
   private sprites = new Map<string, AgentSprite>()
-  private bg?: Phaser.GameObjects.Image
-  private clock?: DigitalClock
+  private world?: WorldLayer
+  private worldReady = false
 
   private unsubAgents?: () => void
   private unsubWallet?: () => void
@@ -30,25 +22,28 @@ export class CabinetScene extends Phaser.Scene {
 
   private pendingThoughts = new Map<string, { text: string; duration?: number }>()
   private onThought?: (p: { agentId: string; text: string; duration?: number }) => void
+  private onLive?: (p: { live: boolean }) => void
 
   constructor() {
     super({ key: 'CabinetScene' })
   }
 
   preload() {
-    this.load.image('bg', '/assets/backgrounds/room_shell_background_v01.png')
-    this.load.image(CLOCK.textureKey, CLOCK.url)
+    WorldLayer.preloadManifests(this)
   }
 
   create() {
-    const { width, height } = this.scale
+    this.world = new WorldLayer(this)
+    this.add.existing(this.world)
 
-    // Background
-    this.bg = this.add.image(width / 2, height / 2, 'bg').setDepth(0)
-    this.clock = new DigitalClock(this, 0, 0, CLOCK).setDepth(1)
-    this.add.existing(this.clock)
-    this.fitBgCover()
-    this.scale.on('resize', () => this.fitBgCover())
+    void this.world.build().then(() => {
+      this.worldReady = true
+      this.fitWorld()
+      this.syncAgents()
+    })
+
+    this.fitWorld()
+    this.scale.on('resize', () => this.fitWorld())
 
     // Subscribe FIRST (avoid missing first world:state)
     this.unsubAgents = useGameStore.subscribe(
@@ -86,12 +81,17 @@ export class CabinetScene extends Phaser.Scene {
     }
     GameEventBus.on('thought:show', this.onThought)
 
+    // TV broadcast state from the match feed poller (MatchTV)
+    this.onLive = ({ live }) => this.world?.setBroadcast(live)
+    GameEventBus.on('matches:live', this.onLive)
+
     // Apply initial pause state (in case UI started wallet flow before scene)
     this.setPaused(useGameStore.getState().ui.isWalletFlowActive)
   }
 
   shutdown() {
     if (this.onThought) GameEventBus.off('thought:show', this.onThought)
+    if (this.onLive) GameEventBus.off('matches:live', this.onLive)
     this.syncTimer?.remove(false)
     this.unsubAgents?.()
     this.unsubWallet?.()
@@ -112,30 +112,19 @@ export class CabinetScene extends Phaser.Scene {
     }
   }
 
-  private fitBgCover() {
-    if (!this.bg) return
+  private fitWorld() {
     const { width, height } = this.scale
-    const tex = this.textures.get('bg')
-    const src = tex.getSourceImage() as HTMLImageElement
-    const s = Math.max(width / src.width, height / src.height)
-    this.bg.setPosition(width / 2, height / 2).setScale(s)
-
-    // Keep bg-space props glued to the background under the cover transform.
-    if (this.clock) {
-      const left = width / 2 - (src.width * s) / 2
-      const top = height / 2 - (src.height * s) / 2
-      this.clock.setPosition(left + CLOCK.xy.x * s, top + CLOCK.xy.y * s).setScale(s)
-    }
+    this.world?.cover(width, height)
   }
 
   private syncAgents() {
+    if (!this.worldReady || !this.world) return
     const agents = Object.values(useGameStore.getState().agents)
     for (const a of agents) {
       if (this.sprites.has(a.agentId)) continue
       const sp = new AgentSprite(this, a)
       this.sprites.set(a.agentId, sp)
-      sp.setDepth(10)
-      this.add.existing(sp)
+      this.world.addAgent(sp)
     }
   }
 }
