@@ -79,6 +79,14 @@ export class AgentParamsStore {
       if (raced === null) throw new ConcurrentParamsWriteError(agentId);
       return raced.value;
     }
+    // FIX 3.1: snapshot genesis into history. Without it the very first
+    // rollback (v1 → v0) throws "no snapshot" → eternal abort loop, exactly
+    // when params are bad and rollback is most needed (history-before-pointer
+    // invariant must hold for v0 too).
+    await this.memwal.write(MemWalKeys.personalityHistory(agentId, 0), fresh, {
+      priority: 'HIGH',
+      awaitDurability: true,
+    });
     return fresh;
   }
 
@@ -130,17 +138,23 @@ export class AgentParamsStore {
     const snapshot = await this.memwal.read<AgentParams>(
       MemWalKeys.personalityHistory(agentId, targetVersion),
     );
-    if (snapshot === null) {
-      throw new Error(`No history snapshot v${targetVersion} for agent ${agentId}`);
-    }
     const key = MemWalKeys.personality(agentId);
     const record = await this.memwal.read<AgentParams>(key);
     if (record === null || record.value.version !== expectedVersion) {
       throw new ConcurrentParamsWriteError(agentId);
     }
 
+    // FIX 3.1 fallback: v0 is fully deterministic — reconstruct it even if the
+    // genesis snapshot is missing (agents created before this fix).
+    const base: AgentParams | null =
+      snapshot?.value ??
+      (targetVersion === 0 ? defaultParams(agentId, this.clock.nowIso()) : null);
+    if (base === null) {
+      throw new Error(`No history snapshot v${targetVersion} for agent ${agentId}`);
+    }
+
     const next: AgentParams = {
-      ...snapshot.value,
+      ...base,
       version: expectedVersion + 1, // history moves forward, never rewinds
       updatedAt: this.clock.nowIso(),
       sourceEvolutionEventId,

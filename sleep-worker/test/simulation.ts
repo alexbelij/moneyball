@@ -7,80 +7,8 @@
  * Run: bun test/simulation.ts
  */
 
-import {
-  applyCalibration,
-  createSleepWorker,
-  systemClock,
-  type AgentEventReader,
-  type EvolutionEvent,
-  type MemWalClient,
-  type PredictionEvent,
-  type VersionedRecord,
-  type WriteOptions,
-  type WriteResult,
-} from '../src/index.js';
-
-// ── In-memory MemWal fake (CAS-correct) ──────────────────────────────────────
-class FakeMemWal implements MemWalClient {
-  private readonly store = new Map<string, { value: unknown; memwalVersion: string }>();
-  private seq = 0;
-
-  async read<T>(key: string): Promise<VersionedRecord<T> | null> {
-    const rec = this.store.get(key);
-    return rec ? { value: structuredClone(rec.value) as T, memwalVersion: rec.memwalVersion } : null;
-  }
-
-  async write<T>(key: string, value: T, opts: WriteOptions): Promise<WriteResult> {
-    const current = this.store.get(key);
-    if (opts.ifVersion === null && current !== undefined) {
-      return { ok: false, reason: 'version_conflict' };
-    }
-    if (typeof opts.ifVersion === 'string' && current?.memwalVersion !== opts.ifVersion) {
-      return { ok: false, reason: 'version_conflict' };
-    }
-    const memwalVersion = `v${++this.seq}`;
-    this.store.set(key, { value: structuredClone(value), memwalVersion });
-    return { ok: true, memwalVersion };
-  }
-
-  async delete(key: string): Promise<void> {
-    this.store.delete(key);
-  }
-
-  async listKeys(prefix: string): Promise<readonly string[]> {
-    return [...this.store.keys()].filter((k) => k.startsWith(prefix));
-  }
-}
-
-// ── Fake AgentEventService adapter ───────────────────────────────────────────
-class FakeEventReader implements AgentEventReader {
-  readonly predictions: PredictionEvent[] = [];
-  readonly evolutions: EvolutionEvent[] = [];
-
-  async listResolvedSince(
-    agentId: string,
-    sinceResolvedAt: string | null,
-    limit: number,
-  ): Promise<readonly PredictionEvent[]> {
-    return this.predictions
-      .filter(
-        (e) =>
-          e.agentId === agentId &&
-          e.outcome !== null &&
-          (sinceResolvedAt === null || e.outcome.resolvedAt > sinceResolvedAt),
-      )
-      .sort((a, b) => a.outcome!.resolvedAt.localeCompare(b.outcome!.resolvedAt))
-      .slice(0, limit);
-  }
-
-  async appendEvolutionEvent(event: EvolutionEvent): Promise<void> {
-    this.evolutions.push(event);
-  }
-
-  async hasEvolutionEventForRun(agentId: string, runId: string): Promise<boolean> {
-    return this.evolutions.some((e) => e.agentId === agentId && e.runId === runId);
-  }
-}
+import { applyCalibration, createSleepWorker, systemClock } from '../src/index.js';
+import { FakeMemWal, FakeEventReader } from './fakes.js';
 
 // ── Scenario ─────────────────────────────────────────────────────────────────
 const AGENT = 'agent_001';

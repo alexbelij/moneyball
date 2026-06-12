@@ -1,10 +1,16 @@
 import type { TopicId } from '../params/AgentParams.js';
+import type { ResolvedCursor } from '../events/types.js';
 
 /**
- * Per-agent sleep bookkeeping. Two records, two writers:
+ * Per-agent sleep bookkeeping. Three records, ONE writer each (FIX 1.1 —
+ * the old design had interaction path + sleep pipeline doing non-CAS RMW on
+ * the same sleep_state doc, which allowed watermark regression and double
+ * learning):
  *   - SleepState      key: agent/{id}/sys/sleep_state
- *       counters incremented by the interaction path (coalesced LOW writes),
- *       watermark/cooldowns committed by the sleep pipeline (HIGH writes).
+ *       watermark/cooldowns — written ONLY by the sleep pipeline (CAS).
+ *   - ResolvedCounter key: agent/{id}/sys/resolved_counter
+ *       monotonic counter — written ONLY by the interaction path (CAS-retry,
+ *       lossy under extreme contention by design; never reset).
  *   - SleepCheckpoint key: agent/{id}/sys/sleep_checkpoint
  *       written only by the sleep pipeline; enables crash-resume.
  */
@@ -13,13 +19,19 @@ export interface SleepState {
   readonly agentId: string;
   readonly lastSleepAt: string | null;
   /**
-   * Reflection watermark: max outcome.resolvedAt processed so far.
-   * COLLECT reads events with resolvedAt > watermark. Watermarking by
-   * resolvedAt (not event ts) guarantees late-resolving predictions are seen.
+   * Reflection watermark: composite (resolvedAt, eventId) cursor of the last
+   * processed event (FIX 2.2 — resolvedAt alone is not unique: one final
+   * whistle resolves many predictions with an identical timestamp, and an
+   * exclusive `>` comparison loses the tail of the group at a page boundary).
    */
-  readonly resolvedWatermark: string | null;
-  /** Outcomes resolved since last sleep — the trigger counter. */
+  readonly resolvedWatermark: ResolvedCursor | null;
+  /**
+   * Derived, not persisted: counter.value - counterAtLastSleep.
+   * Trigger counter for "is sleep due".
+   */
   readonly resolvedSinceSleep: number;
+  /** Value of the monotonic resolved counter at the last COMMIT. */
+  readonly counterAtLastSleep: number;
   /** topic → remaining cooldown sleeps; decremented on each COMMIT. */
   readonly topicCooldowns: Readonly<Record<TopicId, number>>;
   readonly consecutiveAborts: number;
@@ -32,6 +44,7 @@ export function initialSleepState(agentId: string): SleepState {
     lastSleepAt: null,
     resolvedWatermark: null,
     resolvedSinceSleep: 0,
+    counterAtLastSleep: 0,
     topicCooldowns: {},
     consecutiveAborts: 0,
     paramsVersionAtLastSleep: 0,

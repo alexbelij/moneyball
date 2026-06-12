@@ -57,6 +57,35 @@ export interface EvolutionEvent {
 }
 
 /**
+ * Composite collection cursor (FIX 2.2): `resolvedAt` alone is NOT unique —
+ * one final whistle resolves a batch of predictions with an identical
+ * timestamp. Paginating with `resolvedAt > watermark` silently drops the tail
+ * of such a group at a page boundary. The cursor is strictly ordered by
+ * (resolvedAt, eventId) instead.
+ */
+export interface ResolvedCursor {
+  readonly resolvedAt: string;
+  readonly eventId: string;
+}
+
+/** Strict ordering predicate for (resolvedAt, eventId). */
+export function isAfterCursor(event: PredictionEvent, after: ResolvedCursor | null): boolean {
+  if (event.outcome === null) return false;
+  if (after === null) return true;
+  if (event.outcome.resolvedAt !== after.resolvedAt) {
+    return event.outcome.resolvedAt > after.resolvedAt;
+  }
+  return event.id > after.eventId;
+}
+
+export function compareByCursor(a: PredictionEvent, b: PredictionEvent): number {
+  const ra = a.outcome?.resolvedAt ?? '';
+  const rb = b.outcome?.resolvedAt ?? '';
+  if (ra !== rb) return ra < rb ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/**
  * Read/append port over your existing AgentEventService.
  * IMPORTANT: reflection consumes events by `outcome.resolvedAt`, not by `ts` —
  * a prediction made before the last sleep may resolve after it and must not be
@@ -64,17 +93,21 @@ export interface EvolutionEvent {
  */
 export interface AgentEventReader {
   /**
-   * Resolved predictions with outcome.resolvedAt > sinceResolvedAt (exclusive),
-   * ordered by resolvedAt ascending. `sinceResolvedAt = null` → from the start.
+   * Resolved predictions strictly after the composite cursor (exclusive),
+   * ordered by (resolvedAt, eventId) ascending. `after = null` → from start.
    */
   listResolvedSince(
     agentId: string,
-    sinceResolvedAt: string | null,
+    after: ResolvedCursor | null,
     limit: number,
   ): Promise<readonly PredictionEvent[]>;
 
   appendEvolutionEvent(event: EvolutionEvent): Promise<void>;
 
-  /** Idempotency guard: has this sleep run already emitted its event. */
-  hasEvolutionEventForRun(agentId: string, runId: string): Promise<boolean>;
+  /**
+   * Idempotency + redo source (FIX 2.1): the duplicate-run branch must inspect
+   * the recorded event to decide between "skip" and "re-apply intent that
+   * never reached params". Returns null if this run has no event yet.
+   */
+  getEvolutionEventForRun(agentId: string, runId: string): Promise<EvolutionEvent | null>;
 }

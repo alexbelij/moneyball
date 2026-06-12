@@ -5,7 +5,8 @@
  * Layout (per agent):
  *   agent/{agentId}/personality                  — current AgentParams (versioned doc)
  *   agent/{agentId}/personality_history/{v}      — last N param versions (rollback)
- *   agent/{agentId}/sys/sleep_state              — SleepState (watermarks, counters)
+ *   agent/{agentId}/sys/sleep_state              — SleepState (watermark, cooldowns; sleep pipeline is the ONLY writer)
+ *   agent/{agentId}/sys/resolved_counter         — monotonic counter (interaction path is the ONLY writer)
  *   agent/{agentId}/sys/sleep_lock               — SleepLock (CAS + TTL)
  *   agent/{agentId}/sys/sleep_checkpoint         — SleepCheckpoint (crash recovery)
  *
@@ -23,6 +24,12 @@ export const MemWalKeys = {
     `agent/${agentId}/personality_history/`,
 
   sleepState: (agentId: string): string => `agent/${agentId}/sys/sleep_state`,
+
+  /**
+   * FIX 1.1: monotonic resolved-outcome counter, separate key so the
+   * interaction path NEVER writes sleep_state (single writer per key).
+   */
+  resolvedCounter: (agentId: string): string => `agent/${agentId}/sys/resolved_counter`,
 
   sleepLock: (agentId: string): string => `agent/${agentId}/sys/sleep_lock`,
 

@@ -58,8 +58,34 @@ export class EvolutionEngine {
     reflection: ReflectionResult,
     evidenceEventIds: readonly string[],
   ): Promise<EvolutionOutcome> {
-    // Idempotency: crashed sleep re-run must not double-apply.
-    if (await this.eventReader.hasEvolutionEventForRun(agentId, runId)) {
+    // Idempotency + redo (FIX 2.1): an existing event records INTENT, not
+    // necessarily APPLICATION. A crash between audit-append and params-write
+    // used to make the duplicate check return noop forever (frozen agent,
+    // watermark advanced, evidence lost). If the recorded event says
+    // fromVersion === live version, the intent never reached params — finish
+    // the job (two-phase: event = redo log, deltas are self-contained).
+    const existing = await this.eventReader.getEvolutionEventForRun(agentId, runId);
+    if (existing !== null) {
+      if (!existing.dryRun && params.version === existing.fromVersion) {
+        if (existing.type === 'param_update') {
+          const next = await this.paramsStore.commitNewVersion(
+            agentId,
+            existing.fromVersion,
+            existing.deltas,
+            existing.id,
+          );
+          return { kind: 'applied', event: existing, params: next };
+        }
+        if (existing.type === 'rollback') {
+          const next = await this.paramsStore.rollbackTo(
+            agentId,
+            existing.fromVersion - 1,
+            existing.fromVersion,
+            existing.id,
+          );
+          return { kind: 'rolled_back', event: existing, params: next };
+        }
+      }
       return { kind: 'skipped_duplicate_run' };
     }
 
