@@ -1,10 +1,10 @@
 /**
- * authStore | v0.1.0 | 2026-06-09
+ * authStore | v0.2.0 | 2026-06-12
  * Purpose: Persist JWT + viewer role client-side.
  */
 
 import { create } from 'zustand'
-import { devtools } from 'zustand/middleware'
+import { devtools, subscribeWithSelector } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 
 export type ViewerRole = 'user' | 'admin'
@@ -30,6 +30,7 @@ const viewer: Viewer | null =
 
 export const useAuthStore = create<AuthState>()(
   devtools(
+    subscribeWithSelector(
     immer((set) => ({
       token: viewer ? persisted : null,
       viewer,
@@ -44,5 +45,6 @@ export const useAuthStore = create<AuthState>()(
         s.viewer = null
       }),
     })),
+    ),
   ),
 )
