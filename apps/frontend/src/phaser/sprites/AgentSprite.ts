@@ -4,7 +4,7 @@ import { GameEventBus } from '@/events/GameEventBus'
 
 export class AgentSprite extends Phaser.GameObjects.Container {
   private id: string
-  private body: Phaser.GameObjects.Rectangle
+  private bodyRect: Phaser.GameObjects.Rectangle
   private label: Phaser.GameObjects.Text
   private thoughtText?: Phaser.GameObjects.Text
   private thoughtBg?: Phaser.GameObjects.Rectangle
@@ -14,9 +14,9 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     super(scene, agent.position.x, agent.position.y)
     this.id = agent.agentId
 
-    this.body = scene.add.rectangle(0, 0, 52, 72, 0x3a3a5c).setStrokeStyle(2, 0x6a6a9c)
-    this.body.setInteractive({ cursor: 'pointer' })
-    this.body.on('pointerdown', () => GameEventBus.emit('agent:click', { agentId: this.id }))
+    this.bodyRect = scene.add.rectangle(0, 0, 52, 72, 0x3a3a5c).setStrokeStyle(2, 0x6a6a9c)
+    this.bodyRect.setInteractive({ cursor: 'pointer' })
+    this.bodyRect.on('pointerdown', () => GameEventBus.emit('agent:click', { agentId: this.id }))
 
     this.label = scene.add.text(0, 44, agent.name, {
       fontSize: '11px',
@@ -25,7 +25,7 @@ export class AgentSprite extends Phaser.GameObjects.Container {
       strokeThickness: 3,
     }).setOrigin(0.5, 0)
 
-    this.add([this.body, this.label])
+    this.add([this.bodyRect, this.label])
   }
 
   showThought(text: string, ttlMs = 2500) {

@@ -1,11 +1,12 @@
 /**
- * MatchTV | v0.1.0 | 2026-06-12
+ * MatchTV | v0.1.1 | 2026-06-12
  * Purpose: Cabinet TV ticker — live/next/recent WC2026 matches from the
  * public match feed. Polls every 30s; collapsible to a one-line bar.
  */
 
 import React, { useEffect, useState } from 'react'
 import { getMatches, type MatchInfo } from '@/lib/api'
+import { GameEventBus } from '@/events/GameEventBus'
 
 const POLL_MS = 30_000
 
@@ -16,7 +17,11 @@ export function MatchTV() {
   useEffect(() => {
     let alive = true
     const load = () => getMatches().then(
-      (r) => alive && setFeed({ live: r.live, upcoming: r.upcoming, recent: r.recent }),
+      (r) => {
+        if (!alive) return
+        setFeed({ live: r.live, upcoming: r.upcoming, recent: r.recent })
+        GameEventBus.emit('matches:live', { live: r.live.length > 0 }) // drives cabinet TV state
+      },
       () => undefined, // keep last good feed on transient errors
     )
     load()
