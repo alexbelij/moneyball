@@ -8,8 +8,9 @@
 
 [![CI](https://github.com/anna-stolbovskaja/moneyball/actions/workflows/ci.yml/badge.svg)](https://github.com/anna-stolbovskaja/moneyball/actions/workflows/ci.yml)
 
-<!-- Replace with an actual screenshot when available -->
+<!-- TODO: add screenshot at docs/assets/hero.png, then uncomment:
 ![Hero](docs/assets/hero.png)
+-->
 
 *Hackathon entry for [Walrus Memory World Cup](https://walrus.xyz) · Deadline: June 24, 2026*
 
@@ -121,7 +122,7 @@ pnpm -C apps/frontend test
 # Backend (vitest)
 pnpm -C apps/backend test
 
-# Backend under bun (optional — extended timer-sensitive suite)
+# Backend under bun (optional — same suite via bun-test-runner shim)
 pnpm -C apps/backend test:bun
 
 # Sleep-worker (regressions + simulation)
