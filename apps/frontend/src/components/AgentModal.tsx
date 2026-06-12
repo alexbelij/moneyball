@@ -1,7 +1,8 @@
 /**
- * AgentModal | v0.5.0 | 2026-06-12
+ * AgentModal | v0.6.0 | 2026-06-13
  * Purpose: Agent dossier — Overview (actions) + Predictions / Evolution /
  * Memory tabs. WAI-ARIA dialog + tabs pattern, focus trap, keyboard nav.
+ * T14: refactored to use PixelButton + design-spec palette.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -15,10 +16,26 @@ import { GameEventBus } from '@/events/GameEventBus'
 import { useAuthStore } from '@/store/authStore'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
 import { useRovingTabs } from '@/lib/a11y/useRovingTabs'
+import { PixelButton } from '@/components/ui/PixelButton'
 
 type Tab = 'overview' | 'predictions' | 'evolution' | 'memory'
 const TABS: readonly Tab[] = ['overview', 'predictions', 'evolution', 'memory'] as const
 const MODAL_TITLE_ID = 'agent-modal-title'
+
+/* ── Design-spec tokens ────────────────────────────────────────────── */
+const C = {
+  bg: '#0c0c0c',
+  wood900: '#181009',
+  wood700: '#3a3020',
+  wood500: '#7a7060',
+  paper: '#f4ede2',
+  dim: '#d5cec0',
+  gold: '#e8a44a',
+  green: '#39c04a',
+  red: '#c03030',
+  fontBody: '"VT323", "Press Start 2P", monospace',
+  fontHeader: '"Press Start 2P", monospace',
+} as const
 
 export function AgentModal() {
   const selected = useGameStore((s) => s.ui.selectedAgentId)
@@ -79,7 +96,12 @@ export function AgentModal() {
   return (
     <div
       onClick={close}
-      style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'flex-end', zIndex: 70 }}
+      style={{
+        position: 'absolute', inset: 0,
+        background: 'rgba(0,0,0,0.6)',
+        display: 'flex', justifyContent: 'flex-end',
+        zIndex: 70,
+      }}
     >
       <div
         ref={trapRef}
@@ -88,61 +110,67 @@ export function AgentModal() {
         aria-labelledby={MODAL_TITLE_ID}
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: 440, height: '100%', background: '#111827',
-          borderLeft: '1px solid #374151', padding: 16, color: '#e5e7eb',
+          width: 440, height: '100%',
+          background: C.wood900,
+          borderLeft: `2px solid ${C.wood700}`,
+          padding: 16, color: C.paper,
+          fontFamily: C.fontBody,
           display: 'flex', flexDirection: 'column',
         }}
       >
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
           <div>
-            <div id={MODAL_TITLE_ID} style={{ fontSize: 18, fontWeight: 700 }}>{agent.name}</div>
-            <div style={{ fontSize: 13, color: '#9ca3af' }}>{agent.role}</div>
-            <div style={{ marginTop: 8, fontSize: 12, color: '#d1d5db' }}>
+            <div
+              id={MODAL_TITLE_ID}
+              style={{ fontSize: 12, fontWeight: 700, fontFamily: C.fontHeader, color: C.gold, letterSpacing: '-0.5px' }}
+            >
+              {agent.name}
+            </div>
+            <div style={{ fontSize: 16, color: C.wood500, marginTop: 2 }}>{agent.role}</div>
+            <div style={{ marginTop: 8, fontSize: 14, color: C.dim }}>
               Status: <b>{agent.status}</b>
             </div>
           </div>
-          <button
-            onClick={close}
-            aria-label="Close agent modal"
-            style={{ background: 'none', border: 0, color: '#9ca3af', fontSize: 18, cursor: 'pointer' }}
-          >
+          <PixelButton variant="ghost" size="small" onClick={close} aria-label="Close agent modal">
             ✕
-          </button>
+          </PixelButton>
         </div>
 
-        <div style={{ marginTop: 14, display: 'flex', gap: 6 }} {...getTabListProps()}>
+        {/* Tabs */}
+        <div style={{ marginTop: 14, display: 'flex', gap: 4 }} {...getTabListProps()}>
           {TABS.map((t) => (
-            <button
+            <PixelButton
               key={t}
+              variant={tab === t ? 'primary' : 'default'}
+              size="small"
               onClick={() => setTab(t)}
               {...getTabProps(t)}
-              style={{
-                ...btnStyle(tab === t ? '#2563eb' : '#374151', tab === t ? 'rgba(37,99,235,0.2)' : '#1f2937', tab === t ? '#93c5fd' : '#e5e7eb'),
-                textTransform: 'capitalize',
-              }}
+              style={{ textTransform: 'capitalize', fontSize: 12 }}
             >
               {t}
-            </button>
+            </PixelButton>
           ))}
         </div>
 
+        {/* Tab panel */}
         <div style={{ marginTop: 12, flex: 1, overflowY: 'auto', minHeight: 0 }} {...getTabPanelProps(tab)}>
           {tab === 'overview' && (
             <>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button disabled={busy} onClick={onRoast} style={btnStyle()}>Roast me</button>
-                <button disabled={busy} onClick={onDisagree} style={btnStyle('#7c2d12', 'rgba(180, 83, 9, 0.15)', '#fdba74')}>
+                <PixelButton disabled={busy} onClick={onRoast}>Roast me</PixelButton>
+                <PixelButton disabled={busy} onClick={onDisagree} variant="danger">
                   Disagree
-                </button>
+                </PixelButton>
                 {isAdmin && (
-                  <button disabled={busy} onClick={onSimulateDayPlusOne} style={btnStyle('#1d4ed8', 'rgba(59,130,246,0.15)', '#93c5fd')}>
-                    Simulate Day +1 (admin)
-                  </button>
+                  <PixelButton disabled={busy} onClick={onSimulateDayPlusOne} variant="primary">
+                    Simulate Day +1
+                  </PixelButton>
                 )}
               </div>
-              {err && <div role="alert" style={{ marginTop: 10, color: '#fca5a5', fontSize: 12 }}>{err}</div>}
-              <div style={{ marginTop: 16, fontSize: 12, color: '#9ca3af' }}>Last thought:</div>
-              <div style={{ marginTop: 6, fontSize: 13 }}>{agent.lastThought ?? '—'}</div>
+              {err && <div role="alert" style={{ marginTop: 10, color: C.red, fontSize: 14 }}>{err}</div>}
+              <div style={{ marginTop: 16, fontSize: 14, color: C.wood500 }}>Last thought:</div>
+              <div style={{ marginTop: 6, fontSize: 15 }}>{agent.lastThought ?? '—'}</div>
             </>
           )}
           {tab === 'predictions' && <PredictionsTab agentId={agentId} />}
@@ -150,7 +178,7 @@ export function AgentModal() {
           {tab === 'memory' && <MemoryTab agentId={agentId} />}
         </div>
 
-        <div style={{ marginTop: 12, fontSize: 11, color: '#6b7280' }}>
+        <div style={{ marginTop: 12, fontSize: 12, color: C.wood500, borderTop: `2px solid ${C.wood700}`, paddingTop: 8 }}>
           Identity: {viewer ? `Sui (${viewer.role})` : 'Guest'}
         </div>
       </div>
@@ -178,7 +206,7 @@ function useFetch<T>(load: () => Promise<T>, deps: unknown[]) {
 function PredictionsTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentPredictions(agentId), [agentId])
   if (loading) return <Hint>Loading predictions…</Hint>
-  if (err) return <Hint color="#fca5a5">{err}</Hint>
+  if (err) return <Hint color={C.red}>{err}</Hint>
   const items = (data?.items ?? []).slice().reverse()
   if (!items.length) return <Hint>No predictions yet — waiting for the next fixture window.</Hint>
 
@@ -186,8 +214,8 @@ function PredictionsTab({ agentId }: { agentId: string }) {
   const correct = resolved.filter((p) => p.outcome!.correct).length
   return (
     <div>
-      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
-        Record: <b style={{ color: '#e5e7eb' }}>{correct}/{resolved.length}</b> resolved · {items.length} total
+      <div style={{ fontSize: 14, color: C.wood500, marginBottom: 8 }}>
+        Record: <b style={{ color: C.paper }}>{correct}/{resolved.length}</b> resolved · {items.length} total
       </div>
       {items.map((p) => <PredictionRow key={p.predictionId ?? `${p.matchId}:${p.createdAt}`} p={p} />)}
     </div>
@@ -196,19 +224,19 @@ function PredictionsTab({ agentId }: { agentId: string }) {
 
 function PredictionRow({ p }: { p: PredictionItem }) {
   const badge = p.outcome ? (p.outcome.correct ? '✓' : '✗') : '…'
-  const badgeColor = p.outcome ? (p.outcome.correct ? '#34d399' : '#f87171') : '#9ca3af'
+  const badgeColor = p.outcome ? (p.outcome.correct ? C.green : C.red) : C.wood500
   return (
     <div style={card()}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-        <span style={{ color: '#d1d5db' }}>{p.matchId}</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+        <span style={{ color: C.dim }}>{p.matchId}</span>
         <span style={{ color: badgeColor, fontWeight: 700 }} aria-label={p.outcome ? (p.outcome.correct ? 'Correct' : 'Incorrect') : 'Pending'}>{badge}</span>
       </div>
-      <div style={{ marginTop: 4, fontSize: 13 }}>
+      <div style={{ marginTop: 4, fontSize: 15 }}>
         Pick <b>{p.pick}</b> · confidence <b>{Math.round(p.confidence * 100)}%</b>
-        {typeof p.paramsVersion === 'number' && <span style={{ color: '#6b7280' }}> · params v{p.paramsVersion}</span>}
+        {typeof p.paramsVersion === 'number' && <span style={{ color: C.wood500 }}> · params v{p.paramsVersion}</span>}
       </div>
-      <div style={{ marginTop: 4, fontSize: 12, color: '#9ca3af' }}>{p.reasoning}</div>
-      <div style={{ marginTop: 4, fontSize: 10, color: '#6b7280' }}>{new Date(p.createdAt).toLocaleString()}</div>
+      <div style={{ marginTop: 4, fontSize: 14, color: C.wood500 }}>{p.reasoning}</div>
+      <div style={{ marginTop: 4, fontSize: 12, color: C.wood500 }}>{new Date(p.createdAt).toLocaleString()}</div>
     </div>
   )
 }
@@ -216,7 +244,7 @@ function PredictionRow({ p }: { p: PredictionItem }) {
 function EvolutionTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentEvolution(agentId), [agentId])
   if (loading) return <Hint>Loading evolution history…</Hint>
-  if (err) return <Hint color="#fca5a5">{err}</Hint>
+  if (err) return <Hint color={C.red}>{err}</Hint>
   const items = (data?.items ?? []).slice().reverse()
   if (!items.length) return <Hint>No evolutions yet — the agent evolves after sleeping on resolved matches.</Hint>
   return (
@@ -230,21 +258,21 @@ function EvolutionRow({ ev }: { ev: EvolutionItem }) {
   const diff = Object.entries(ev.parameterDiff ?? {})
   return (
     <div style={card()}>
-      <div style={{ fontSize: 12, color: '#a78bfa', fontWeight: 700 }}>
+      <div style={{ fontSize: 14, color: C.gold, fontWeight: 700 }}>
         {typeof ev.fromVersion === 'number' ? `v${ev.fromVersion} → v${ev.toVersion}` : 'evolution'}
-        {ev.evolutionType && <span style={{ color: '#6b7280', fontWeight: 400 }}> · {ev.evolutionType}</span>}
+        {ev.evolutionType && <span style={{ color: C.wood500, fontWeight: 400 }}> · {ev.evolutionType}</span>}
       </div>
-      <div style={{ marginTop: 4, fontSize: 13 }}>{ev.summary}</div>
+      <div style={{ marginTop: 4, fontSize: 15 }}>{ev.summary}</div>
       {diff.length > 0 && (
-        <div style={{ marginTop: 6, fontSize: 11, fontFamily: 'monospace' }}>
+        <div style={{ marginTop: 6, fontSize: 13, fontFamily: 'monospace' }}>
           {diff.map(([k, v]) => (
-            <div key={k} style={{ color: v >= 0 ? '#34d399' : '#f87171' }}>
+            <div key={k} style={{ color: v >= 0 ? C.green : C.red }}>
               {k}: {v >= 0 ? '+' : ''}{v.toFixed(3)}
             </div>
           ))}
         </div>
       )}
-      <div style={{ marginTop: 4, fontSize: 10, color: '#6b7280' }}>{new Date(ev.createdAt).toLocaleString()}</div>
+      <div style={{ marginTop: 4, fontSize: 12, color: C.wood500 }}>{new Date(ev.createdAt).toLocaleString()}</div>
     </div>
   )
 }
@@ -252,27 +280,27 @@ function EvolutionRow({ ev }: { ev: EvolutionItem }) {
 function MemoryTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentParams(agentId), [agentId])
   if (loading) return <Hint>Reading long-term memory…</Hint>
-  if (err) return <Hint color="#fca5a5">{err}</Hint>
+  if (err) return <Hint color={C.red}>{err}</Hint>
   const params = data?.params
   if (!params) return <Hint>No persisted memory yet — first sleep cycle pending.</Hint>
   const topics = Object.entries(params.topicCalibration ?? {})
   return (
     <div>
       <div style={card()}>
-        <div style={{ fontSize: 12, color: '#9ca3af' }}>Current parameters (persisted on Walrus Memory)</div>
-        <div style={{ marginTop: 6, fontSize: 13 }}>
+        <div style={{ fontSize: 14, color: C.wood500 }}>Current parameters (persisted on Walrus Memory)</div>
+        <div style={{ marginTop: 6, fontSize: 15 }}>
           Version <b>v{params.version}</b>
         </div>
         <ParamBar label="confidence bias" value={params.confidenceBias} range={0.3} />
         <ParamBar label="hedging level" value={params.hedgingLevel} range={1} />
         {topics.length > 0 && (
           <>
-            <div style={{ marginTop: 10, fontSize: 11, color: '#9ca3af' }}>Topic calibration</div>
+            <div style={{ marginTop: 10, fontSize: 13, color: C.wood500 }}>Topic calibration</div>
             {topics.map(([k, v]) => <ParamBar key={k} label={k} value={v} range={0.3} />)}
           </>
         )}
         {params.updatedAt && (
-          <div style={{ marginTop: 8, fontSize: 10, color: '#6b7280' }}>updated {new Date(params.updatedAt).toLocaleString()}</div>
+          <div style={{ marginTop: 8, fontSize: 12, color: C.wood500 }}>updated {new Date(params.updatedAt).toLocaleString()}</div>
         )}
       </div>
       <Hint>
@@ -287,42 +315,45 @@ function ParamBar({ label, value, range }: { label: string; value: number; range
   const pct = Math.max(-1, Math.min(1, value / range))
   const half = Math.abs(pct) * 50
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, fontFamily: 'monospace' }}>
-      <span style={{ width: 120, color: '#9ca3af', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
-      <div style={{ flex: 1, height: 6, background: '#1f2937', borderRadius: 3, position: 'relative' }} role="meter" aria-label={label} aria-valuenow={value} aria-valuemin={-range} aria-valuemax={range}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 13, fontFamily: 'monospace' }}>
+      <span style={{ width: 120, color: C.wood500, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+      <div
+        style={{
+          flex: 1, height: 6, background: C.bg,
+          border: `1px solid ${C.wood700}`, borderRadius: 0,
+          position: 'relative',
+        }}
+        role="meter"
+        aria-label={label}
+        aria-valuenow={value}
+        aria-valuemin={-range}
+        aria-valuemax={range}
+      >
         <div style={{
-          position: 'absolute', top: 0, height: 6, borderRadius: 3,
+          position: 'absolute', top: 0, height: '100%',
           left: pct >= 0 ? '50%' : `${50 - half}%`, width: `${half}%`,
-          background: pct >= 0 ? '#2563eb' : '#d97706',
+          background: pct >= 0 ? C.gold : C.red,
         }} />
-        <div style={{ position: 'absolute', left: '50%', top: -1, width: 1, height: 8, background: '#4b5563' }} />
+        <div style={{ position: 'absolute', left: '50%', top: -1, width: 1, height: 'calc(100% + 2px)', background: C.wood700 }} />
       </div>
-      <span style={{ width: 52, textAlign: 'right' }}>{value >= 0 ? '+' : ''}{value.toFixed(3)}</span>
+      <span style={{ width: 52, textAlign: 'right', color: C.dim }}>{value >= 0 ? '+' : ''}{value.toFixed(3)}</span>
     </div>
   )
 }
 
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
-function Hint({ children, color = '#9ca3af' }: { children: React.ReactNode; color?: string }) {
-  return <div style={{ fontSize: 12, color, marginTop: 8 }}>{children}</div>
+function Hint({ children, color = C.wood500 }: { children: React.ReactNode; color?: string }) {
+  return <div style={{ fontSize: 14, color, marginTop: 8 }}>{children}</div>
 }
 
 function card() {
   return {
-    background: '#1f2937', border: '1px solid #374151', borderRadius: 8,
-    padding: 10, marginBottom: 8,
-  } as const
-}
-
-function btnStyle(border = '#374151', bg = '#1f2937', color = '#e5e7eb') {
-  return {
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: `1px solid ${border}`,
-    background: bg,
-    color,
-    cursor: 'pointer',
-    fontSize: 12,
+    background: C.bg,
+    border: `2px solid ${C.wood700}`,
+    borderRadius: 0,
+    padding: 10,
+    marginBottom: 8,
+    boxShadow: `2px 2px 0 ${C.bg}`,
   } as const
 }
