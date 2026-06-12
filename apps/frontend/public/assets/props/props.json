@@ -187,6 +187,22 @@
       "_comment": "hires: docs/reference/thermos_hires_v01.png; scale ref: mug=28px vs coffee_machine=103px"
     },
     {
+      "id": "plant",
+      "src": "props/plant.png",
+      "w": 61,
+      "h": 68,
+      "target_xy": [
+        50,
+        444
+      ],
+      "anchor": [
+        80,
+        512
+      ],
+      "interactive": false,
+      "note": "potted plant on dresser top; anchor=pot bottom center, validated vs dresser.png offset (10,475)"
+    },
+    {
       "id": "trash_bin",
       "src": "props/trash_bin.png",
       "src_xy": [
