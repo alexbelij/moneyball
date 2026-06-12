@@ -1,4 +1,4 @@
-# ci | v0.2.0 | 2026-06-12
+# ci | v0.3.0 | 2026-06-12
 # Typecheck + full test suite on every push/PR. Node 20 + pnpm (vitest needs
 # node to fork workers; local bun users can run `pnpm -C apps/backend test:bun`).
 name: CI
@@ -28,6 +28,9 @@ jobs:
 
       - name: Typecheck sleep-worker
         run: pnpm -C sleep-worker exec tsc -p tsconfig.json --noEmit
+
+      - name: Frontend tests (vitest)
+        run: pnpm -C apps/frontend exec vitest run
 
       - name: Backend tests (vitest)
         run: pnpm -C apps/backend exec vitest run
