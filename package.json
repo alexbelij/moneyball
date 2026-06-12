@@ -7,5 +7,10 @@
     "dev:backend": "pnpm --filter @moneyball/backend dev",
     "typecheck": "pnpm -r typecheck",
     "lint": "pnpm -r lint"
-  }
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "sleep-worker"
+  ]
 }

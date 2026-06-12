@@ -7,8 +7,7 @@ import type { Express } from 'express'
 import { requireAdmin } from './jwtMiddleware'
 import { AgentEventService } from '../agents/agentEventService'
 
-export function registerAgentEventRoutes(app: Express) {
-  const svc = new AgentEventService()
+export function registerAgentEventRoutes(app: Express, svc: AgentEventService = new AgentEventService()) {
 
   // Public read
   app.get('/api/public/agents/:agentId/predictions', async (req, res) => {
