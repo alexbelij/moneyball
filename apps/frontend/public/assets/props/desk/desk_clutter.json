@@ -1,0 +1,254 @@
+{
+ "book_brown": {
+  "file": "props/desk/book_brown.png",
+  "w": 139,
+  "h": 161,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "book_closed_brown": {
+  "file": "props/desk/book_closed_brown.png",
+  "w": 160,
+  "h": 164,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "book_open": {
+  "file": "props/desk/book_open.png",
+  "w": 207,
+  "h": 154,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "checklist": {
+  "file": "props/desk/checklist.png",
+  "w": 149,
+  "h": 149,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "doc_page_v1": {
+  "file": "props/desk/doc_page_v1.png",
+  "w": 171,
+  "h": 160,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "doc_page_v2": {
+  "file": "props/desk/doc_page_v2.png",
+  "w": 144,
+  "h": 144,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "doc_page_v3": {
+  "file": "props/desk/doc_page_v3.png",
+  "w": 142,
+  "h": 149,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "ereader": {
+  "file": "props/desk/ereader.png",
+  "w": 139,
+  "h": 151,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "folder_pile_tall": {
+  "file": "props/desk/folder_pile_tall.png",
+  "w": 187,
+  "h": 211,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "folder_pile_v2": {
+  "file": "props/desk/folder_pile_v2.png",
+  "w": 192,
+  "h": 166,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "folder_tan_stack": {
+  "file": "props/desk/folder_tan_stack.png",
+  "w": 136,
+  "h": 178,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "folder_v1": {
+  "file": "props/desk/folder_v1.png",
+  "w": 145,
+  "h": 161,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "folder_v2_tab": {
+  "file": "props/desk/folder_v2_tab.png",
+  "w": 143,
+  "h": 169,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "folder_v3": {
+  "file": "props/desk/folder_v3.png",
+  "w": 138,
+  "h": 161,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "folder_v4": {
+  "file": "props/desk/folder_v4.png",
+  "w": 134,
+  "h": 161,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "folder_with_papers": {
+  "file": "props/desk/folder_with_papers.png",
+  "w": 167,
+  "h": 170,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "mug_v1": {
+  "file": "props/desk/mug_v1.png",
+  "w": 92,
+  "h": 98,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "mug_v2": {
+  "file": "props/desk/mug_v2.png",
+  "w": 84,
+  "h": 93,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "mug_v3": {
+  "file": "props/desk/mug_v3.png",
+  "w": 82,
+  "h": 89,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "mug_v4": {
+  "file": "props/desk/mug_v4.png",
+  "w": 95,
+  "h": 105,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "mug_v5": {
+  "file": "props/desk/mug_v5.png",
+  "w": 85,
+  "h": 104,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "mug_v6": {
+  "file": "props/desk/mug_v6.png",
+  "w": 96,
+  "h": 105,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "newspaper": {
+  "file": "props/desk/newspaper.png",
+  "w": 197,
+  "h": 160,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "notebook_blue_spiral": {
+  "file": "props/desk/notebook_blue_spiral.png",
+  "w": 134,
+  "h": 152,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "notebook_open_v2": {
+  "file": "props/desk/notebook_open_v2.png",
+  "w": 198,
+  "h": 155,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "notebook_spiral_open": {
+  "file": "props/desk/notebook_spiral_open.png",
+  "w": 204,
+  "h": 151,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "notepad_yellow": {
+  "file": "props/desk/notepad_yellow.png",
+  "w": 129,
+  "h": 148,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "paper_stack_loose": {
+  "file": "props/desk/paper_stack_loose.png",
+  "w": 141,
+  "h": 169,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "pen_v1": {
+  "file": "props/desk/pen_v1.png",
+  "w": 52,
+  "h": 140,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "pen_v2": {
+  "file": "props/desk/pen_v2.png",
+  "w": 52,
+  "h": 141,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "pen_v3": {
+  "file": "props/desk/pen_v3.png",
+  "w": 50,
+  "h": 142,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "pen_v4": {
+  "file": "props/desk/pen_v4.png",
+  "w": 51,
+  "h": 140,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "pen_v5": {
+  "file": "props/desk/pen_v5.png",
+  "w": 51,
+  "h": 144,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "pen_v6": {
+  "file": "props/desk/pen_v6.png",
+  "w": 42,
+  "h": 138,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "smartphone": {
+  "file": "props/desk/smartphone.png",
+  "w": 83,
+  "h": 135,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ },
+ "tactics_map": {
+  "file": "props/desk/tactics_map.png",
+  "w": 173,
+  "h": 149,
+  "source": "desk_clutter_sheet_v02 (pixel-art)",
+  "note": "hires; scale ~0.2-0.3 for scene"
+ }
+}
