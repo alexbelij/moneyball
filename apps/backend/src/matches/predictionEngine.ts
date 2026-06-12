@@ -1,5 +1,5 @@
 /**
- * predictionEngine | v0.1.0 | 2026-06-12
+ * predictionEngine | v0.2.0 | 2026-06-12
  * Purpose: Deterministic, zero-LLM prediction methodologies for the 5 agents.
  * Same (agentId, match) ⇒ same pick/confidence/reasoning, forever — the
  * decision log rule "LLM never mutates numbers" extends to "no RNG in the
@@ -13,6 +13,7 @@
  */
 
 import type { Match, PickCode } from './types'
+import { divine } from './mysticism/mysticismEngine'
 
 export interface AgentPick {
   pick: PickCode
@@ -108,50 +109,50 @@ function viktorKane(m: Match, p: Record<string, number>): AgentPick {
 }
 
 function sofiaMendes(m: Match, p: Record<string, number>): AgentPick {
-  // Synthetic 1X2 odds from strengths + a market-noise hash; pick best EV.
-  const noise = (hash01(`market:${m.id}`) - 0.5) * 0.1
-  const home = teamStrength(m.homeTeam) + 0.04 + noise
-  const away = teamStrength(m.awayTeam) - noise
+  // True probabilities from strengths; a synthetic MARKET misprices them with
+  // deterministic per-outcome noise + favorite shading (public over-bets
+  // favorites). EV_i = pTrue_i / pMarket_i; bet only when the edge clears
+  // min_edge, otherwise pass (X) — "no value, no bet".
+  const home = teamStrength(m.homeTeam) + 0.04
+  const away = teamStrength(m.awayTeam)
   const total = home + away + 0.25 // draw mass
-  const probs: Record<PickCode, number> = {
+  const pTrue: Record<PickCode, number> = {
     '1': home / total,
     '2': away / total,
     X: 0.25 / total,
   }
-  const fair: Record<PickCode, number> = { '1': 1 / probs['1'], X: 1 / probs.X, '2': 1 / probs['2'] }
-  // Public over-bets favorites → value sits on the less-fancied side.
   const bias = p.public_bias_correction ?? 0.03
-  const ev: Record<PickCode, number> = {
-    '1': probs['1'] * fair['1'] - bias * (probs['1'] > probs['2'] ? 1 : -1),
-    X: probs.X * fair.X,
-    '2': probs['2'] * fair['2'] - bias * (probs['2'] > probs['1'] ? 1 : -1),
+  const favorite: PickCode = pTrue['1'] >= pTrue['2'] ? '1' : '2'
+  const noise = (o: PickCode): number => (hash01(`market:${m.id}:${o}`) - 0.5) * 0.16
+  const pMarket = {} as Record<PickCode, number>
+  for (const o of ['1', 'X', '2'] as PickCode[]) {
+    pMarket[o] = Math.max(0.03, pTrue[o] * (1 + noise(o)) + (o === favorite ? bias : -bias / 2))
   }
-  const pick = (Object.keys(ev) as PickCode[]).reduce((a, b) => (ev[b] > ev[a] ? b : a))
-  const rawConfidence = clamp01(0.55 + probs[pick] * 0.45, 0.55, 0.85)
+  const ev = {} as Record<PickCode, number>
+  for (const o of ['1', 'X', '2'] as PickCode[]) ev[o] = pTrue[o] / pMarket[o]
+
+  const best = (['1', 'X', '2'] as PickCode[]).reduce((a, b) => (ev[b] > ev[a] ? b : a))
+  const minEdge = p.min_edge ?? 0.04
+  const hasValue = ev[best] >= 1 + minEdge
+  const pick: PickCode = hasValue ? best : 'X'
+  const rawConfidence = hasValue
+    ? clamp01(0.55 + (ev[best] - 1) * 2.2, 0.55, 0.85)
+    : 0.55
+  const fmt = (o: PickCode) => (1 / pMarket[o]).toFixed(2)
   return {
     pick,
     rawConfidence,
-    reasoning: `Implied odds 1/X/2 = ${fair['1'].toFixed(2)}/${fair.X.toFixed(2)}/${fair['2'].toFixed(2)}; public bias correction ${bias}. Best EV at ${pick} (${ev[pick].toFixed(3)}). Stake-confidence ${pct(rawConfidence)}.`,
+    reasoning: hasValue
+      ? `Market odds 1/X/2 = ${fmt('1')}/${fmt('X')}/${fmt('2')} vs my model — edge ${((ev[best] - 1) * 100).toFixed(1)}% on ${pick}. Value bet, stake-confidence ${pct(rawConfidence)}.`
+      : `Market odds 1/X/2 = ${fmt('1')}/${fmt('X')}/${fmt('2')} are efficient today (best edge ${((ev[best] - 1) * 100).toFixed(1)}% < ${(minEdge * 100).toFixed(0)}%). No value, no bet — X.`,
   }
 }
 
 function madamePythia(m: Match, p: Record<string, number>): AgentPick {
-  const numerology = (team: string): number =>
-    [...team].reduce((sum, ch) => sum + ch.charCodeAt(0), 0)
-  const dateDigits = [...m.kickoffUtc.slice(0, 10)].filter((c) => /\d/.test(c))
-    .reduce((s, c) => s + Number(c), 0)
-  const omen = (numerology(m.homeTeam) - numerology(m.awayTeam) + dateDigits) % 3
-  const pick: PickCode = omen === 0 ? 'X' : omen === 1 ? '1' : '2'
-  const chaos = hash01(`stars:${m.id}`)
-  const rawConfidence =
-    chaos > (p.chaos_threshold ?? 0.8)
-      ? 0.97 // the spirits SCREAM
-      : clamp01(0.5 + chaos * 0.35, 0.5, 0.85)
-  return {
-    pick,
-    rawConfidence,
-    reasoning: `Name-number ${numerology(m.homeTeam)} against ${numerology(m.awayTeam)}, date vibration ${dateDigits} — the omen resolves to ${pick}. ${rawConfidence > 0.9 ? 'The cards are deafening today.' : 'The mist is thin but readable.'}`,
-  }
+  // v0.2: real books — Pythagorean numerology + classical astrology
+  // (mysticism/*.v1.json), applied as pure deterministic rules.
+  const v = divine(m.homeTeam, m.awayTeam, m.kickoffUtc, p)
+  return { pick: v.pick, rawConfidence: v.rawConfidence, reasoning: v.reasoning }
 }
 
 // ── Engine ───────────────────────────────────────────────────────────────────

@@ -6,7 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "lint": "echo \"lint backend: TBD\""
+    "lint": "echo \"lint backend: TBD\"",
+    "test:bun": "bun scripts/bun-test-runner.ts"
   },
   "dependencies": {
     "@moneyball/shared": "workspace:*",
