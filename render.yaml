@@ -1,0 +1,41 @@
+# render.yaml | v1.0.0 | 2026-06-12
+# Render Blueprint — deploy backend as a free-tier web service.
+# Usage: connect repo in Render dashboard → it auto-detects this file.
+
+services:
+  - type: web
+    name: moneyball-backend
+    runtime: docker
+    dockerfilePath: apps/backend/Dockerfile
+    dockerContext: .
+    plan: free                          # Free tier — autosleep after 15 min idle
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "3001"
+      - key: CORS_ORIGINS
+        sync: false                     # Set manually in dashboard
+      - key: JWT_SECRET
+        generateValue: true             # Render generates a random secret
+      - key: AUTH_DOMAIN
+        sync: false
+      - key: AUTH_URI
+        sync: false
+      - key: ADMIN_ALLOWLIST
+        sync: false
+      - key: STORAGE_BACKEND
+        value: memwal
+      - key: MEMWAL_KEY
+        sync: false
+      - key: MEMWAL_ACCOUNT_ID
+        sync: false
+      - key: MEMWAL_RELAYER
+        value: https://relayer.memory.walrus.xyz
+      - key: MEMWAL_NAMESPACE
+        value: moneyball
+      - key: MATCH_SOURCE
+        value: manual
+      - key: FOOTBALL_DATA_TOKEN
+        sync: false
+      - key: NODE_ENV
+        value: production
