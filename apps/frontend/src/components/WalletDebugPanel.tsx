@@ -1,5 +1,5 @@
 /**
- * WalletDebugPanel | v0.2.0 | 2026-06-09
+ * WalletDebugPanel | v0.3.0 | 2026-06-12
  * Purpose: Troubleshoot Wallet Standard connectivity (Slush) + show accounts exposed.
  */
 
@@ -49,7 +49,7 @@ export function WalletDebugPanel() {
         {wallets.map(w => w.name).join(', ') || '—'}
       </div>
 
-      <div>Current wallet: {currentWallet?.name ?? '—'}</div>
+      <div>Current wallet: {currentWallet.currentWallet?.name ?? '—'}</div>
       <div>Accounts exposed: {accounts.length}</div>
       <div style={{ opacity: 0.85, marginBottom: 6, wordBreak: 'break-all' }}>
         {accounts.map(a => a.address).join(', ') || '—'}

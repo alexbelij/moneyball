@@ -1,4 +1,4 @@
-# ci | v0.1.1 | 2026-06-12
+# ci | v0.2.0 | 2026-06-12
 # Typecheck + full test suite on every push/PR. Node 20 + pnpm (vitest needs
 # node to fork workers; local bun users can run `pnpm -C apps/backend test:bun`).
 name: CI
@@ -19,6 +19,9 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile=false
+
+      - name: Typecheck frontend
+        run: pnpm -C apps/frontend exec tsc -p tsconfig.json --noEmit
 
       - name: Typecheck backend
         run: pnpm -C apps/backend exec tsc -p tsconfig.json --noEmit

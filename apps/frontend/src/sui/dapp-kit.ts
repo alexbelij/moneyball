@@ -1,5 +1,5 @@
 /**
- * dapp-kit config | v0.3.0 | 2026-06-09
+ * dapp-kit config | v0.4.0 | 2026-06-12
  * Purpose: Use explicit fullnode URLs and default to mainnet (production).
  */
 
@@ -11,8 +11,8 @@ const SUI_FULLNODE = {
 } as const
 
 export const { networkConfig } = createNetworkConfig({
-  testnet: { url: SUI_FULLNODE.testnet },
-  mainnet: { url: SUI_FULLNODE.mainnet },
+  testnet: { url: SUI_FULLNODE.testnet, network: 'testnet' },
+  mainnet: { url: SUI_FULLNODE.mainnet, network: 'mainnet' },
 })
 
 export const DEFAULT_NETWORK = 'mainnet' as const

@@ -1,5 +1,5 @@
 /**
- * WalletControls | v0.1.0 | 2026-06-09
+ * WalletControls | v0.2.0 | 2026-06-12
  * Purpose: Deterministic wallet UX (connect/disconnect/switch account) + pause integration.
  */
 
@@ -126,7 +126,7 @@ export function WalletControls() {
           {openAccounts && (
             <div style={menu()}>
               <div style={menuTitle()}>
-                Wallet: {currentWallet?.name ?? '—'} · Accounts: {accounts.length}
+                Wallet: {currentWallet.currentWallet?.name ?? '—'} · Accounts: {accounts.length}
               </div>
 
               {accounts.map((a) => (
