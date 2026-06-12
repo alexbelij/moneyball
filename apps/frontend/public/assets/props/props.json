@@ -155,6 +155,38 @@
       "interactive": true
     },
     {
+      "id": "mug",
+      "src": "props/mug.png",
+      "w": 28,
+      "h": 28,
+      "target_xy": [
+        224,
+        424
+      ],
+      "anchor": [
+        238,
+        452
+      ],
+      "interactive": false,
+      "_comment": "hires: docs/reference/mug_hires_v01.png"
+    },
+    {
+      "id": "thermos",
+      "src": "props/thermos.png",
+      "w": 32,
+      "h": 71,
+      "target_xy": [
+        96,
+        375
+      ],
+      "anchor": [
+        112,
+        446
+      ],
+      "interactive": false,
+      "_comment": "hires: docs/reference/thermos_hires_v01.png; scale ref: mug=28px vs coffee_machine=103px"
+    },
+    {
       "id": "trash_bin",
       "src": "props/trash_bin.png",
       "src_xy": [
