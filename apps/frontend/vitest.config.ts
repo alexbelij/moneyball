@@ -2,16 +2,18 @@
  * vitest.config.ts | v1.0.0 | 2026-06-12
  */
 import { defineConfig } from 'vitest/config'
-import path from 'path'
+import path from 'node:path'
 
 export default defineConfig({
   resolve: {
-    alias: { '@': path.resolve(__dirname, './src') },
+    alias: {
+      '@': path.resolve(__dirname, 'src'),
+      '@moneyball/shared': path.resolve(__dirname, '../../packages/shared/src'),
+    },
   },
   test: {
     environment: 'jsdom',
-    globals: true,
     setupFiles: ['./test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],
+    globals: false,
   },
 })
