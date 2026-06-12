@@ -1,0 +1,28 @@
+/**
+ * a11y.css | v1.0.0 | 2026-06-12
+ * Purpose: Global accessibility styles — focus-visible ring token,
+ * reduced-motion override.
+ */
+
+/* Global focus-visible ring */
+:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+
+/* Remove default outline for non-keyboard interactions */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Reduced motion: disable all transitions and animations */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
