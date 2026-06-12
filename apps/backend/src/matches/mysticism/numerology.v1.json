@@ -1,0 +1,33 @@
+{
+  "system": "pythagorean",
+  "letterValues": {
+    "a": 1, "j": 1, "s": 1,
+    "b": 2, "k": 2, "t": 2,
+    "c": 3, "l": 3, "u": 3,
+    "d": 4, "m": 4, "v": 4,
+    "e": 5, "n": 5, "w": 5,
+    "f": 6, "o": 6, "x": 6,
+    "g": 7, "p": 7, "y": 7,
+    "h": 8, "q": 8, "z": 8,
+    "i": 9, "r": 9
+  },
+  "masterNumbers": [11, 22],
+  "numbers": {
+    "1": { "planet": "Sun", "element": "fire", "keyword": "the Sovereign", "omen": "stands alone and strikes first" },
+    "2": { "planet": "Moon", "element": "water", "keyword": "the Mirror", "omen": "yields, reflects, and waits" },
+    "3": { "planet": "Jupiter", "element": "fire", "keyword": "the Herald", "omen": "expands and overwhelms" },
+    "4": { "planet": "Saturn", "element": "earth", "keyword": "the Wall", "omen": "endures what others cannot" },
+    "5": { "planet": "Mercury", "element": "air", "keyword": "the Trickster", "omen": "moves faster than the eye" },
+    "6": { "planet": "Venus", "element": "earth", "keyword": "the Weaver", "omen": "binds the eleven into one" },
+    "7": { "planet": "Neptune", "element": "water", "keyword": "the Seer", "omen": "knows the path before walking it" },
+    "8": { "planet": "Saturn", "element": "earth", "keyword": "the Judge", "omen": "collects every debt at the final whistle" },
+    "9": { "planet": "Mars", "element": "fire", "keyword": "the Warrior", "omen": "burns brightest at the end" },
+    "11": { "planet": "Moon", "element": "air", "keyword": "the Lightning", "omen": "the gate between worlds stands open" },
+    "22": { "planet": "Saturn", "element": "earth", "keyword": "the Architect", "omen": "builds an empire in ninety minutes" }
+  },
+  "planetNumbers": { "Sun": 1, "Moon": 2, "Jupiter": 3, "Saturn": 8, "Mercury": 5, "Venus": 6, "Neptune": 7, "Mars": 9 },
+  "planetFriendships": [
+    ["Sun", "Mars"], ["Sun", "Jupiter"], ["Moon", "Venus"], ["Moon", "Neptune"],
+    ["Mercury", "Venus"], ["Mercury", "Saturn"], ["Jupiter", "Mars"], ["Saturn", "Venus"]
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "zodiac": [
+    { "sign": "Capricorn", "from": "12-22", "to": "01-19", "element": "earth", "ruler": "Saturn" },
+    { "sign": "Aquarius", "from": "01-20", "to": "02-18", "element": "air", "ruler": "Saturn" },
+    { "sign": "Pisces", "from": "02-19", "to": "03-20", "element": "water", "ruler": "Jupiter" },
+    { "sign": "Aries", "from": "03-21", "to": "04-19", "element": "fire", "ruler": "Mars" },
+    { "sign": "Taurus", "from": "04-20", "to": "05-20", "element": "earth", "ruler": "Venus" },
+    { "sign": "Gemini", "from": "05-21", "to": "06-20", "element": "air", "ruler": "Mercury" },
+    { "sign": "Cancer", "from": "06-21", "to": "07-22", "element": "water", "ruler": "Moon" },
+    { "sign": "Leo", "from": "07-23", "to": "08-22", "element": "fire", "ruler": "Sun" },
+    { "sign": "Virgo", "from": "08-23", "to": "09-22", "element": "earth", "ruler": "Mercury" },
+    { "sign": "Libra", "from": "09-23", "to": "10-22", "element": "air", "ruler": "Venus" },
+    { "sign": "Scorpio", "from": "10-23", "to": "11-21", "element": "water", "ruler": "Mars" },
+    { "sign": "Sagittarius", "from": "11-22", "to": "12-21", "element": "fire", "ruler": "Jupiter" }
+  ],
+  "dayRulers": ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn"],
+  "elementAffinity": {
+    "fire": { "fire": 1.0, "air": 0.75, "earth": 0.25, "water": 0.0 },
+    "air": { "air": 1.0, "fire": 0.75, "water": 0.25, "earth": 0.0 },
+    "earth": { "earth": 1.0, "water": 0.75, "fire": 0.25, "air": 0.0 },
+    "water": { "water": 1.0, "earth": 0.75, "air": 0.25, "fire": 0.0 }
+  }
+}
