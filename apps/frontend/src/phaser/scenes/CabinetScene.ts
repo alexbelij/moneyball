@@ -1,16 +1,28 @@
 /**
- * CabinetScene | v0.4.0 | 2026-06-09
- * Purpose: Main cabinet scene with robust agent spawn + background cover + wallet-flow pause.
+ * CabinetScene | v0.5.0 | 2026-06-12
+ * Purpose: Main cabinet scene with robust agent spawn + background cover +
+ * wallet-flow pause + wall digital clock (local time, blinking colon).
  */
 
 import Phaser from 'phaser'
 import { useGameStore } from '@/store/gameStore'
 import { AgentSprite } from '@/phaser/sprites/AgentSprite'
 import { GameEventBus } from '@/events/GameEventBus'
+import { DigitalClock } from '@/phaser/objects/DigitalClock'
+
+// Wall LCD clock above the magnetic board. Coordinates are bg-space px
+// (1672x941 reference chain, room_bg_v02); mirrored in assets/props/props.json.
+const CLOCK = {
+  textureKey: 'prop_digital_clock',
+  url: '/assets/props/digital_clock.png',
+  xy: { x: 794, y: 128 },
+  screen: { x: 10, y: 11, w: 76, h: 25 },
+}
 
 export class CabinetScene extends Phaser.Scene {
   private sprites = new Map<string, AgentSprite>()
   private bg?: Phaser.GameObjects.Image
+  private clock?: DigitalClock
 
   private unsubAgents?: () => void
   private unsubWallet?: () => void
@@ -25,6 +37,7 @@ export class CabinetScene extends Phaser.Scene {
 
   preload() {
     this.load.image('bg', '/assets/backgrounds/room_shell_background_v01.png')
+    this.load.image(CLOCK.textureKey, CLOCK.url)
   }
 
   create() {
@@ -32,6 +45,8 @@ export class CabinetScene extends Phaser.Scene {
 
     // Background
     this.bg = this.add.image(width / 2, height / 2, 'bg').setDepth(0)
+    this.clock = new DigitalClock(this, 0, 0, CLOCK).setDepth(1)
+    this.add.existing(this.clock)
     this.fitBgCover()
     this.scale.on('resize', () => this.fitBgCover())
 
@@ -104,6 +119,13 @@ export class CabinetScene extends Phaser.Scene {
     const src = tex.getSourceImage() as HTMLImageElement
     const s = Math.max(width / src.width, height / src.height)
     this.bg.setPosition(width / 2, height / 2).setScale(s)
+
+    // Keep bg-space props glued to the background under the cover transform.
+    if (this.clock) {
+      const left = width / 2 - (src.width * s) / 2
+      const top = height / 2 - (src.height * s) / 2
+      this.clock.setPosition(left + CLOCK.xy.x * s, top + CLOCK.xy.y * s).setScale(s)
+    }
   }
 
   private syncAgents() {

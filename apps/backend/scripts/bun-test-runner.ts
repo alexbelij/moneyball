@@ -1,5 +1,5 @@
 /**
- * bun-test-runner | v0.1.0 | 2026-06-12
+ * bun-test-runner | v0.1.1 | 2026-06-12
  * Purpose: Run the vitest suites in environments that have bun but no node
  * (vitest's tinypool requires node to fork workers). Provides a minimal
  * vitest-compatible shim (describe/it/expect) via a Bun resolver plugin and
@@ -47,6 +47,18 @@ function makeExpect(actual: unknown, msg?: string) {
     toBeGreaterThanOrEqual: (e: number) => { if (!(Number(actual) >= e)) fail(`expected >= ${e}`) },
     toBeLessThan: (e: number) => { if (!(Number(actual) < e)) fail(`expected < ${e}`) },
     toBeLessThanOrEqual: (e: number) => { if (!(Number(actual) <= e)) fail(`expected <= ${e}`) },
+    toThrow: (e?: string | RegExp) => {
+      if (typeof actual !== 'function') fail('expected a function to test for throw')
+      try {
+        ;(actual as () => unknown)()
+      } catch (err) {
+        const m = err instanceof Error ? err.message : String(err)
+        if (e === undefined) return
+        if (typeof e === 'string' ? m.includes(e) : e.test(m)) return
+        throw new Error(`expected throw matching ${e}${label()} — got "${m}"`)
+      }
+      throw new Error(`expected function to throw${label()}`)
+    },
     toMatch: (re: RegExp | string) => {
       const ok = typeof actual === 'string' && (typeof re === 'string' ? actual.includes(re) : re.test(actual))
       if (!ok) fail(`expected to match ${re}`)
