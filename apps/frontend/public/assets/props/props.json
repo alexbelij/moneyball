@@ -1,0 +1,230 @@
+[
+ {
+  "id": "board_left",
+  "src": "props/board_left.png",
+  "src_xy": [
+   22,
+   207
+  ],
+  "w": 155,
+  "h": 208,
+  "target_xy": [
+   22,
+   156
+  ],
+  "anchor": [
+   99,
+   364
+  ],
+  "interactive": true
+ },
+ {
+  "id": "board_main",
+  "src": "props/board_main.png",
+  "src_xy": [
+   507,
+   206
+  ],
+  "w": 716,
+  "h": 265,
+  "target_xy": [
+   507,
+   155
+  ],
+  "anchor": [
+   865,
+   420
+  ],
+  "interactive": true
+ },
+ {
+  "id": "board_scout",
+  "src": "props/board_scout.png",
+  "src_xy": [
+   1498,
+   211
+  ],
+  "w": 152,
+  "h": 222,
+  "target_xy": [
+   1498,
+   160
+  ],
+  "anchor": [
+   1574,
+   382
+  ],
+  "interactive": true
+ },
+ {
+  "id": "clock",
+  "src": "props/clock.png",
+  "src_xy": [
+   804,
+   152
+  ],
+  "w": 86,
+  "h": 39,
+  "target_xy": [
+   804,
+   101
+  ],
+  "anchor": [
+   847,
+   140
+  ],
+  "interactive": true
+ },
+ {
+  "id": "banner",
+  "src": "props/banner.png",
+  "src_xy": [
+   1259,
+   227
+  ],
+  "w": 93,
+  "h": 146,
+  "target_xy": [
+   1259,
+   176
+  ],
+  "anchor": [
+   1305,
+   322
+  ],
+  "interactive": false
+ },
+ {
+  "id": "door",
+  "src": "props/door.png",
+  "src_xy": [
+   333,
+   238
+  ],
+  "w": 144,
+  "h": 334,
+  "target_xy": [
+   333,
+   287
+  ],
+  "anchor": [
+   405,
+   621
+  ],
+  "interactive": true
+ },
+ {
+  "id": "exit_sign",
+  "src": "props/exit_sign.png",
+  "src_xy": [
+   375,
+   196
+  ],
+  "w": 71,
+  "h": 29,
+  "target_xy": [
+   375,
+   245
+  ],
+  "anchor": [
+   410,
+   274
+  ],
+  "interactive": true
+ },
+ {
+  "id": "light_switch",
+  "src": "props/light_switch.png",
+  "src_xy": [
+   306,
+   405
+  ],
+  "w": 16,
+  "h": 23,
+  "target_xy": [
+   306,
+   450
+  ],
+  "anchor": [
+   314,
+   473
+  ],
+  "interactive": true
+ },
+ {
+  "id": "dresser_set",
+  "src": "props/dresser_set.png",
+  "src_xy": [
+   21,
+   440
+  ],
+  "w": 261,
+  "h": 245,
+  "target_xy": [
+   21,
+   469
+  ],
+  "anchor": [
+   151,
+   714
+  ],
+  "interactive": false
+ },
+ {
+  "id": "coffee_machine",
+  "src": "props/coffee_machine.png",
+  "src_xy": [
+   135,
+   393
+  ],
+  "w": 75,
+  "h": 103,
+  "target_xy": [
+   135,
+   422
+  ],
+  "anchor": [
+   172,
+   525
+  ],
+  "interactive": true
+ },
+ {
+  "id": "trash_bin",
+  "src": "props/trash_bin.png",
+  "src_xy": [
+   303,
+   531
+  ],
+  "w": 66,
+  "h": 81,
+  "target_xy": [
+   303,
+   568
+  ],
+  "anchor": [
+   336,
+   649
+  ],
+  "interactive": false
+ },
+ {
+  "id": "tv_set",
+  "src": "props/tv_set.png",
+  "src_xy": [
+   1317,
+   371
+  ],
+  "w": 138,
+  "h": 250,
+  "target_xy": [
+   1317,
+   407
+  ],
+  "anchor": [
+   1386,
+   657
+  ],
+  "interactive": true
+ }
+]
