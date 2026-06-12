@@ -1,15 +1,17 @@
 /**
- * CabinetScene | v0.6.0 | 2026-06-12
+ * CabinetScene | v0.7.0 | 2026-06-13
  * Purpose: Main cabinet scene. Composes the bg-space WorldLayer (background,
  * props.json props, TV states, wall clock, y-sorted table occlusion) with
- * agent sprites, wallet-flow pause and thought bubbles.
+ * agent sprites, wallet-flow pause, thought bubbles, and keyboard navigation
+ * between interactive props.
+ * T17: keyboard nav (Tab/Shift-Tab cycle, Enter/Space activate).
  */
 
 import Phaser from 'phaser'
 import { useGameStore } from '@/store/gameStore'
 import { AgentSprite } from '@/phaser/sprites/AgentSprite'
 import { GameEventBus } from '@/events/GameEventBus'
-import { WorldLayer } from '@/phaser/world/WorldLayer'
+import { WorldLayer, type FocusableProp } from '@/phaser/world/WorldLayer'
 
 export class CabinetScene extends Phaser.Scene {
   private sprites = new Map<string, AgentSprite>()
@@ -23,6 +25,10 @@ export class CabinetScene extends Phaser.Scene {
   private pendingThoughts = new Map<string, { text: string; duration?: number }>()
   private onThought?: (p: { agentId: string; text: string; duration?: number }) => void
   private onLive?: (p: { live: boolean }) => void
+
+  /* Keyboard navigation state */
+  private focusIndex = -1
+  private interactiveList: readonly FocusableProp[] = []
 
   constructor() {
     super({ key: 'CabinetScene' })
@@ -38,6 +44,7 @@ export class CabinetScene extends Phaser.Scene {
 
     void this.world.build().then(() => {
       this.worldReady = true
+      this.interactiveList = this.world!.getInteractiveProps()
       this.fitWorld()
       this.syncAgents()
     })
@@ -87,6 +94,11 @@ export class CabinetScene extends Phaser.Scene {
 
     // Apply initial pause state (in case UI started wallet flow before scene)
     this.setPaused(useGameStore.getState().ui.isWalletFlowActive)
+
+    // Keyboard navigation: Tab/Shift-Tab cycle props, Enter/Space activate
+    this.input.keyboard?.on('keydown', (evt: KeyboardEvent) => {
+      this.handleKeyboard(evt)
+    })
   }
 
   shutdown() {
@@ -95,6 +107,35 @@ export class CabinetScene extends Phaser.Scene {
     this.syncTimer?.remove(false)
     this.unsubAgents?.()
     this.unsubWallet?.()
+  }
+
+  private handleKeyboard(evt: KeyboardEvent) {
+    if (!this.worldReady || this.interactiveList.length === 0) return
+
+    if (evt.key === 'Tab') {
+      evt.preventDefault()
+      const len = this.interactiveList.length
+      const prev = this.focusIndex
+      if (evt.shiftKey) {
+        this.focusIndex = this.focusIndex <= 0 ? len - 1 : this.focusIndex - 1
+      } else {
+        this.focusIndex = this.focusIndex >= len - 1 ? 0 : this.focusIndex + 1
+      }
+      if (prev >= 0 && prev < len) this.interactiveList[prev].setFocused(false)
+      this.interactiveList[this.focusIndex].setFocused(true)
+      return
+    }
+
+    if ((evt.key === 'Enter' || evt.key === ' ') && this.focusIndex >= 0) {
+      evt.preventDefault()
+      this.interactiveList[this.focusIndex].activate()
+      return
+    }
+
+    if (evt.key === 'Escape' && this.focusIndex >= 0) {
+      this.interactiveList[this.focusIndex].setFocused(false)
+      this.focusIndex = -1
+    }
   }
 
   private setPaused(paused: boolean) {

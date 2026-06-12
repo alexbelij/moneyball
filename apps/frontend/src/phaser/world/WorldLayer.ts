@@ -1,9 +1,10 @@
 /**
- * WorldLayer | v0.1.1 | 2026-06-12
- * Purpose: Single bg-space (1672x941) container for background, props and
- * agents. Children live in background pixel coordinates; one cover transform
- * glues everything to any viewport (replaces per-prop glue math). Y-sort via
+ * WorldLayer | v0.2.0 | 2026-06-13
+ * Purpose: Single bg-space (1672×941) container for background, props and
+ * agents. Children live in background pixel coordinates; one integer-scale
+ * transform + letterbox glues everything to any viewport. Y-sort via
  * child depth = anchorY (table occlusion sprite overdraws agents at the desk).
+ * T17: integer scaling + letterbox, exposes interactive prop list for keyboard nav.
  */
 
 import Phaser from 'phaser'
@@ -33,6 +34,13 @@ function texKey(path: string): string {
   return `prop:${path}`
 }
 
+/** Common contract for keyboard-focusable interactive props. */
+export interface FocusableProp {
+  readonly propId: string
+  setFocused(on: boolean): void
+  activate(): void
+}
+
 export class WorldLayer extends Phaser.GameObjects.Container {
   /** Background-space size (from props_manifest scene block). */
   private bgW = 1672
@@ -40,6 +48,9 @@ export class WorldLayer extends Phaser.GameObjects.Container {
 
   private doc?: PropsDoc
   private tv?: TvSet
+
+  /** Ordered interactive props for keyboard navigation (spec order). */
+  private interactiveProps: FocusableProp[] = []
 
   constructor(scene: Phaser.Scene) {
     super(scene, 0, 0)
@@ -94,11 +105,19 @@ export class WorldLayer extends Phaser.GameObjects.Container {
     })
   }
 
-  /** Cover-fit the whole world to the viewport. Call on create + resize. */
+  /**
+   * Integer-scale fit with letterbox. For pixel art the scale factor is
+   * Math.floor when ≥ 1 (pixel-perfect), or plain contain when < 1 (small
+   * viewports). Center position floors to integer for crisp pixels.
+   */
   cover(viewW: number, viewH: number) {
-    const s = Math.max(viewW / this.bgW, viewH / this.bgH)
+    const raw = Math.min(viewW / this.bgW, viewH / this.bgH)
+    const s = raw >= 1 ? Math.floor(raw) : raw
     this.setScale(s)
-    this.setPosition(viewW / 2 - (this.bgW * s) / 2, viewH / 2 - (this.bgH * s) / 2)
+    this.setPosition(
+      Math.floor((viewW - this.bgW * s) / 2),
+      Math.floor((viewH - this.bgH * s) / 2),
+    )
   }
 
   /** Add an agent (bg-space coords already set on the sprite). */
@@ -113,6 +132,11 @@ export class WorldLayer extends Phaser.GameObjects.Container {
     this.tv?.setBroadcast(on)
   }
 
+  /** Ordered list of interactive props for keyboard navigation. */
+  getInteractiveProps(): readonly FocusableProp[] {
+    return this.interactiveProps
+  }
+
   private buildChildren(table?: ManifestTable) {
     const scene = this.scene
     if (!this.doc) return
@@ -121,7 +145,12 @@ export class WorldLayer extends Phaser.GameObjects.Container {
     this.add(bg)
 
     for (const def of this.doc.props) {
-      this.add(this.buildProp(def))
+      const child = this.buildProp(def)
+      this.add(child)
+      // Collect interactive props in document (props.json) order
+      if (def.interactive && isFocusable(child)) {
+        this.interactiveProps.push(child)
+      }
     }
 
     if (table) {
@@ -165,4 +194,14 @@ export class WorldLayer extends Phaser.GameObjects.Container {
     sprite.setDepth(def.anchorY)
     return sprite
   }
+}
+
+function isFocusable(obj: unknown): obj is FocusableProp {
+  return (
+    obj !== null &&
+    typeof obj === 'object' &&
+    'propId' in obj &&
+    'setFocused' in obj &&
+    'activate' in obj
+  )
 }
