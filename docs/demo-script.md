@@ -1,4 +1,4 @@
-<!-- docs/demo-script.md | v1.0.0 | 2026-06-12 -->
+<!-- docs/demo-script.md | v1.0.1 | 2026-06-12 -->
 # Moneyball — Demo Video Script (≤2:45)
 
 > **Voiceover word count:** ~240 words · ~150 wpm → ~1:36 read time
@@ -11,10 +11,10 @@
 | # | Precondition | How to verify | Fallback |
 |---|---|---|---|
 | P1 | Backend running with `STORAGE_BACKEND=memwal` on mainnet relayer | `curl /health` returns `ok:true` | Wake Render service 60 s before recording; or record against `localhost:3001` |
-| P2 | ≥5 matches resolved (with real or admin-injected results) | `GET /api/matches?status=resolved` returns ≥5 | Use admin endpoint to inject 5 manual results |
-| P3 | All 5 agents have predictions on ≥3 resolved matches | `GET /api/agents/:id/predictions` for each | Pre-seed via `POST /admin/day-plus-one` ×3 |
-| P4 | ≥1 agent has slept and evolved (param drift visible) | `GET /api/agents/:id/evolution` returns ≥1 entry | Trigger sleep via `POST /admin/sleep-cycle` |
-| P5 | A guest user has disagreed with an agent ≥3× (takeaway milestones at 1 and 3) | Check user-summary has `agentDisagreeCounts` ≥3 | Click "Disagree" 3× on camera (fits in beat 4) |
+| P2 | ≥5 matches resolved (with real or admin-injected results) | `GET /api/public/matches` → `recent` has ≥5 entries | Inject via `POST /api/admin/matches` + `POST /api/admin/matches/:id/resolve` ×5 |
+| P3 | All 5 agents have predictions on ≥3 resolved matches | `GET /api/public/agents/:agentId/predictions` for each | Pre-seed via `POST /api/admin/agents/:agentId/predict` |
+| P4 | ≥1 agent has slept and evolved (param drift visible) | `GET /api/public/agents/:agentId/evolution` returns ≥1 entry | Trigger via `POST /api/admin/agents/:agentId/evolve` |
+| P5 | A guest user has disagreed with an agent ≥3× (takeaway milestones at 1 and 3) | `GET /api/me/summary` → `agentDisagreeCounts` ≥3 | Click "Disagree" 3× on camera (beat 4), or `POST /api/admin/simulate/day-plus-one` ×3 |
 | P6 | MemWal dashboard shows recent writes with namespace `moneyball` | Open `memory.walrus.xyz` dashboard | Screenshot fallback: capture dashboard before recording |
 | P7 | Frontend deployed to Walrus Sites (or `localhost:5173`) | Load URL in browser | Use localhost; show Walrus Sites URL as overlay text |
 
