@@ -1,0 +1,11 @@
+node_modules
+**/node_modules
+.git
+*.md
+!README.md
+!docs/**
+apps/frontend/dist
+apps/frontend/node_modules
+.env
+.env.*
+!.env.example
