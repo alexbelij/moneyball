@@ -1,0 +1,29 @@
+{
+  "_comment": "props_manifest.json | v0.1 | 2026-06-12 | sprite placement for y-sort renderer",
+  "scene": {
+    "width": 1672,
+    "height": 941,
+    "background": "assets/backgrounds/room_bg_v02_table_clock_pennant.png"
+  },
+  "props": {
+    "table": {
+      "sprite": "assets/props/table_occlusion.png",
+      "offset": {
+        "x": 40,
+        "y": 510
+      },
+      "size": {
+        "w": 1496,
+        "h": 197
+      },
+      "anchorY": 706,
+      "note": "Cut pixel-perfect from room_bg_v02; draw at exact offset. Background already contains the table; this sprite is for y-sort occlusion only.",
+      "collision": {
+        "x0": 40,
+        "y0": 510,
+        "x1": 1536,
+        "y1": 706
+      }
+    }
+  }
+}
