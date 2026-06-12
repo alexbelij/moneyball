@@ -274,6 +274,75 @@
           }
         }
       }
+    },
+    {
+      "id": "clock_city_left",
+      "src": "props/clock_face.png",
+      "w": 53,
+      "h": 52,
+      "target_xy": [
+        721,
+        127
+      ],
+      "anchor": [
+        747,
+        179
+      ],
+      "interactive": false,
+      "tz": "Europe/London",
+      "label": "LONDON",
+      "hands": {
+        "_comment": "frontend draws hour/minute hands programmatically over sprite, under nothing (hub baked in sprite center)",
+        "center": [
+          26,
+          26
+        ],
+        "r_hour": 13,
+        "r_min": 19,
+        "width_hour": 3,
+        "width_min": 2,
+        "color": "#2a221a"
+      },
+      "_comment": "analog city clock left of baked digital clock (798-887,133-173); hires: docs/reference/clock_face_hires_v01.png"
+    },
+    {
+      "id": "clock_city_right",
+      "src": "props/clock_face.png",
+      "w": 53,
+      "h": 52,
+      "target_xy": [
+        911,
+        127
+      ],
+      "anchor": [
+        937,
+        179
+      ],
+      "interactive": false,
+      "tz": "America/New_York",
+      "label": "NEW YORK",
+      "hands": {
+        "_comment": "frontend draws hour/minute hands programmatically over sprite, under nothing (hub baked in sprite center)",
+        "center": [
+          26,
+          26
+        ],
+        "r_hour": 13,
+        "r_min": 19,
+        "width_hour": 3,
+        "width_min": 2,
+        "color": "#2a221a"
+      }
+    },
+    {
+      "id": "pennant_scouting",
+      "src": "props/pennant.png",
+      "w": 98,
+      "h": 175,
+      "target_xy": null,
+      "anchor": null,
+      "interactive": false,
+      "_comment": "spare sprite: scouting pennant (same design already baked into bg at ~(1255,170)); base for per-country club pennant variants (geo-IP idea, V2); hires: docs/reference/pennant_hires_v01.png"
     }
   ]
 }
