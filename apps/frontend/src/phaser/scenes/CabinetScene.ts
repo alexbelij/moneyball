@@ -1,11 +1,12 @@
 /**
- * CabinetScene | v0.7.1 | 2026-06-13
+ * CabinetScene | v0.8.0 | 2026-06-13
  * Purpose: Main cabinet scene. Composes the bg-space WorldLayer (background,
  * props.json props, TV states, wall clock, y-sorted table occlusion) with
  * agent sprites, wallet-flow pause, thought bubbles, and keyboard navigation
  * between interactive props.
  * T17: keyboard nav (Tab/Shift-Tab cycle, Enter/Space activate).
  * T19: cleans up PropStateController on shutdown.
+ * T25: AmbientLayer (dust motes + lamp flicker) above props, below UI.
  */
 
 import Phaser from 'phaser'
@@ -13,10 +14,12 @@ import { useGameStore } from '@/store/gameStore'
 import { AgentSprite } from '@/phaser/sprites/AgentSprite'
 import { GameEventBus } from '@/events/GameEventBus'
 import { WorldLayer, type FocusableProp } from '@/phaser/world/WorldLayer'
+import { AmbientLayer } from '@/phaser/world/AmbientLayer'
 
 export class CabinetScene extends Phaser.Scene {
   private sprites = new Map<string, AgentSprite>()
   private world?: WorldLayer
+  private ambient?: AmbientLayer
   private worldReady = false
 
   private unsubAgents?: () => void
@@ -46,6 +49,12 @@ export class CabinetScene extends Phaser.Scene {
     void this.world.build().then(() => {
       this.worldReady = true
       this.interactiveList = this.world!.getInteractiveProps()
+
+      // T25: add ambient layer above props (depth 7500), below dim overlay (8000) and UI
+      this.ambient = new AmbientLayer(this)
+      this.ambient.setDepth(7500)
+      this.world!.add(this.ambient)
+
       this.fitWorld()
       this.syncAgents()
       GameEventBus.emit('scene:ready', undefined)
@@ -103,10 +112,16 @@ export class CabinetScene extends Phaser.Scene {
     })
   }
 
+  update(time: number, delta: number) {
+    // T25: update ambient particles + flicker each frame
+    this.ambient?.update(time, delta)
+  }
+
   shutdown() {
     if (this.onThought) GameEventBus.off('thought:show', this.onThought)
     if (this.onLive) GameEventBus.off('matches:live', this.onLive)
     this.world?.getStateController()?.destroy()
+    this.ambient?.destroy()
     this.syncTimer?.remove(false)
     this.unsubAgents?.()
     this.unsubWallet?.()
