@@ -196,3 +196,11 @@
 .toastError {
   border-left: 4px solid var(--px-accent-red);
 }
+
+/* ── Reduced motion (design-spec §5) ────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}
