@@ -1,7 +1,8 @@
 /**
- * App | v0.7.0 | 2026-06-12
+ * App | v0.8.0 | 2026-06-13
  * Conditional mount: lite mode shows LiteDashboard, full mode lazy-loads PhaserGame.
  * Overlay components (HUD, AgentModal, etc.) work in both modes.
+ * T18: OfflineBanner when socket is disconnected.
  */
 
 import React, { lazy, Suspense, useState } from 'react'
@@ -17,6 +18,7 @@ import { StatsBoard } from '@/components/StatsBoard'
 import { MatchTV } from '@/components/MatchTV'
 import { LiteDashboard } from '@/components/LiteDashboard'
 import { LiteModeToggle } from '@/components/LiteModeToggle'
+import { OfflineBanner } from '@/components/OfflineBanner'
 
 // Lazy-load Phaser so it's never imported in lite mode
 const PhaserGame = lazy(() =>
@@ -73,6 +75,7 @@ export default function App() {
       <WalletFlowOverlay />
       <AuthSync />
       <LiteModeToggle />
+      <OfflineBanner />
       {config.debugWallet ? <WalletDebugPanel /> : null}
     </div>
   )
