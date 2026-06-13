@@ -1,10 +1,11 @@
 /**
- * WorldLayer | v0.2.0 | 2026-06-13
+ * WorldLayer | v0.3.0 | 2026-06-13
  * Purpose: Single bg-space (1672×941) container for background, props and
  * agents. Children live in background pixel coordinates; one integer-scale
  * transform + letterbox glues everything to any viewport. Y-sort via
  * child depth = anchorY (table occlusion sprite overdraws agents at the desk).
  * T17: integer scaling + letterbox, exposes interactive prop list for keyboard nav.
+ * T19: PropStateController for interactive prop state machines + dim overlay.
  */
 
 import Phaser from 'phaser'
@@ -13,6 +14,7 @@ import { PropSprite } from './PropSprite'
 import { TvSet } from './TvSet'
 import { DigitalClock } from '@/phaser/objects/DigitalClock'
 import { AnalogClock } from './AnalogClock'
+import { PropStateController } from './PropStateController'
 
 const PROPS_JSON_URL = '/assets/props/props.json'
 const MANIFEST_JSON_URL = '/assets/props/props_manifest.json'
@@ -51,6 +53,9 @@ export class WorldLayer extends Phaser.GameObjects.Container {
 
   /** Ordered interactive props for keyboard navigation (spec order). */
   private interactiveProps: FocusableProp[] = []
+
+  /** State machines for interactive props (exit_sign, light, coffee). */
+  private stateCtrl?: PropStateController
 
   constructor(scene: Phaser.Scene) {
     super(scene, 0, 0)
@@ -137,9 +142,16 @@ export class WorldLayer extends Phaser.GameObjects.Container {
     return this.interactiveProps
   }
 
+  /** Expose state controller for cleanup in CabinetScene.shutdown(). */
+  getStateController(): PropStateController | undefined {
+    return this.stateCtrl
+  }
+
   private buildChildren(table?: ManifestTable) {
     const scene = this.scene
     if (!this.doc) return
+
+    this.stateCtrl = new PropStateController(scene)
 
     const bg = scene.add.image(0, 0, texKey(this.doc.base)).setOrigin(0, 0).setDepth(DEPTH_BG)
     this.add(bg)
@@ -151,6 +163,11 @@ export class WorldLayer extends Phaser.GameObjects.Container {
       if (def.interactive && isFocusable(child)) {
         this.interactiveProps.push(child)
       }
+      // Register props with state controller (interactive for click handling,
+      // mug for steam position on coffee brew).
+      if ((def.interactive || def.id === 'mug') && child instanceof PropSprite) {
+        this.stateCtrl.register(def, child)
+      }
     }
 
     if (table) {
@@ -161,6 +178,14 @@ export class WorldLayer extends Phaser.GameObjects.Container {
       this.add(t)
     }
 
+    // Dim overlay for light_switch (covers entire bg space, above all props).
+    const dimOverlay = scene.add.rectangle(0, 0, this.bgW, this.bgH, 0x000000, 0)
+      .setOrigin(0, 0)
+      .setDepth(8000) // below steam (9000) and UI overlays
+    this.add(dimOverlay)
+    this.stateCtrl.setDimOverlay(dimOverlay)
+
+    this.stateCtrl.start()
     this.sort('depth')
   }
 
