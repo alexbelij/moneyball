@@ -1,8 +1,9 @@
 /**
- * vite.config | v1.2.0 | 2026-06-13
+ * vite.config | v1.3.0 | 2026-06-13
  * T16: manualChunks for Phaser vendor isolation + React/Sui vendor chunks.
  * Lite mode never downloads the phaser chunk thanks to React.lazy in App.tsx.
  * T20: DEPLOY_MODE env flag for production-hardened build (terser, no sourcemaps).
+ * T22: editor.html as second input (dev-only, excluded from build:deploy).
  * Regular `build` stays readable; `build:deploy` enables full minification.
  */
 
@@ -30,6 +31,12 @@ export default defineConfig({
       },
     }),
     rollupOptions: {
+      input: isDeploy
+        ? { main: path.resolve(__dirname, 'index.html') }
+        : {
+            main: path.resolve(__dirname, 'index.html'),
+            editor: path.resolve(__dirname, 'editor.html'),
+          },
       output: {
         manualChunks(id) {
           // Phaser in its own chunk — only loaded when full room mode is active
