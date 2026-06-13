@@ -1,17 +1,18 @@
 /**
- * AgentModal | v0.7.0 | 2026-06-13
- * Purpose: Agent dossier — Overview (actions) + Predictions / Evolution /
- * Memory tabs. WAI-ARIA dialog + tabs pattern, focus trap, keyboard nav.
+ * AgentModal | v0.8.0 | 2026-06-13
+ * Purpose: Agent dossier — Overview (actions) + Method / Predictions /
+ * Evolution / Memory tabs. WAI-ARIA dialog + tabs pattern, focus trap, kbd nav.
  * T14: refactored to use PixelButton + design-spec palette.
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
+ * T26: added Method tab surfacing each agent's methodology from agent-config.
  */
 
 import React, { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import {
   roast, disagree, adminDayPlusOne,
-  getAgentPredictions, getAgentEvolution, getAgentParams,
-  type PredictionItem, type EvolutionItem,
+  getAgentProfile, getAgentPredictions, getAgentEvolution, getAgentParams,
+  type PredictionItem, type EvolutionItem, type AgentProfile,
 } from '@/lib/api'
 import { GameEventBus } from '@/events/GameEventBus'
 import { useAuthStore } from '@/store/authStore'
@@ -20,8 +21,8 @@ import { useRovingTabs } from '@/lib/a11y/useRovingTabs'
 import { PixelButton } from '@/components/ui/PixelButton'
 import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
-type Tab = 'overview' | 'predictions' | 'evolution' | 'memory'
-const TABS: readonly Tab[] = ['overview', 'predictions', 'evolution', 'memory'] as const
+type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'memory'
+const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'memory'] as const
 const MODAL_TITLE_ID = 'agent-modal-title'
 
 export function AgentModal() {
@@ -125,7 +126,7 @@ export function AgentModal() {
         </div>
 
         {/* Tabs */}
-        <div style={{ marginTop: 14, display: 'flex', gap: 4 }} {...getTabListProps()}>
+        <div style={{ marginTop: 14, display: 'flex', gap: 4, flexWrap: 'wrap' }} {...getTabListProps()}>
           {TABS.map((t) => (
             <PixelButton
               key={t}
@@ -160,6 +161,7 @@ export function AgentModal() {
               <div style={{ marginTop: 6, fontSize: 15 }}>{agent.lastThought ?? '—'}</div>
             </>
           )}
+          {tab === 'method' && <MethodTab agentId={agentId} />}
           {tab === 'predictions' && <PredictionsTab agentId={agentId} />}
           {tab === 'evolution' && <EvolutionTab agentId={agentId} />}
           {tab === 'memory' && <MemoryTab agentId={agentId} />}
@@ -188,6 +190,120 @@ function useFetch<T>(load: () => Promise<T>, deps: unknown[]) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
   return state
+}
+
+export function MethodTab({ agentId }: { agentId: string }) {
+  const { data, err, loading } = useFetch(() => getAgentProfile(agentId), [agentId])
+  if (loading) return <Hint>Loading methodology…</Hint>
+  if (err) return <Hint color={accents.red}>{err}</Hint>
+  const profile = data?.profile as AgentProfile | undefined
+  if (!profile) return <Hint>No profile available.</Hint>
+
+  const m = profile.methodology
+  const params = Object.entries(m.parameters ?? {})
+
+  return (
+    <div>
+      {/* Personality */}
+      <div style={card()}>
+        <SectionLabel>Approach</SectionLabel>
+        <div style={{ fontSize: 15, marginTop: 4 }}>{profile.personality}</div>
+        <div style={{ marginTop: 8, fontSize: 12, color: text.muted }}>
+          model: <b style={{ color: accents.gold }}>{m.type}</b>
+        </div>
+      </div>
+
+      {/* Catchphrases */}
+      {profile.catchphrases.length > 0 && (
+        <div style={card()}>
+          <SectionLabel>Catchphrases</SectionLabel>
+          {profile.catchphrases.map((c, i) => (
+            <div key={i} style={{ fontSize: 15, marginTop: 4, color: text.dim, fontStyle: 'italic' }}>
+              “{c}”
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Formula (weighted/EV/contrarian agents) */}
+      {m.formula && (
+        <div style={card()}>
+          <SectionLabel>Scoring formula</SectionLabel>
+          <pre
+            style={{
+              margin: '6px 0 0', padding: 8,
+              background: palette.surface, border: borders.rule, borderRadius: 0,
+              fontSize: 13, color: accents.green, fontFamily: 'monospace',
+              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+            }}
+          >
+            {m.formula}
+          </pre>
+        </div>
+      )}
+
+      {/* Rule list (Madame Pythia / deterministic mysticism) */}
+      {m.rules.length > 0 && (
+        <div style={card()}>
+          <SectionLabel>Rules</SectionLabel>
+          {m.description && (
+            <div style={{ fontSize: 13, color: text.muted, marginTop: 4 }}>{m.description}</div>
+          )}
+          {m.rules.map((r, i) => (
+            <div
+              key={i}
+              style={{ marginTop: 8, paddingTop: 8, borderTop: i === 0 ? 'none' : borders.rule }}
+            >
+              <div style={{ fontSize: 14, color: accents.gold, fontWeight: 700 }}>{r.name}</div>
+              <div style={{ fontSize: 13, color: text.dim, marginTop: 2 }}>{r.logic}</div>
+              <div style={{ fontSize: 13, color: accents.green, marginTop: 2, fontFamily: 'monospace' }}>
+                → {r.effect}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Parameters */}
+      {params.length > 0 && (
+        <div style={card()}>
+          <SectionLabel>Parameters</SectionLabel>
+          <div style={{ marginTop: 4 }}>
+            {params.map(([k, v]) => (
+              <div
+                key={k}
+                style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: 'monospace', marginTop: 2 }}
+              >
+                <span style={{ color: text.muted }}>{k}</span>
+                <span style={{ color: palette.paper }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Evolution trigger */}
+      {m.evolutionTrigger && (
+        <div style={card()}>
+          <SectionLabel>How it evolves</SectionLabel>
+          <div style={{ fontSize: 14, marginTop: 4, color: text.dim }}>{m.evolutionTrigger}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        fontSize: 11, fontFamily: fonts.header, color: text.muted,
+        letterSpacing: '-0.5px', textTransform: 'uppercase',
+      }}
+    >
+      {children}
+    </div>
+  )
 }
 
 function PredictionsTab({ agentId }: { agentId: string }) {

@@ -1,13 +1,33 @@
 /**
- * api-stub | v1.0.0 | 2026-06-13
+ * api-stub | v1.1.0 | 2026-06-13
  * Purpose: Minimal Express stub mimicking the backend API for e2e tests.
  * T21: no real secrets or DB — returns static fixture data.
+ * T26: added /profile so the AgentModal Method tab renders in e2e/preview.
  */
 
 import express from 'express'
 
 const app = express()
 const PORT = 4001
+
+const PROFILES: Record<string, unknown> = {
+  dr_morgan: {
+    id: 'dr_morgan',
+    name: 'Dr. Morgan',
+    role: 'Statistician',
+    personality: 'Cold, pedantic, trusts only verifiable data.',
+    catchphrases: ['Probabilities never lie.'],
+    methodology: {
+      type: 'weighted_metrics',
+      formula: 'Score = (Home_xG * 0.4) + (Away_xG_Reverse * 0.3) + (Possession_Eff * 0.2)',
+      description: null,
+      parameters: { error_threshold: 1.5, learning_rate: 0.15, injury_weight_adjustment: 0.15 },
+      evolutionTrigger:
+        'If actual goal diff deviates from xG by more than 1.5, increase recent_defensive_injuries weight by 15%.',
+      rules: [],
+    },
+  },
+}
 
 /* ── Fixture data ──────────────────────────────────────────────── */
 
@@ -44,6 +64,12 @@ const PREDICTIONS = [
 
 app.get('/api/public/agents', (_req, res) => {
   res.json({ agents: AGENTS })
+})
+
+app.get('/api/public/agents/:id/profile', (req, res) => {
+  const profile = PROFILES[req.params.id]
+  if (!profile) return res.status(404).json({ ok: false, error: 'UNKNOWN_AGENT' })
+  res.json({ ok: true, profile })
 })
 
 app.get('/api/public/agents/:id/predictions', (req, res) => {

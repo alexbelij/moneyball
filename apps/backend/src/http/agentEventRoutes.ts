@@ -1,15 +1,28 @@
 /**
- * agentEventRoutes | v0.1.0 | 2026-06-09
+ * agentEventRoutes | v0.2.0 | 2026-06-13
  * Purpose: Public read + admin write for agent predictions/evolution.
+ * T26: adds public /profile (identity + methodology, no secrets).
  */
 
 import type { Express } from 'express'
 import { requireAdmin } from './jwtMiddleware'
 import { AgentEventService } from '../agents/agentEventService'
+import { AgentProfileService } from '../agents/agentProfileService'
 
-export function registerAgentEventRoutes(app: Express, svc: AgentEventService = new AgentEventService()) {
+export function registerAgentEventRoutes(
+  app: Express,
+  svc: AgentEventService = new AgentEventService(),
+  profiles: AgentProfileService = new AgentProfileService(),
+) {
 
   // Public read
+  app.get('/api/public/agents/:agentId/profile', (req, res) => {
+    const agentId = String(req.params.agentId)
+    const profile = profiles.get(agentId)
+    if (!profile) return res.status(404).json({ ok: false, error: 'UNKNOWN_AGENT' })
+    res.json({ ok: true, profile })
+  })
+
   app.get('/api/public/agents/:agentId/predictions', async (req, res) => {
     const agentId = String(req.params.agentId)
     const items = await svc.listPredictions(agentId, 30)

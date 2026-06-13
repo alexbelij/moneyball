@@ -78,6 +78,38 @@ export interface MatchInfo {
   result: { homeScore: number; awayScore: number; outcome: '1' | 'X' | '2' } | null
 }
 
+// Public agent profile (methodology dossier — T26). Shape mirrors backend
+// agentProfileService.PublicAgentProfile.
+export interface MethodologyRule {
+  name: string
+  logic: string
+  effect: string
+}
+
+export interface AgentMethodology {
+  type: string
+  formula: string | null
+  description: string | null
+  parameters: Record<string, number>
+  evolutionTrigger: string | null
+  rules: MethodologyRule[]
+}
+
+export interface AgentProfile {
+  id: string
+  name: string
+  role: string
+  personality: string
+  catchphrases: string[]
+  methodology: AgentMethodology
+}
+
+export async function getAgentProfile(agentId: string) {
+  return apiFetch<{ ok: true; profile: AgentProfile }>(`/api/public/agents/${agentId}/profile`, {
+    method: 'GET',
+  })
+}
+
 export async function getAgentPredictions(agentId: string) {
   return apiFetch<{ ok: true; agentId: string; items: PredictionItem[] }>(`/api/public/agents/${agentId}/predictions`, {
     method: 'GET',
