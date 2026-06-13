@@ -17,8 +17,9 @@ test.describe('Moneyball Cabinet — smoke', () => {
     // Wait for either the Phaser canvas or the loading skeleton
     const canvas = page.locator('canvas')
     const skeleton = page.getByRole('status', { name: /loading/i })
-    // At least one should be visible
-    await expect(canvas.or(skeleton)).toBeVisible({ timeout: 15_000 })
+    // At least one should be visible (.first(): canvas + skeleton can coexist
+    // briefly after T13 merge — strict mode would reject the union)
+    await expect(canvas.or(skeleton).first()).toBeVisible({ timeout: 15_000 })
     await page.screenshot({ path: 'e2e/screenshots/01-room-loaded.png' })
   })
 

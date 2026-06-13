@@ -1,5 +1,5 @@
 /**
- * OfflineBanner | v1.0.0 | 2026-06-13
+ * OfflineBanner | v1.0.1 | 2026-06-13
  * Purpose: Shows a fixed banner when the socket is disconnected.
  * T18: pixel-styled offline indicator, driven by gameStore.isConnected.
  * Respects design-spec: --bg-black, monospace fallback, 2px border, no radius.
@@ -14,6 +14,7 @@ const BANNER_STYLE: React.CSSProperties = {
   left: 0,
   right: 0,
   zIndex: 9999,
+  pointerEvents: 'none',
   padding: '6px 12px',
   background: '#181009',
   color: '#c03030',
