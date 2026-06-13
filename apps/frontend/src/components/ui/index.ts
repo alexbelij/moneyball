@@ -4,3 +4,4 @@
 export { PixelButton, type PixelButtonProps } from './PixelButton'
 export { PixelModal, type PixelModalProps } from './PixelModal'
 export { ToastProvider, useToast, type ToastVariant } from './PixelToast'
+export { RankMedal } from './RankMedal'

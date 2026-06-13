@@ -1,15 +1,18 @@
 /**
- * StatsBoard | v0.3.0 | 2026-06-13
+ * StatsBoard | v0.4.0 | 2026-06-13
  * Purpose: Scouts' leaderboard — per-agent record/accuracy/streak computed
  * client-side from the public predictions feed (no extra backend endpoint).
  * T15: embeds StatsReport (predictions table + Brier chart) below leaderboard.
  * T33: migrated to shared tokens.
+ * T34: pixel reskin — paper leaderboard panel, wood-ramp rows, SNES header,
+ *      pixel-medal rank, PixelButton "CLOSE" (no emoji icons).
  */
 
 import React, { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { getAgentPredictions, type PredictionItem } from '@/lib/api'
 import { StatsReport } from '@/components/StatsReport'
+import { PixelButton, RankMedal } from '@/components/ui'
 import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 interface Row {
@@ -81,47 +84,57 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
       padding: 14, color: palette.paper, boxShadow: shadows.hard,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, fontFamily: fonts.header, letterSpacing: '-0.5px' }}>SCOUT LEADERBOARD</div>
-        <button onClick={onClose} aria-label="Close leaderboard" style={{ background: 'none', border: 0, color: text.muted, fontSize: 16, cursor: 'pointer' }}>✕</button>
+        <div style={{ fontSize: 11, fontWeight: 700, fontFamily: fonts.header, letterSpacing: '-0.5px', color: accents.gold }}>SCOUT LEADERBOARD</div>
+        <PixelButton size="small" onClick={onClose} aria-label="Close leaderboard">CLOSE</PixelButton>
       </div>
 
       {err && <div style={{ marginTop: 10, color: accents.red, fontSize: 12 }}>{err}</div>}
       {!rows && !err && <div style={{ marginTop: 10, color: text.muted, fontSize: 12, fontFamily: fonts.body }}>Crunching the numbers…</div>}
 
       {rows && (
-        <table style={{ marginTop: 10, width: '100%', fontSize: 14, borderCollapse: 'collapse', fontFamily: fonts.body }}>
-          <thead>
-            <tr style={{ color: text.muted, textAlign: 'left' }}>
-              <th style={th()}>#</th>
-              <th style={th()}>Scout</th>
-              <th style={th()}>Record</th>
-              <th style={th()}>Accuracy</th>
-              <th style={th()}>Streak</th>
-              <th style={th()}>Pending</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => {
-              const acc = r.resolved ? Math.round((r.correct / r.resolved) * 100) : null
-              return (
-                <tr
-                  key={r.agentId}
-                  onClick={() => useGameStore.getState().selectAgent(r.agentId)}
-                  style={{ borderTop: `1px solid ${palette.wood700}`, cursor: 'pointer' }}
-                >
-                  <td style={td()}>{i + 1}</td>
-                  <td style={{ ...td(), fontWeight: 600 }}>{r.name}</td>
-                  <td style={td()}>{r.correct}–{r.resolved - r.correct}</td>
-                  <td style={td()}>{acc === null ? '—' : `${acc}%`}</td>
-                  <td style={{ ...td(), color: r.streak > 0 ? accents.green : r.streak < 0 ? accents.red : text.muted }}>
-                    {r.streak === 0 ? '—' : r.streak > 0 ? `W${r.streak}` : `L${-r.streak}`}
-                  </td>
-                  <td style={td()}>{r.total - r.resolved}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        /* Paper leaderboard panel */
+        <div style={{
+          marginTop: 10, background: palette.paper, color: palette.wood900,
+          border: borders.standard, borderRadius: 0, boxShadow: shadows.hardSmall,
+          overflow: 'hidden',
+        }}>
+          <table style={{ width: '100%', fontSize: 15, borderCollapse: 'collapse', fontFamily: fonts.body }}>
+            <thead>
+              <tr style={{ background: palette.wood700, color: palette.paper, textAlign: 'left' }}>
+                <th style={thHead()}>#</th>
+                <th style={thHead()}>Scout</th>
+                <th style={thHead()}>Record</th>
+                <th style={thHead()}>Accuracy</th>
+                <th style={thHead()}>Streak</th>
+                <th style={thHead()}>Pending</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const acc = r.resolved ? Math.round((r.correct / r.resolved) * 100) : null
+                return (
+                  <tr
+                    key={r.agentId}
+                    onClick={() => useGameStore.getState().selectAgent(r.agentId)}
+                    style={{
+                      // Wood-ramp striping over the paper panel (token-only).
+                      background: i % 2 === 0 ? palette.paperBright : palette.paper,
+                      borderTop: i === 0 ? 'none' : borders.rule,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <td style={td()}><RankMedal rank={i + 1} /></td>
+                    <td style={{ ...td(), fontWeight: 700, color: palette.wood900 }}>{r.name}</td>
+                    <td style={td()}>{r.correct}–{r.resolved - r.correct}</td>
+                    <td style={td()}>{acc === null ? '—' : `${acc}%`}</td>
+                    <td style={td()}><StreakChip streak={r.streak} /></td>
+                    <td style={td()}>{r.total - r.resolved}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       <div style={{ marginTop: 8, fontSize: 12, color: text.faint, fontFamily: fonts.body }}>
         Click a scout to open their dossier. Records update as WC2026 matches finish.
@@ -135,5 +148,27 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
   )
 }
 
-function th() { return { padding: '4px 6px' } as const }
-function td() { return { padding: '6px 6px' } as const }
+/** Win/loss streak as a pixel chip — guaranteed contrast on the paper panel. */
+function StreakChip({ streak }: { streak: number }) {
+  if (streak === 0) return <span style={{ color: palette.wood500 }}>—</span>
+  const win = streak > 0
+  return (
+    <span style={{
+      display: 'inline-block', padding: '1px 5px',
+      fontFamily: fonts.header, fontSize: 9, lineHeight: '16px',
+      background: win ? accents.green : accents.red,
+      color: win ? palette.wood900 : palette.paper,
+      border: `2px solid ${palette.wood900}`, boxShadow: shadows.hardSmall,
+    }}>
+      {win ? `W${streak}` : `L${-streak}`}
+    </span>
+  )
+}
+
+function thHead() {
+  return {
+    padding: '6px 8px', fontFamily: fonts.header, fontSize: 9,
+    letterSpacing: '-0.5px', textTransform: 'uppercase' as const, fontWeight: 400,
+  } as const
+}
+function td() { return { padding: '7px 8px', verticalAlign: 'middle' } as const }

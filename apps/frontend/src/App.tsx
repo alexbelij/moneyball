@@ -20,6 +20,7 @@ import { MatchTV } from '@/components/MatchTV'
 import { LiteDashboard } from '@/components/LiteDashboard'
 import { LiteModeToggle } from '@/components/LiteModeToggle'
 import { OfflineBanner } from '@/components/OfflineBanner'
+import { PixelButton } from '@/components/ui'
 import { LoadingSkeleton, useSceneReady } from '@/components/LoadingSkeleton'
 
 // Lazy-load Phaser so it's never imported in lite mode
@@ -48,20 +49,13 @@ export default function App() {
       )}
       <HUD />
       {!liteMode && (
-        <button
-          onClick={() => setStatsOpen((v) => !v)}
-          style={{
-            position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60,
-            padding: '4px 10px',
-            fontFamily: '"VT323", monospace', fontSize: 16,
-            color: '#f4ede2', background: '#181009',
-            border: '2px solid #3a3020', borderRadius: 0,
-            cursor: 'pointer',
-            boxShadow: '2px 2px 0 #000',
-          }}
-        >
-          🏆 Leaderboard
-        </button>
+        <div style={{
+          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60,
+        }}>
+          <PixelButton size="small" onClick={() => setStatsOpen((v) => !v)} aria-pressed={statsOpen}>
+            Leaderboard
+          </PixelButton>
+        </div>
       )}
       {statsOpen && !liteMode && <StatsBoard onClose={() => setStatsOpen(false)} />}
       {!liteMode && <MatchTV />}

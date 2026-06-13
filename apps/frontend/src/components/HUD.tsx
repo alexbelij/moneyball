@@ -10,6 +10,7 @@ import { useCurrentAccount } from '@mysten/dapp-kit'
 import { useSuiAuth } from '@/hooks/useSuiAuth'
 import { useAuthStore } from '@/store/authStore'
 import { WalletControls } from '@/components/WalletControls'
+import { PixelButton } from '@/components/ui'
 import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 export function HUD() {
@@ -48,7 +49,8 @@ export function HUD() {
         <WalletControls />
 
         {account && !viewer && (
-          <button
+          <PixelButton
+            variant="primary"
             disabled={busy}
             onClick={async () => {
               setErr(null); setBusy(true)
@@ -56,38 +58,15 @@ export function HUD() {
               try { await signIn() } catch (e: any) { setErr(e.message ?? String(e)) }
               finally { setBusy(false); setWalletFlowActive(false) }
             }}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 0,
-              border: borders.standard,
-              background: accents.gold,
-              color: palette.wood900,
-              cursor: busy ? 'not-allowed' : 'pointer',
-              fontSize: 14, fontFamily: fonts.body, fontWeight: 700,
-              boxShadow: shadows.hardSmall,
-            }}
           >
             {busy ? 'Signing…' : 'Admin / Creator Sign In'}
-          </button>
+          </PixelButton>
         )}
 
         {viewer && (
-          <button
-            onClick={signOut}
-            style={{
-              padding: '8px 12px',
-              borderRadius: 0,
-              border: borders.standard,
-              background: palette.wood900,
-              color: palette.paper,
-              cursor: 'pointer',
-              fontSize: 14, fontFamily: fonts.body,
-              boxShadow: shadows.hardSmall,
-            }}
-            title={viewer.suiAddress}
-          >
+          <PixelButton onClick={signOut} title={viewer.suiAddress}>
             {viewer.role === 'admin' ? 'ADMIN' : 'USER'} · Sign Out
-          </button>
+          </PixelButton>
         )}
       </div>
 

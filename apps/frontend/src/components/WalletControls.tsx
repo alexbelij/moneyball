@@ -15,6 +15,7 @@ import {
   useWallets,
 } from '@mysten/dapp-kit'
 import { useGameStore } from '@/store/gameStore'
+import { PixelButton } from '@/components/ui'
 import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 export function WalletControls() {
@@ -99,13 +100,9 @@ export function WalletControls() {
     <div style={{ position: 'relative', display: 'inline-flex', gap: 8, alignItems: 'center' }}>
       {!connected ? (
         <>
-          <button
-            onClick={() => setOpen((v) => !v)}
-            disabled={busy}
-            style={btn()}
-          >
+          <PixelButton onClick={() => setOpen((v) => !v)} disabled={busy}>
             {busy ? 'Connecting…' : 'Connect wallet'}
-          </button>
+          </PixelButton>
 
           {open && (
             <div style={menu()}>
@@ -121,9 +118,9 @@ export function WalletControls() {
         </>
       ) : (
         <>
-          <button onClick={() => setOpenAccounts((v) => !v)} style={btn()}>
+          <PixelButton onClick={() => setOpenAccounts((v) => !v)}>
             {short}
-          </button>
+          </PixelButton>
 
           {openAccounts && (
             <div style={menu()}>
@@ -153,20 +150,6 @@ export function WalletControls() {
       {err && <div style={{ color: accents.red, fontSize: 13, maxWidth: 260, fontFamily: fonts.body }}>{err}</div>}
     </div>
   )
-}
-
-function btn() {
-  return {
-    padding: '8px 12px',
-    borderRadius: 0,
-    border: borders.standard,
-    background: palette.wood900,
-    color: palette.paper,
-    cursor: 'pointer',
-    fontSize: 14,
-    fontFamily: fonts.body,
-    boxShadow: shadows.hardSmall,
-  } as const
 }
 
 function menu() {

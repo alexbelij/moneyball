@@ -12,6 +12,7 @@ import { useGameStore } from '@/store/gameStore'
 import type { WorldAgentState } from '@moneyball/shared/events'
 import { getAgentPredictions, getMatches, getAgentParams } from '@/lib/api'
 import { StatsReport } from '@/components/StatsReport'
+import { RankMedal } from '@/components/ui'
 import { palette, accents, text, fonts, borders, shadows } from '@/styles/tokens'
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
@@ -138,7 +139,13 @@ function MatchCard({ match }: { match: MatchInfo }) {
         <span>{match.awayTeam}</span>
       </div>
       <div style={styles.matchTime}>
-        {match.status === 'live' ? '■ LIVE' : time}
+        {match.status === 'live' ? (
+          <span style={styles.liveTag}>
+            <span style={styles.liveDot} aria-hidden="true" />LIVE
+          </span>
+        ) : (
+          time
+        )}
       </div>
     </div>
   )
@@ -166,8 +173,15 @@ function Leaderboard({
       <h2 style={styles.sectionTitle}>LEADERBOARD</h2>
       <div style={styles.leaderboard}>
         {sorted.map((a, i) => (
-          <div key={a.agentId} style={styles.leaderRow}>
-            <span style={styles.leaderRank}>#{i + 1}</span>
+          <div
+            key={a.agentId}
+            style={{
+              ...styles.leaderRow,
+              background: i % 2 === 0 ? palette.paperBright : palette.paper,
+              borderTop: i === 0 ? 'none' : borders.rule,
+            }}
+          >
+            <RankMedal rank={i + 1} />
             <span style={styles.leaderName}>{a.name}</span>
             <span style={styles.leaderScore}>
               {a.correct}/{a.total}
@@ -525,29 +539,45 @@ const styles: Record<string, React.CSSProperties> = {
     color: text.faint,
     marginTop: 4,
   },
+  liveTag: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 5,
+    color: accents.red,
+    fontFamily: fonts.header,
+    fontSize: 9,
+    letterSpacing: '-0.5px',
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 0,
+    background: accents.red,
+    display: 'inline-block',
+  },
+  // T34: paper leaderboard panel — wood-ramp rows, dark text, medal ranks.
   leaderboard: {
-    background: palette.wood900,
+    background: palette.paper,
     border: borders.standard,
     borderRadius: 0,
     overflow: 'hidden',
+    boxShadow: shadows.hardSmall,
   },
   leaderRow: {
     display: 'flex',
     alignItems: 'center',
+    gap: 8,
     padding: '8px 12px',
-    borderBottom: borders.rule,
-    fontSize: 14,
-  },
-  leaderRank: {
-    width: 32,
-    fontWeight: 700,
-    color: accents.gold,
+    fontSize: 15,
+    color: palette.wood900,
   },
   leaderName: {
     flex: 1,
+    fontWeight: 700,
+    color: palette.wood900,
   },
   leaderScore: {
-    fontWeight: 600,
-    color: accents.green,
+    fontWeight: 700,
+    color: palette.wood700,
   },
 }
