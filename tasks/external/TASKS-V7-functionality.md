@@ -63,11 +63,20 @@
 - (Real xG/odds integration = separate future task, needs owner budget decision.)
 
 # ── DECIDED (13.06): full version, LLM chat = Option B. Football-only, memory-aware. ──
-# BLOCKER: needs an LLM provider API key in backend env (owner provides; prefer a
-# free/cheap tier — Gemini Flash / Groq — to avoid spend; key is a SECRET, never in repo,
-# never shared with the second Viktor). Do NOT start coding the live call until the key
-# env var name is fixed; you CAN build everything behind an LLMClient interface + a
-# deterministic fallback so tests/CI never need the key.
+# LLM provider = GEMINI (tested working 13.06). Env vars (set in Render, NEVER in repo):
+#   LLM_PROVIDER=gemini  GEMINI_API_KEY=<secret, owner-provided>  GEMINI_MODEL=gemini-flash-latest
+# IMPORTANT model notes from live testing:
+#   - This key's project has free-tier quota ONLY on the *-latest aliases / 2.5 models;
+#     `gemini-2.0-flash` returns 429 (free_tier limit 0). USE `gemini-flash-latest`.
+#   - gemini-flash-latest is a THINKING model — it burns output budget on internal
+#     reasoning, truncating answers & adding latency. MUST set
+#     generationConfig.thinkingConfig.thinkingBudget=0 for chat. With that: ~1.4–1.8s warm,
+#     occasional ~6s cold start; persona quality excellent, off-topic deflection works.
+#   - REST: POST generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=KEY
+#     body: {system_instruction:{parts:[{text:PERSONA+CONTEXT}]}, contents:[{parts:[{text:USER}]}],
+#            generationConfig:{maxOutputTokens, thinkingConfig:{thinkingBudget:0}}}
+# Build everything behind an LLMClient interface + deterministic fallback so tests/CI never
+# need the key. Key is wired to Render env separately (by the lead Viktor), not by you.
 
 ## T31 — Agent chat (LLM-backed, football-only, memory-aware) — deliver 1-pg design first
 - Backend: POST `/api/agents/:id/chat` (or socket room). Per-user, auth-gated.
