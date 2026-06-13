@@ -1,13 +1,14 @@
 /**
- * WalletFlowOverlay | v0.3.0 | 2026-06-13
+ * WalletFlowOverlay | v0.3.1 | 2026-06-13
  * Purpose: Blur/freeze overlay while wallet modal/auth flow is active.
  * T14: pixel-styled per design-spec (no border-radius, 2px borders, room palette).
  * T33: migrated to shared tokens.
+ * T35: scrim backdrop uses semantic `overlay` token.
  */
 
 import React from 'react'
 import { useGameStore } from '@/store/gameStore'
-import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, overlay } from '@/styles/tokens'
 
 export function WalletFlowOverlay() {
   const active = useGameStore((s) => s.ui.isWalletFlowActive)
@@ -19,7 +20,7 @@ export function WalletFlowOverlay() {
         position: 'absolute',
         inset: 0,
         zIndex: zIndex.wallet,
-        background: 'rgba(0,0,0,0.6)',
+        background: overlay,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

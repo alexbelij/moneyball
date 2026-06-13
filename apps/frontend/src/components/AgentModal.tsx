@@ -1,8 +1,9 @@
 /**
- * AgentModal | v0.9.0 | 2026-06-13
+ * AgentModal | v0.9.1 | 2026-06-13
  * Purpose: Agent dossier — Overview (actions) + Method / Predictions /
  * Evolution / Memory tabs. WAI-ARIA dialog + tabs pattern, focus trap, kbd nav.
  * T14: refactored to use PixelButton + design-spec palette.
+ * T35: scrim backdrop uses semantic `overlay` token.
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
  * T26: added Method tab surfacing each agent's methodology from agent-config.
  * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
@@ -25,7 +26,7 @@ import { PixelButton } from '@/components/ui/PixelButton'
 import { AgentPerfChart } from '@/components/AgentPerfChart'
 import { buildAgentPerfSeries } from '@/lib/agentPerf'
 import { buildEvolutionStory } from '@/lib/evolutionStory'
-import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, overlay } from '@/styles/tokens'
 
 type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'memory'
 const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'memory'] as const
@@ -92,7 +93,7 @@ export function AgentModal() {
       onClick={close}
       style={{
         position: 'absolute', inset: 0,
-        background: 'rgba(0,0,0,0.6)',
+        background: overlay,
         display: 'flex', justifyContent: 'flex-end',
         zIndex: zIndex.modal,
       }}

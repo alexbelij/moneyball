@@ -1,8 +1,9 @@
 /**
- * tokens | v1.0.0 | 2026-06-13
+ * tokens | v1.1.0 | 2026-06-13
  * Purpose: Single source of truth for design-spec palette, typography,
  * spacing, border, shadow, and z-index tokens.
  *
+ * T35: added semantic `overlay` scrim token.
  * Canonical reference: docs/design-spec.md v1.0.0
  * Rule: grep for raw `#` hex in src/components/ should yield ≈ 0 results
  *       after migration. Every colour must come from this module.
@@ -55,6 +56,11 @@ export const text = {
   /** Very dim (captions, meta). */
   faint:    palette.wood300,
 } as const
+
+/* ── Overlay / scrim (modal & wallet-flow backdrops) ─────────────── */
+
+/** Semi-transparent backdrop behind modals and the wallet-flow freeze. */
+export const overlay = 'rgba(0,0,0,0.6)' as const
 
 /* ── Per-agent accent colours (series / badges) ──────────────────── */
 
@@ -186,6 +192,8 @@ export const T = {
   // Shadows
   shadow:      shadows.hard,
   shadowSm:    shadows.hardSmall,
+  // Overlay
+  overlay,
   // Chart
   chartGrid,
 } as const

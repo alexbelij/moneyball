@@ -1,9 +1,10 @@
 /**
- * StatsReport | v1.1.0 | 2026-06-13
+ * StatsReport | v1.2.0 | 2026-06-13
  * Purpose: Interactive predictions table + rolling Brier score SVG chart.
  * T15: hand-rolled SVG (no chart deps), pixel-styled per design-spec,
  * hover tooltips, keyboard-accessible data points.
  * T33: migrated to shared tokens (fixed wrong wood values).
+ * T35: pending outcome glyph (was emoji) -> token-coloured ellipsis.
  * Rendered inside StatsBoard modal AND in Lite mode.
  */
 
@@ -192,7 +193,9 @@ export function StatsReport() {
                 <td style={tdStyle}>{r.brierScore !== null ? r.brierScore.toFixed(3) : '—'}</td>
                 <td style={tdStyle}>{r.pick}</td>
                 <td style={{ ...tdStyle, textAlign: 'center' }}>
-                  {r.correct === null ? '⏳' : r.correct ? (
+                  {r.correct === null ? (
+                    <span style={{ color: text.faint }} aria-label="pending">…</span>
+                  ) : r.correct ? (
                     <span style={{ color: accents.green }}>✓</span>
                   ) : (
                     <span style={{ color: accents.red }}>✗</span>
