@@ -353,7 +353,7 @@ export function LiteDashboard() {
 
       {/* T15: Detailed predictions + Brier chart */}
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>📊 Scouting Report</h2>
+        <h2 style={styles.sectionTitle}>╠═ Scouting Report</h2>
         <StatsReport />
       </div>
 
