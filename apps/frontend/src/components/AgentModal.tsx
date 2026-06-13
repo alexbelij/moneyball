@@ -1,10 +1,11 @@
 /**
- * AgentModal | v0.8.0 | 2026-06-13
+ * AgentModal | v0.9.0 | 2026-06-13
  * Purpose: Agent dossier — Overview (actions) + Method / Predictions /
  * Evolution / Memory tabs. WAI-ARIA dialog + tabs pattern, focus trap, kbd nav.
  * T14: refactored to use PixelButton + design-spec palette.
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
  * T26: added Method tab surfacing each agent's methodology from agent-config.
+ * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -19,6 +20,8 @@ import { useAuthStore } from '@/store/authStore'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
 import { useRovingTabs } from '@/lib/a11y/useRovingTabs'
 import { PixelButton } from '@/components/ui/PixelButton'
+import { AgentPerfChart } from '@/components/AgentPerfChart'
+import { buildAgentPerfSeries } from '@/lib/agentPerf'
 import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'memory'
@@ -310,13 +313,26 @@ function PredictionsTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentPredictions(agentId), [agentId])
   if (loading) return <Hint>Loading predictions…</Hint>
   if (err) return <Hint color={accents.red}>{err}</Hint>
-  const items = (data?.items ?? []).slice().reverse()
+  const raw = data?.items ?? []
+  const items = raw.slice().reverse()
   if (!items.length) return <Hint>No predictions yet — waiting for the next fixture window.</Hint>
 
   const resolved = items.filter((p) => p.outcome)
   const correct = resolved.filter((p) => p.outcome!.correct).length
+  // T27: per-agent performance chart from this agent's resolved predictions.
+  const perf = buildAgentPerfSeries(agentId, raw)
   return (
     <div>
+      {perf.resolvedCount >= 2 ? (
+        <AgentPerfChart series={perf} />
+      ) : (
+        <div style={{
+          fontSize: 13, color: text.muted, border: borders.standard,
+          background: palette.surface, padding: 10, marginBottom: 8, textAlign: 'center',
+        }}>
+          Need ≥2 resolved matches to chart this scout's accuracy.
+        </div>
+      )}
       <div style={{ fontSize: 14, color: text.muted, marginBottom: 8 }}>
         Record: <b style={{ color: palette.paper }}>{correct}/{resolved.length}</b> resolved · {items.length} total
       </div>
