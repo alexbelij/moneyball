@@ -75,8 +75,23 @@
 #   - REST: POST generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=KEY
 #     body: {system_instruction:{parts:[{text:PERSONA+CONTEXT}]}, contents:[{parts:[{text:USER}]}],
 #            generationConfig:{maxOutputTokens, thinkingConfig:{thinkingBudget:0}}}
-# Build everything behind an LLMClient interface + deterministic fallback so tests/CI never
-# need the key. Key is wired to Render env separately (by the lead Viktor), not by you.
+# PROVIDER CHAIN (both keys tested live 13.06). LLMClient must support an ordered fallback
+# chain driven by env, NOT hardcoded:
+#   LLM_PRIMARY=groq      LLM_FALLBACK=gemini      (then deterministic fallback last)
+#   Groq:   GROQ_API_KEY, GROQ_MODEL=llama-3.3-70b-versatile
+#           POST https://api.groq.com/openai/v1/chat/completions (OpenAI-compatible:
+#           messages=[{role:system,...},{role:user,...}], max_tokens). ~0.45–0.55s, fast.
+#   Gemini: GEMINI_API_KEY, GEMINI_MODEL=gemini-flash-latest (see notes above; thinkingBudget=0).
+# Behavior: try primary → on 429/5xx/timeout fall to next provider → if all fail, deterministic
+# canned reply (in-persona). Same INVARIANT for every provider: LLM only phrases, all numbers
+# come from the deterministic engine, never trusted from LLM text.
+# IDENTITY/MEMORY GATING (confirmed with owner): per-user memory keyed by getUserId():
+#   sui:<wallet address> (authed) -> durable per-user memory read+write to MemWal.
+#   guest:<id> or null (no wallet) -> NO durable per-user write/recall; agent answers from
+#   global persona + public state only (session-only context ok). Demo narrative:
+#   "connect wallet so I remember you" reinforces Memory Depth.
+# Build everything behind the LLMClient interface + deterministic fallback so tests/CI never
+# need a key. Keys wired to Render env separately (by the lead Viktor), not by you.
 
 ## T31 — Agent chat (LLM-backed, football-only, memory-aware) — deliver 1-pg design first
 - Backend: POST `/api/agents/:id/chat` (or socket room). Per-user, auth-gated.
