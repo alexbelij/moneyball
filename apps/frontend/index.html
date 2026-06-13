@@ -10,10 +10,10 @@
     <link rel="preload" as="fetch" href="/assets/props/props.json" crossorigin />
     <link rel="preload" as="fetch" href="/assets/props/props_manifest.json" crossorigin />
 
-    <!-- T14: pixel fonts (design-spec: Press Start 2P for headers, VT323 for body) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+    <!-- T13-fix: self-hosted pixel fonts (design-spec: NO CDN, works offline from Walrus) -->
+    <link rel="stylesheet" href="/assets/fonts/fonts.css" />
+    <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/PressStart2P-Latin.woff2" crossorigin />
+    <link rel="preload" as="font" type="font/woff2" href="/assets/fonts/VT323-Latin.woff2" crossorigin />
 
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
