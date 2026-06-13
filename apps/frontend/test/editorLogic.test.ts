@@ -119,6 +119,45 @@ describe('import/export round-trip', () => {
   })
 })
 
+/* ── Anchor synthesis (loader drops props without a valid anchor) ─────── */
+
+describe('export anchor handling', () => {
+  it('synthesizes a bottom-center anchor for new props lacking one', () => {
+    // makeProps()[0]: x=10 y=20 w=50 h=50 scale=1 -> anchor [10+25, 20+50]
+    const props = makeProps()
+    const result = exportPropsJson(props, 'bg.png')
+    const a = result.json.props.find((p) => p.id === 'a')!
+    expect(a.anchor).toEqual([35, 70])
+  })
+
+  it('accounts for scale when synthesizing the anchor', () => {
+    const props = makeProps()
+    const b = props.find((p) => p.id === 'b')! // x=30 y=40 w=60 h=60
+    b.scale = 2 // -> w=120 h=120 -> anchor [30+60, 40+120]
+    const result = exportPropsJson(props, 'bg.png')
+    const exported = result.json.props.find((p) => p.id === 'b')!
+    expect(exported.anchor).toEqual([90, 160])
+  })
+
+  it('preserves a hand-authored anchor from imported props', () => {
+    const imported = importPropsJson(sampleDoc)
+    // Move board_left; its original anchor [99,388] must NOT be overwritten.
+    const moved = imported.map((p) => (p.id === 'board_left' ? { ...p, x: 500, y: 500 } : p))
+    const result = exportPropsJson(moved, sampleDoc.base)
+    const board = result.json.props.find((p) => p.id === 'board_left')!
+    expect(board.anchor).toEqual([99, 388])
+  })
+
+  it('every exported prop has a valid anchor (loader will not drop it)', () => {
+    const props = makeProps()
+    const result = exportPropsJson(props, 'bg.png')
+    for (const p of result.json.props) {
+      expect(Array.isArray(p.anchor)).toBe(true)
+      expect((p.anchor as number[]).length).toBe(2)
+    }
+  })
+})
+
 /* ── Z-reorder ───────────────────────────────────────────────────────── */
 
 describe('z-reorder', () => {

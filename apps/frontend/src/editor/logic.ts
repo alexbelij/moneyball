@@ -61,13 +61,27 @@ export function exportPropsJson(
   const sorted = [...props].sort((a, b) => a.zIndex - b.zIndex)
 
   const entries: PropsJsonEntry[] = sorted.map((p) => {
+    const w = Math.round(p.naturalW * p.scale)
+    const h = Math.round(p.naturalH * p.scale)
+    const x = Math.round(p.x)
+    const y = Math.round(p.y)
     const entry: PropsJsonEntry = {
       id: p.id,
       src: p.src,
-      w: Math.round(p.naturalW * p.scale),
-      h: Math.round(p.naturalH * p.scale),
-      target_xy: [Math.round(p.x), Math.round(p.y)],
+      w,
+      h,
+      target_xy: [x, y],
       ...p._passthrough,
+    }
+    // The game loader (parsePropsDoc) DROPS any prop without a valid `anchor`
+    // (the y-sort point). Newly placed props carry no anchor in _passthrough,
+    // so synthesize a bottom-center default; hand-authored anchors from
+    // imported props are preserved (already spread via _passthrough above).
+    const a = entry.anchor as unknown
+    const hasAnchor = Array.isArray(a) && a.length === 2 &&
+      typeof a[0] === 'number' && typeof a[1] === 'number'
+    if (!hasAnchor) {
+      entry.anchor = [Math.round(x + w / 2), Math.round(y + h)]
     }
     if (p.flipX) entry.flipX = true
     if (!p.visible) entry.visible = false
