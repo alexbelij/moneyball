@@ -122,6 +122,24 @@ export async function getAgentEvolution(agentId: string) {
   })
 }
 
+/** T30: honest provenance of the prediction engine's model inputs. */
+export type InputSource = 'synthetic' | 'manual' | 'live'
+export interface ModelInputField {
+  key: string
+  label: string
+  source: InputSource
+  detail: string
+}
+export interface DataSourceSummary {
+  version: number
+  headline: string
+  inputs: ModelInputField[]
+}
+
+export async function getDataSource() {
+  return apiFetch<{ ok: true } & DataSourceSummary>('/api/public/data-source', { method: 'GET' })
+}
+
 /** Thought-bubble states → flavour lines, for room cycling (T29). */
 export type AgentThoughtStates = Record<string, string[]>
 

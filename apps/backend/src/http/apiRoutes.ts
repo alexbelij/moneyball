@@ -1,6 +1,7 @@
 import type { Express } from 'express'
 import { getUserSummaryStore } from '../memory/storeFactory'
 import { AgentPersonaService } from '../agents/agentPersonaService'
+import { getDataSourceSummary } from '../matches/dataSource'
 
 function getGuestId(req: any): string | null {
   const v = req.header('x-guest-id')
@@ -71,6 +72,11 @@ export function registerApiRoutes(app: Express, personas: AgentPersonaService = 
         identity: id.kind,
       },
     })
+  })
+
+  // T30: honest provenance of the prediction engine's model inputs.
+  app.get('/api/public/data-source', (_req, res) => {
+    res.json({ ok: true, ...getDataSourceSummary() })
   })
 
   // T29: public thought bubbles for room cycling (flavour text, grouped by

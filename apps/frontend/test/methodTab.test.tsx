@@ -11,7 +11,12 @@ window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as any
 
 // Mock the api module so config.ts (which requires VITE_BACKEND_URL) never loads.
 const getAgentProfile = vi.fn()
-vi.mock('@/lib/api', () => ({ getAgentProfile: (...a: unknown[]) => getAgentProfile(...a) }))
+const getDataSource = vi.fn()
+vi.mock('@/lib/api', () => ({
+  getAgentProfile: (...a: unknown[]) => getAgentProfile(...a),
+  // MethodTab now renders DataInputsCard (T30), which calls getDataSource.
+  getDataSource: (...a: unknown[]) => getDataSource(...a),
+}))
 
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
@@ -53,7 +58,12 @@ const pythia: AgentProfile = {
 }
 
 describe('MethodTab (T26)', () => {
-  beforeEach(() => getAgentProfile.mockReset())
+  beforeEach(() => {
+    getAgentProfile.mockReset()
+    getDataSource.mockReset()
+    // Keep the disclosure silent in these T26 tests (returns null → no DOM).
+    getDataSource.mockResolvedValue(null as any)
+  })
 
   it('shows loading then renders a formula-based agent dossier', async () => {
     getAgentProfile.mockResolvedValue({ ok: true, profile: morgan })

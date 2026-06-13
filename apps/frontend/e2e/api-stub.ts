@@ -99,6 +99,20 @@ app.get('/api/public/agents/:id/predictions', (req, res) => {
   res.json({ items })
 })
 
+app.get('/api/public/data-source', (_req, res) => {
+  // T30: honest model-input provenance fixture.
+  res.json({
+    ok: true,
+    version: 1,
+    headline: 'Model inputs are synthetic (v1): predictions run on deterministic placeholders, not live data feeds.',
+    inputs: [
+      { key: 'teamStrength', label: 'Team strength', source: 'synthetic', detail: 'Deterministic hash of the team name in [0.30, 0.70]. Placeholder for real xG.' },
+      { key: 'homeAdvantage', label: 'Home advantage', source: 'manual', detail: 'Fixed +0.04 term added to the home side.' },
+      { key: 'syntheticOdds', label: 'Bookmaker odds', source: 'synthetic', detail: 'Derived from team strength. No live odds feed connected.' },
+    ],
+  })
+})
+
 app.get('/api/public/agents/:id/thoughts', (req, res) => {
   // T29: minimal thought-bubble fixture so room cycling renders in preview/e2e.
   res.json({

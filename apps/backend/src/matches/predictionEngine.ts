@@ -10,6 +10,10 @@
  * V2 note: pseudo-strength below is a hash of the team name — a placeholder
  * with honest variance. Swapping in real xG/odds feeds only changes
  * `teamStrength`/`syntheticOdds`, not the engine contract.
+ *
+ * Provenance of these inputs is declared honestly in `./dataSource.ts` and
+ * surfaced to users via GET /api/public/data-source (T30). If you wire a real
+ * feed here, update that descriptor + bump MODEL_INPUTS_VERSION.
  */
 
 import type { Match, PickCode } from './types'

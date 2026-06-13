@@ -7,13 +7,14 @@
  * T26: added Method tab surfacing each agent's methodology from agent-config.
  * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
  * T28: Evolution tab renders a deterministic human-readable story per event.
+ * T30: Method tab discloses honest model-input provenance (synthetic v1).
  */
 
 import React, { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import {
   roast, disagree, adminDayPlusOne,
-  getAgentProfile, getAgentPredictions, getAgentEvolution, getAgentParams,
+  getAgentProfile, getAgentPredictions, getAgentEvolution, getAgentParams, getDataSource,
   type PredictionItem, type EvolutionItem, type AgentProfile,
 } from '@/lib/api'
 import { GameEventBus } from '@/events/GameEventBus'
@@ -294,7 +295,60 @@ export function MethodTab({ agentId }: { agentId: string }) {
           <div style={{ fontSize: 14, marginTop: 4, color: text.dim }}>{m.evolutionTrigger}</div>
         </div>
       )}
+
+      {/* T30: honest data-source disclosure */}
+      <DataInputsCard />
     </div>
+  )
+}
+
+/**
+ * T30: honest disclosure of what the prediction engine actually runs on. The
+ * agents narrate "xG model: …" but the numbers are synthetic placeholders — we
+ * say so plainly here so users/judges are never misled.
+ */
+export function DataInputsCard() {
+  const { data, err, loading } = useFetch(() => getDataSource(), [])
+  if (loading || err || !data) return null
+  return (
+    <div style={card()}>
+      <SectionLabel>Data inputs</SectionLabel>
+      <div style={{
+        fontSize: 13, color: accents.gold, marginTop: 4, display: 'flex',
+        alignItems: 'center', gap: 6,
+      }}>
+        <SourceBadge source="synthetic" />
+        <span>{data.headline}</span>
+      </div>
+      <div style={{ marginTop: 8 }}>
+        {data.inputs.map((inp) => (
+          <div key={inp.key} style={{
+            marginTop: 8, paddingTop: 8,
+            borderTop: borders.rule,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <SourceBadge source={inp.source} />
+              <span style={{ fontSize: 14, color: palette.paper }}>{inp.label}</span>
+            </div>
+            <div style={{ fontSize: 13, color: text.muted, marginTop: 2 }}>{inp.detail}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function SourceBadge({ source }: { source: 'synthetic' | 'manual' | 'live' }) {
+  const color = source === 'live' ? accents.green : source === 'manual' ? text.dim : accents.red
+  return (
+    <span style={{
+      fontSize: 10, fontFamily: fonts.header, letterSpacing: '-0.5px',
+      textTransform: 'uppercase', color: palette.wood900,
+      background: color, padding: '2px 5px', border: borders.rule,
+      whiteSpace: 'nowrap',
+    }}>
+      {source}
+    </span>
   )
 }
 
