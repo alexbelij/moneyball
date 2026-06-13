@@ -1,8 +1,9 @@
 /**
  * App | v0.8.0 | 2026-06-13
  * Conditional mount: lite mode shows LiteDashboard, full mode lazy-loads PhaserGame.
+ * T13: pixel-art loading skeleton shown until Phaser scene:ready fires.
+ * T18: OfflineBanner for connection status.
  * Overlay components (HUD, AgentModal, etc.) work in both modes.
- * T18: OfflineBanner when socket is disconnected.
  */
 
 import React, { lazy, Suspense, useState } from 'react'
@@ -19,6 +20,7 @@ import { MatchTV } from '@/components/MatchTV'
 import { LiteDashboard } from '@/components/LiteDashboard'
 import { LiteModeToggle } from '@/components/LiteModeToggle'
 import { OfflineBanner } from '@/components/OfflineBanner'
+import { LoadingSkeleton, useSceneReady } from '@/components/LoadingSkeleton'
 
 // Lazy-load Phaser so it's never imported in lite mode
 const PhaserGame = lazy(() =>
@@ -28,6 +30,7 @@ const PhaserGame = lazy(() =>
 export default function App() {
   useSocket()
   const liteMode = useUiPrefs((s) => s.liteMode)
+  const sceneReady = useSceneReady()
   const [statsOpen, setStatsOpen] = useState(false)
 
   return (
@@ -35,26 +38,13 @@ export default function App() {
       {liteMode ? (
         <LiteDashboard />
       ) : (
-        <Suspense
-          fallback={
-            <div
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: '#0f172a',
-                color: '#94a3b8',
-                fontFamily: 'monospace',
-              }}
-            >
-              Loading arcade…
-            </div>
-          }
-        >
-          <PhaserGame />
-        </Suspense>
+        <>
+          <Suspense fallback={<LoadingSkeleton />}>
+            <PhaserGame />
+          </Suspense>
+          {/* Show skeleton over Phaser until scene:ready */}
+          {!sceneReady && <LoadingSkeleton />}
+        </>
       )}
       <HUD />
       {!liteMode && (
@@ -62,8 +52,12 @@ export default function App() {
           onClick={() => setStatsOpen((v) => !v)}
           style={{
             position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60,
-            padding: '6px 12px', borderRadius: 8, border: '1px solid #374151',
-            background: 'rgba(17,24,39,0.85)', color: '#e5e7eb', fontSize: 12, cursor: 'pointer',
+            padding: '4px 10px',
+            fontFamily: '"VT323", monospace', fontSize: 16,
+            color: '#f4ede2', background: '#181009',
+            border: '2px solid #3a3020', borderRadius: 0,
+            cursor: 'pointer',
+            boxShadow: '2px 2px 0 #000',
           }}
         >
           🏆 Leaderboard

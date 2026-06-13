@@ -2,6 +2,7 @@
  * PhaserGame | v0.4.0 | 2026-06-13
  * Purpose: Create Phaser instance once and sleep/wake the main loop during wallet flow.
  * T17: pixelArt + roundPixels for nearest-neighbor scaling; #000 letterbox bg.
+ * T13: scene:ready event for loading skeleton.
  */
 
 import React, { useEffect, useRef } from 'react'
