@@ -1,10 +1,12 @@
 /**
- * WalletDebugPanel | v0.3.0 | 2026-06-12
+ * WalletDebugPanel | v0.4.0 | 2026-06-13
  * Purpose: Troubleshoot Wallet Standard connectivity (Slush) + show accounts exposed.
+ * T33: migrated to shared tokens.
  */
 
 import React, { useMemo, useState } from 'react'
 import { useWallets, useAccounts, useCurrentWallet, useCurrentAccount } from '@mysten/dapp-kit'
+import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 export function WalletDebugPanel() {
   const wallets = useWallets()
@@ -37,46 +39,49 @@ export function WalletDebugPanel() {
 
   return (
     <div style={{
-      position: 'absolute', top: 80, right: 12, zIndex: 100,
-      background: 'rgba(0,0,0,0.78)', border: '1px solid #374151',
-      borderRadius: 8, padding: 10, color: '#e5e7eb', fontSize: 11,
+      position: 'absolute', top: 80, right: 12, zIndex: zIndex.debug,
+      background: palette.wood900, border: borders.standard,
+      borderRadius: 0, padding: 10, color: palette.paper,
+      fontSize: 14, fontFamily: fonts.body,
       width: 420, pointerEvents: 'auto',
+      boxShadow: shadows.hard,
     }}>
-      <div style={{ fontWeight: 700, marginBottom: 6 }}>Wallet Debug</div>
+      <div style={{ fontWeight: 700, marginBottom: 6, fontFamily: fonts.header, fontSize: 10, letterSpacing: '-0.5px' }}>WALLET DEBUG</div>
 
       <div>Detected wallets: {wallets.length}</div>
-      <div style={{ opacity: 0.85, marginBottom: 6 }}>
+      <div style={{ color: text.dim, marginBottom: 6 }}>
         {wallets.map(w => w.name).join(', ') || '—'}
       </div>
 
       <div>Current wallet: {currentWallet.currentWallet?.name ?? '—'}</div>
       <div>Accounts exposed: {accounts.length}</div>
-      <div style={{ opacity: 0.85, marginBottom: 6, wordBreak: 'break-all' }}>
+      <div style={{ color: text.dim, marginBottom: 6, wordBreak: 'break-all' }}>
         {accounts.map(a => a.address).join(', ') || '—'}
       </div>
 
       <div>Current account: {currentAccount?.address ?? '—'}</div>
 
-      <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid #374151' }}>
-        <div style={{ fontWeight: 700, marginBottom: 6 }}>Direct Wallet Standard connect</div>
+      <div style={{ marginTop: 10, paddingTop: 10, borderTop: borders.standard }}>
+        <div style={{ fontWeight: 700, marginBottom: 6, fontFamily: fonts.header, fontSize: 10, letterSpacing: '-0.5px' }}>DIRECT WALLET STANDARD CONNECT</div>
         <button
           disabled={directBusy}
           onClick={directConnect}
           style={{
             padding: '6px 10px',
-            borderRadius: 8,
-            border: '1px solid #2563eb',
-            background: directBusy ? '#111827' : '#1d4ed8',
-            color: '#fff',
+            borderRadius: 0,
+            border: borders.standard,
+            background: directBusy ? palette.wood900 : accents.gold,
+            color: directBusy ? text.muted : palette.wood900,
             cursor: directBusy ? 'not-allowed' : 'pointer',
-            fontSize: 12,
+            fontSize: 14, fontFamily: fonts.body, fontWeight: 700,
+            boxShadow: shadows.hardSmall,
           }}
         >
           {directBusy ? 'Connecting…' : 'Direct standard:connect (Slush)'}
         </button>
 
         {directErr && (
-          <div style={{ marginTop: 8, color: '#fca5a5', whiteSpace: 'pre-wrap' }}>
+          <div style={{ marginTop: 8, color: accents.red, whiteSpace: 'pre-wrap' }}>
             Error: {directErr}
           </div>
         )}
@@ -86,16 +91,18 @@ export function WalletDebugPanel() {
             marginTop: 8,
             maxHeight: 160,
             overflow: 'auto',
-            background: 'rgba(255,255,255,0.06)',
+            background: palette.surface,
             padding: 8,
-            borderRadius: 8,
-            fontSize: 10,
+            borderRadius: 0,
+            border: borders.standard,
+            fontSize: 12,
+            color: text.dim,
           }}>
             {JSON.stringify(directResult, null, 2)}
           </pre>
         )}
 
-        <div style={{ opacity: 0.75, marginTop: 8 }}>
+        <div style={{ color: text.muted, marginTop: 8 }}>
           If this fails too, the issue is Slush/browser permissions (not dapp-kit UI).
         </div>
       </div>

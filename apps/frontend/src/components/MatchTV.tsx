@@ -1,12 +1,14 @@
 /**
- * MatchTV | v0.1.1 | 2026-06-12
+ * MatchTV | v0.2.0 | 2026-06-13
  * Purpose: Cabinet TV ticker — live/next/recent WC2026 matches from the
  * public match feed. Polls every 30s; collapsible to a one-line bar.
+ * T33: migrated to shared tokens.
  */
 
 import React, { useEffect, useState } from 'react'
 import { getMatches, type MatchInfo } from '@/lib/api'
 import { GameEventBus } from '@/events/GameEventBus'
+import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 const POLL_MS = 30_000
 
@@ -32,26 +34,29 @@ export function MatchTV() {
   const live = feed?.live[0]
   const next = feed?.upcoming[0]
   const headline = live
-    ? `🔴 LIVE ${live.homeTeam} vs ${live.awayTeam}`
+    ? `LIVE ${live.homeTeam} vs ${live.awayTeam}`
     : next
-      ? `📺 Next: ${next.homeTeam} vs ${next.awayTeam} · ${kickoff(next)}`
-      : '📺 WC2026'
+      ? `Next: ${next.homeTeam} vs ${next.awayTeam} · ${kickoff(next)}`
+      : 'WC2026'
 
   return (
     <div style={{
       position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
-      zIndex: 55, width: open ? 460 : 'auto', maxWidth: '92vw',
-      background: 'rgba(17,24,39,0.92)', border: '1px solid #374151', borderRadius: 10,
-      color: '#e5e7eb', fontSize: 12, overflow: 'hidden',
+      zIndex: zIndex.matchTV, width: open ? 460 : 'auto', maxWidth: '92vw',
+      background: palette.wood900, border: borders.standard, borderRadius: 0,
+      color: palette.paper, fontSize: 14, fontFamily: fonts.body,
+      overflow: 'hidden', boxShadow: shadows.hardSmall,
     }}>
       <button
         onClick={() => setOpen((v) => !v)}
         style={{
           display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px',
-          background: 'none', border: 0, color: '#e5e7eb', cursor: 'pointer', fontSize: 12,
+          background: 'none', border: 0, color: palette.paper, cursor: 'pointer',
+          fontSize: 14, fontFamily: fonts.body,
         }}
       >
-        {headline} <span style={{ color: '#6b7280' }}>{open ? '▾' : '▴'}</span>
+        {live ? <span style={{ color: accents.red }}>■ </span> : <span style={{ color: accents.gold }}>▶ </span>}
+        {headline} <span style={{ color: text.faint }}>{open ? '▾' : '▴'}</span>
       </button>
 
       {open && feed && (
@@ -68,12 +73,12 @@ export function MatchTV() {
 function Section({ title, items, empty }: { title: string; items: MatchInfo[]; empty: string }) {
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ color: '#9ca3af', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>
-      {items.length === 0 && <div style={{ color: '#6b7280', marginTop: 2 }}>{empty}</div>}
+      <div style={{ color: text.muted, fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>
+      {items.length === 0 && <div style={{ color: text.faint, marginTop: 2 }}>{empty}</div>}
       {items.map((m) => (
         <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
           <span>{m.homeTeam} vs {m.awayTeam}</span>
-          <span style={{ color: '#9ca3af' }}>
+          <span style={{ color: text.muted }}>
             {m.status === 'finished' && m.result
               ? `${m.result.homeScore}–${m.result.awayScore}`
               : m.status === 'live' ? 'LIVE' : kickoff(m)}

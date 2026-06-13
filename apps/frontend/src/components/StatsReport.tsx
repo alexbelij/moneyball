@@ -1,37 +1,16 @@
 /**
- * StatsReport | v1.0.0 | 2026-06-13
+ * StatsReport | v1.1.0 | 2026-06-13
  * Purpose: Interactive predictions table + rolling Brier score SVG chart.
  * T15: hand-rolled SVG (no chart deps), pixel-styled per design-spec,
  * hover tooltips, keyboard-accessible data points.
+ * T33: migrated to shared tokens (fixed wrong wood values).
  * Rendered inside StatsBoard modal AND in Lite mode.
  */
 
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { getAgentPredictions, type PredictionItem } from '@/lib/api'
 import { buildAllBrierSeries, type AgentBrierSeries, type BrierPoint } from '@/lib/brierSeries'
-
-/* ── Design-spec tokens ────────────────────────────────────────────── */
-
-const COLOR_BG = '#0c0c0c'
-const COLOR_PAPER = '#f4ede2'
-const COLOR_GRID = '#2a2a2a'
-const COLOR_TEXT = '#d5cec0'
-const COLOR_DIM = '#7a7060'
-const COLOR_BORDER = '#3a3020'
-const COLOR_CORRECT = '#39c04a'
-const COLOR_WRONG = '#c03030'
-
-/** Agent accent colors — pulled from design-spec wood/accent ramp. */
-const AGENT_COLORS: Record<string, string> = {
-  dr_morgan: '#e8a44a',
-  scout_alvarez: '#4aade8',
-  viktor_kane: '#c04a4a',
-  sofia_mendes: '#7ae84a',
-  madame_pythia: '#d64ae8',
-}
-
-const FONT_BODY = '"VT323", "Press Start 2P", monospace'
-const FONT_HEADER = '"Press Start 2P", monospace'
+import { palette, accents, text, fonts, borders, shadows, agentColors, chartGrid } from '@/styles/tokens'
 
 /* ── Agent IDs ──────────────────────────────────────────────────────── */
 
@@ -135,19 +114,19 @@ export function StatsReport() {
   }, [])
 
   if (err) {
-    return <div style={{ color: COLOR_WRONG, fontFamily: FONT_BODY, padding: 12 }}>{err}</div>
+    return <div style={{ color: accents.red, fontFamily: fonts.body, padding: 12 }}>{err}</div>
   }
   if (!allItems) {
-    return <div style={{ color: COLOR_DIM, fontFamily: FONT_BODY, padding: 12 }}>Loading scouting data…</div>
+    return <div style={{ color: text.muted, fontFamily: fonts.body, padding: 12 }}>Loading scouting data…</div>
   }
 
   return (
-    <div style={{ fontFamily: FONT_BODY, color: COLOR_TEXT }}>
+    <div style={{ fontFamily: fonts.body, color: text.dim }}>
       {/* Chart */}
       {resolvedCount < 2 ? (
         <div style={{
-          padding: 16, textAlign: 'center', color: COLOR_DIM, fontSize: 14,
-          border: `2px solid ${COLOR_BORDER}`, background: COLOR_BG, marginBottom: 12,
+          padding: 16, textAlign: 'center', color: text.muted, fontSize: 14,
+          border: borders.standard, background: palette.surface, marginBottom: 12,
         }}>
           Need ≥2 resolved matches per agent to draw the accuracy chart.
         </div>
@@ -157,13 +136,13 @@ export function StatsReport() {
 
       {/* Table */}
       <div style={{
-        border: `2px solid ${COLOR_BORDER}`,
-        background: COLOR_BG,
+        border: borders.standard,
+        background: palette.surface,
         maxHeight: 320,
         overflowY: 'auto',
       }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-          <thead style={{ position: 'sticky', top: 0, background: '#181009', zIndex: 1 }}>
+          <thead style={{ position: 'sticky', top: 0, background: palette.wood900, zIndex: 1 }}>
             <tr>
               {(['agentId', 'matchId', 'confidence', 'brierScore'] as SortKey[]).map((key) => (
                 <th
@@ -175,26 +154,26 @@ export function StatsReport() {
                   aria-sort={sortKey === key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                   style={{
                     padding: '6px 8px', textAlign: 'left', cursor: 'pointer',
-                    color: sortKey === key ? COLOR_PAPER : COLOR_DIM,
-                    borderBottom: `2px solid ${COLOR_BORDER}`,
+                    color: sortKey === key ? palette.paper : text.muted,
+                    borderBottom: borders.standard,
                     userSelect: 'none',
-                    fontSize: 11, fontFamily: FONT_HEADER, letterSpacing: '-0.5px',
+                    fontSize: 11, fontFamily: fonts.header, letterSpacing: '-0.5px',
                   }}
                 >
                   {HEADER_LABELS[key]} {sortKey === key ? (sortDir === 'asc' ? '▲' : '▼') : ''}
                 </th>
               ))}
               <th style={{
-                padding: '6px 8px', textAlign: 'left', color: COLOR_DIM,
-                borderBottom: `2px solid ${COLOR_BORDER}`,
-                fontSize: 11, fontFamily: FONT_HEADER, letterSpacing: '-0.5px',
+                padding: '6px 8px', textAlign: 'left', color: text.muted,
+                borderBottom: borders.standard,
+                fontSize: 11, fontFamily: fonts.header, letterSpacing: '-0.5px',
               }}>
                 Pick
               </th>
               <th style={{
-                padding: '6px 8px', textAlign: 'center', color: COLOR_DIM,
-                borderBottom: `2px solid ${COLOR_BORDER}`,
-                fontSize: 11, fontFamily: FONT_HEADER, letterSpacing: '-0.5px',
+                padding: '6px 8px', textAlign: 'center', color: text.muted,
+                borderBottom: borders.standard,
+                fontSize: 11, fontFamily: fonts.header, letterSpacing: '-0.5px',
               }}>
                 ✓
               </th>
@@ -202,9 +181,9 @@ export function StatsReport() {
           </thead>
           <tbody>
             {sortedRows.map((r, i) => (
-              <tr key={`${r.agentId}-${r.matchId}-${i}`} style={{ borderTop: `1px solid ${COLOR_GRID}` }}>
+              <tr key={`${r.agentId}-${r.matchId}-${i}`} style={{ borderTop: `1px solid ${chartGrid}` }}>
                 <td style={tdStyle}>
-                  <span style={{ color: AGENT_COLORS[r.agentId] ?? COLOR_TEXT }}>
+                  <span style={{ color: agentColors[r.agentId] ?? text.dim }}>
                     {r.agentId.replace('_', ' ')}
                   </span>
                 </td>
@@ -214,9 +193,9 @@ export function StatsReport() {
                 <td style={tdStyle}>{r.pick}</td>
                 <td style={{ ...tdStyle, textAlign: 'center' }}>
                   {r.correct === null ? '⏳' : r.correct ? (
-                    <span style={{ color: COLOR_CORRECT }}>✓</span>
+                    <span style={{ color: accents.green }}>✓</span>
                   ) : (
-                    <span style={{ color: COLOR_WRONG }}>✗</span>
+                    <span style={{ color: accents.red }}>✗</span>
                   )}
                 </td>
               </tr>
@@ -284,11 +263,11 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
 
   return (
     <div style={{
-      marginBottom: 12, border: `2px solid ${COLOR_BORDER}`, background: COLOR_BG,
+      marginBottom: 12, border: borders.standard, background: palette.surface,
       padding: 4, position: 'relative',
     }}>
       <div style={{
-        fontSize: 11, fontFamily: FONT_HEADER, color: COLOR_DIM,
+        fontSize: 11, fontFamily: fonts.header, color: text.muted,
         padding: '4px 8px', letterSpacing: '-0.5px',
       }}>
         ROLLING BRIER SCORE
@@ -306,12 +285,12 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
           <g key={`grid-${v}`}>
             <line
               x1={PAD.left} y1={yScale(v)} x2={CHART_W - PAD.right} y2={yScale(v)}
-              stroke={COLOR_GRID} strokeWidth={1} strokeDasharray="2 4"
+              stroke={chartGrid} strokeWidth={1} strokeDasharray="2 4"
             />
             <text
               x={PAD.left - 4} y={yScale(v) + 4}
-              textAnchor="end" fill={COLOR_DIM}
-              style={{ fontSize: 10, fontFamily: FONT_BODY }}
+              textAnchor="end" fill={text.muted}
+              style={{ fontSize: 10, fontFamily: fonts.body }}
             >
               {v.toFixed(1)}
             </text>
@@ -323,8 +302,8 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
           <text
             key={`x-${idx}`}
             x={xScale(idx)} y={CHART_H - 6}
-            textAnchor="middle" fill={COLOR_DIM}
-            style={{ fontSize: 10, fontFamily: FONT_BODY }}
+            textAnchor="middle" fill={text.muted}
+            style={{ fontSize: 10, fontFamily: fonts.body }}
           >
             {idx}
           </text>
@@ -333,7 +312,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
         {/* Series lines + markers */}
         {data.map((series) => {
           if (series.points.length === 0) return null
-          const color = AGENT_COLORS[series.agentId] ?? COLOR_TEXT
+          const color = agentColors[series.agentId] ?? text.dim
 
           // Stepped line path (pixel-art style: horizontal then vertical)
           let pathD = ''
@@ -359,7 +338,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
                   <rect
                     key={`${series.agentId}-${pt.matchIndex}`}
                     x={cx - 3} y={cy - 3} width={6} height={6}
-                    fill={color} stroke={COLOR_BG} strokeWidth={1}
+                    fill={color} stroke={palette.surface} strokeWidth={1}
                     style={{ cursor: 'pointer' }}
                     tabIndex={0}
                     role="button"
@@ -384,15 +363,15 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
             left: `${(tooltip.x / CHART_W) * 100}%`,
             top: `${((tooltip.y / CHART_H) * 100) - 8}%`,
             transform: 'translate(-50%, -100%)',
-            background: '#181009',
-            border: `2px solid ${COLOR_BORDER}`,
+            background: palette.wood900,
+            border: borders.standard,
             padding: '4px 8px',
-            fontSize: 12, fontFamily: FONT_BODY,
-            color: COLOR_PAPER,
+            fontSize: 12, fontFamily: fonts.body,
+            color: palette.paper,
             whiteSpace: 'pre-line',
             pointerEvents: 'none',
             zIndex: 10,
-            boxShadow: `3px 3px 0 ${COLOR_BG}`,
+            boxShadow: shadows.hardSmall,
           }}
         >
           {tooltip.text}
@@ -402,13 +381,13 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
       {/* Legend */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 10, padding: '4px 8px',
-        fontSize: 11, fontFamily: FONT_BODY, color: COLOR_DIM,
+        fontSize: 11, fontFamily: fonts.body, color: text.muted,
       }}>
         {data.map((s) => (
           <span key={s.agentId} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <span style={{
               display: 'inline-block', width: 8, height: 8,
-              background: AGENT_COLORS[s.agentId] ?? COLOR_TEXT,
+              background: agentColors[s.agentId] ?? text.dim,
             }} />
             {s.agentId.replace('_', ' ')}
           </span>

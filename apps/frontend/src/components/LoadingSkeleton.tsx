@@ -1,12 +1,14 @@
 /**
- * LoadingSkeleton | v1.0.0 | 2026-06-13
+ * LoadingSkeleton | v1.1.0 | 2026-06-13
  * Purpose: SNES-styled loading skeleton shown until Phaser scene:ready fires.
  * T13: pixel-art frame, animated dots (CSS only), design-spec palette.
+ * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
  * Reserves the full viewport to avoid layout shift.
  */
 
 import React, { useEffect, useState } from 'react'
 import { GameEventBus } from '@/events/GameEventBus'
+import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 /** Hook: returns true once GameEventBus 'scene:ready' has fired. */
 export function useSceneReady(): boolean {
@@ -42,24 +44,24 @@ export function LoadingSkeleton() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#0c0c0c',
-        zIndex: 50,
+        background: palette.surface,
+        zIndex: zIndex.loading,
       }}
     >
       {/* Pixel-art frame */}
       <div style={{
-        border: '2px solid #3a3020',
+        border: borders.standard,
         borderRadius: 0,
         padding: '24px 32px',
-        background: '#181009',
-        boxShadow: '4px 4px 0 #000',
+        background: palette.wood900,
+        boxShadow: shadows.hard,
         textAlign: 'center',
       }}>
         {/* CRT scanline effect */}
         <div style={{
-          fontFamily: '"Press Start 2P", monospace',
+          fontFamily: fonts.header,
           fontSize: 12,
-          color: '#e8a44a',
+          color: accents.gold,
           letterSpacing: '-0.5px',
           marginBottom: 12,
         }}>
@@ -70,33 +72,33 @@ export function LoadingSkeleton() {
         <div style={{
           width: 200,
           height: 8,
-          border: '2px solid #3a3020',
+          border: borders.standard,
           borderRadius: 0,
-          background: '#0c0c0c',
+          background: palette.surface,
           overflow: 'hidden',
           margin: '0 auto 12px',
         }}>
           <div style={{
             width: '40%',
             height: '100%',
-            background: '#e8a44a',
+            background: accents.gold,
             animation: 'pixelLoadSlide 1.5s steps(8) infinite',
           }} />
         </div>
 
         <div style={{
-          fontFamily: '"VT323", monospace',
+          fontFamily: fonts.body,
           fontSize: 18,
-          color: '#d5cec0',
+          color: text.dim,
           minWidth: 160,
         }}>
           Loading{dots}
         </div>
 
         <div style={{
-          fontFamily: '"VT323", monospace',
+          fontFamily: fonts.body,
           fontSize: 14,
-          color: '#7a7060',
+          color: text.muted,
           marginTop: 8,
         }}>
           Preparing the scouting room

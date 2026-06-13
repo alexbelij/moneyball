@@ -1,0 +1,191 @@
+/**
+ * tokens | v1.0.0 | 2026-06-13
+ * Purpose: Single source of truth for design-spec palette, typography,
+ * spacing, border, shadow, and z-index tokens.
+ *
+ * Canonical reference: docs/design-spec.md v1.0.0
+ * Rule: grep for raw `#` hex in src/components/ should yield ≈ 0 results
+ *       after migration. Every colour must come from this module.
+ */
+
+/* ══════════════════════════════════════════════════════════════════════
+ * §2 — PALETTE (sampled from room_bg_v02, exact design-spec values)
+ * ══════════════════════════════════════════════════════════════════════ */
+
+export const palette = {
+  /** Letterbox / CRT off. */
+  bgBlack:    '#000000',
+  /** Dark panel surface (slightly lifted from true black). */
+  surface:    '#0c0c0c',
+
+  wallGreen:  '#122116',
+  wallGreen2: '#1d311f',
+
+  wood900:    '#181009',
+  wood700:    '#341d0e',
+  wood500:    '#4e2912',
+  wood300:    '#876845',
+  wood200:    '#9e7c54',
+  wood100:    '#ac885e',
+
+  paper:      '#f4ede2',
+  paperBright:'#fffcf5',
+} as const
+
+/* ── Accent colours (signals only — never large fills) ───────────── */
+
+export const accents = {
+  /** Desk-lamp amber / primary call-to-action. */
+  gold:  '#e8a44a',
+  /** Exit-sign red / danger / incorrect. */
+  red:   '#c03030',
+  /** LCD/LED green / success / correct. */
+  green: '#39c04a',
+} as const
+
+/* ── Semantic text helpers (derived from palette) ────────────────── */
+
+export const text = {
+  /** Primary text on dark backgrounds. */
+  primary:  palette.paper,
+  /** Slightly muted text. */
+  dim:      '#d5cec0',
+  /** Secondary / label text. */
+  muted:    palette.wood500,
+  /** Very dim (captions, meta). */
+  faint:    palette.wood300,
+} as const
+
+/* ── Per-agent accent colours (series / badges) ──────────────────── */
+
+export const agentColors: Record<string, string> = {
+  dr_morgan:     '#e8a44a',
+  scout_alvarez: '#4aade8',
+  viktor_kane:   '#c04a4a',
+  sofia_mendes:  '#7ae84a',
+  madame_pythia: '#d64ae8',
+} as const
+
+/* ══════════════════════════════════════════════════════════════════════
+ * §3 — TYPOGRAPHY (self-hosted woff2, NO CDN)
+ * ══════════════════════════════════════════════════════════════════════ */
+
+export const fonts = {
+  /** Sparingly — headers, HUD labels. */
+  header: '"Press Start 2P", monospace',
+  /** Body / data / tables. */
+  body:   '"VT323", "Press Start 2P", monospace',
+} as const
+
+/* ══════════════════════════════════════════════════════════════════════
+ * §4 — COMPONENTS (SNES dialog language)
+ * ══════════════════════════════════════════════════════════════════════ */
+
+/** 8px base spacing grid. Use multiples: 8, 16, 24, 32… */
+export const GRID = 8
+
+/** Spacing scale (multiples of GRID). */
+export const spacing = {
+  xs: 4,        // half-grid, use sparingly
+  sm: GRID,     // 8
+  md: GRID * 2, // 16
+  lg: GRID * 3, // 24
+  xl: GRID * 4, // 32
+} as const
+
+/** 2px hard borders, border-radius: 0. */
+export const borders = {
+  width: 2,
+  radius: 0,
+  /** Standard panel/card border. */
+  standard: `2px solid ${palette.wood700}`,
+  /** Thin rule (table rows, dividers). */
+  rule: `1px solid ${palette.wood700}`,
+} as const
+
+/** Chart grid colour (subtle scanline). */
+export const chartGrid = '#2a2a2a'
+
+/**
+ * SNES-style bevel: bright top-left (wood-100), dark bottom-right (wood-900).
+ * Hard offset shadow (no blur).
+ */
+export const shadows = {
+  /** Large panel / modal. */
+  hard:        `4px 4px 0 ${palette.bgBlack}`,
+  /** Small card / toast. */
+  hardSmall:   `2px 2px 0 ${palette.bgBlack}`,
+  /** Inset bevel for buttons. */
+  bevelInset:  `inset 1px 1px 0 rgba(244,237,226,0.12), inset -1px -1px 0 rgba(0,0,0,0.3)`,
+  /** Pressed state inset. */
+  bevelPress:  `inset -1px -1px 0 rgba(244,237,226,0.08), inset 1px 1px 0 rgba(0,0,0,0.4)`,
+} as const
+
+/* ══════════════════════════════════════════════════════════════════════
+ * Z-INDEX LAYERS
+ * ══════════════════════════════════════════════════════════════════════ */
+
+export const zIndex = {
+  /** Base game / phaser canvas. */
+  base:     0,
+  /** Loading skeleton. */
+  loading:  50,
+  /** HUD status (top-left). */
+  hud:      50,
+  /** Match TV ticker. */
+  matchTV:  55,
+  /** HUD wallet (top-right). */
+  hudRight: 60,
+  /** StatsBoard / leaderboard. */
+  stats:    65,
+  /** Agent modal / dossier. */
+  modal:    70,
+  /** HUD error. */
+  hudError: 70,
+  /** Debug panel. */
+  debug:    100,
+  /** Pixel modal overlay. */
+  overlay:  100,
+  /** Toast notifications. */
+  toast:    200,
+  /** Wallet flow freeze. */
+  wallet:   999,
+  /** Persistent controls (lite toggle, offline banner). */
+  topmost:  9999,
+  /** Dropdown / select menus. */
+  dropdown: 2000,
+} as const
+
+/* ══════════════════════════════════════════════════════════════════════
+ * CONVENIENCE: flat namespace re-export for terse inline styles
+ * ══════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Flat token object for inline-style usage.
+ * Prefer named imports above for tree-shaking.
+ * Usage: `import { T } from '@/styles/tokens'; ... color: T.paper`
+ */
+export const T = {
+  // Palette
+  ...palette,
+  // Accents
+  gold:        accents.gold,
+  red:         accents.red,
+  green:       accents.green,
+  // Text
+  textPrimary: text.primary,
+  textDim:     text.dim,
+  textMuted:   text.muted,
+  textFaint:   text.faint,
+  // Fonts
+  fontHeader:  fonts.header,
+  fontBody:    fonts.body,
+  // Borders
+  border:      borders.standard,
+  borderRule:  borders.rule,
+  // Shadows
+  shadow:      shadows.hard,
+  shadowSm:    shadows.hardSmall,
+  // Chart
+  chartGrid,
+} as const

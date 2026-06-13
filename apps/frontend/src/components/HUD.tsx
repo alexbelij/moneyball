@@ -1,6 +1,7 @@
 /**
- * HUD | v0.6.0 | 2026-06-09
+ * HUD | v0.7.0 | 2026-06-13
  * Purpose: Connection indicator + wallet controls + sign-in/out.
+ * T33: migrated to shared tokens.
  */
 
 import React, { useState } from 'react'
@@ -9,6 +10,7 @@ import { useCurrentAccount } from '@mysten/dapp-kit'
 import { useSuiAuth } from '@/hooks/useSuiAuth'
 import { useAuthStore } from '@/store/authStore'
 import { WalletControls } from '@/components/WalletControls'
+import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 export function HUD() {
   const isConnected = useGameStore((s) => s.ui.isConnected)
@@ -25,19 +27,21 @@ export function HUD() {
   return (
     <>
       <div style={{
-        position: 'absolute', top: 12, left: 12, zIndex: 50,
-        background: 'rgba(0,0,0,0.55)', padding: '6px 10px', borderRadius: 8,
-        color: '#e5e7eb', fontSize: 12,
+        position: 'absolute', top: 12, left: 12, zIndex: zIndex.hud,
+        background: palette.wood900, padding: '6px 10px',
+        border: borders.standard, borderRadius: 0,
+        color: palette.paper, fontSize: 14, fontFamily: fonts.body,
+        boxShadow: shadows.hardSmall,
       }}>
         <span style={{
-          display: 'inline-block', width: 8, height: 8, borderRadius: 999,
-          marginRight: 6, background: isConnected ? '#10b981' : '#ef4444',
+          display: 'inline-block', width: 8, height: 8, borderRadius: 0,
+          marginRight: 6, background: isConnected ? accents.green : accents.red,
         }} />
         {isConnected ? 'Live' : 'Connecting…'} · {count} agents
       </div>
 
       <div style={{
-        position: 'absolute', top: 12, right: 12, zIndex: 60,
+        position: 'absolute', top: 12, right: 12, zIndex: zIndex.hudRight,
         display: 'flex', gap: 8, alignItems: 'center',
         pointerEvents: 'auto',
       }}>
@@ -54,12 +58,13 @@ export function HUD() {
             }}
             style={{
               padding: '8px 12px',
-              borderRadius: 8,
-              border: '1px solid #2563eb',
-              background: '#1d4ed8',
-              color: '#fff',
+              borderRadius: 0,
+              border: borders.standard,
+              background: accents.gold,
+              color: palette.wood900,
               cursor: busy ? 'not-allowed' : 'pointer',
-              fontSize: 12,
+              fontSize: 14, fontFamily: fonts.body, fontWeight: 700,
+              boxShadow: shadows.hardSmall,
             }}
           >
             {busy ? 'Signing…' : 'Admin / Creator Sign In'}
@@ -71,12 +76,13 @@ export function HUD() {
             onClick={signOut}
             style={{
               padding: '8px 12px',
-              borderRadius: 8,
-              border: '1px solid #374151',
-              background: 'rgba(0,0,0,0.55)',
-              color: '#e5e7eb',
+              borderRadius: 0,
+              border: borders.standard,
+              background: palette.wood900,
+              color: palette.paper,
               cursor: 'pointer',
-              fontSize: 12,
+              fontSize: 14, fontFamily: fonts.body,
+              boxShadow: shadows.hardSmall,
             }}
             title={viewer.suiAddress}
           >
@@ -87,14 +93,15 @@ export function HUD() {
 
       {err && (
         <div style={{
-          position: 'absolute', top: 52, right: 12, zIndex: 70,
-          background: 'rgba(127,29,29,0.8)',
-          border: '1px solid rgba(239,68,68,0.4)',
-          color: '#fecaca',
+          position: 'absolute', top: 52, right: 12, zIndex: zIndex.hudError,
+          background: palette.wood900,
+          border: `2px solid ${accents.red}`,
+          borderRadius: 0,
+          color: accents.red,
           padding: '6px 10px',
-          borderRadius: 8,
-          fontSize: 12,
+          fontSize: 14, fontFamily: fonts.body,
           pointerEvents: 'none',
+          boxShadow: shadows.hardSmall,
         }}>
           {err}
         </div>

@@ -1,6 +1,7 @@
 /**
- * WalletControls | v0.2.0 | 2026-06-12
+ * WalletControls | v0.3.0 | 2026-06-13
  * Purpose: Deterministic wallet UX (connect/disconnect/switch account) + pause integration.
+ * T33: migrated to shared tokens.
  */
 
 import React, { useMemo, useState } from 'react'
@@ -14,6 +15,7 @@ import {
   useWallets,
 } from '@mysten/dapp-kit'
 import { useGameStore } from '@/store/gameStore'
+import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 export function WalletControls() {
   const wallets = useWallets()
@@ -100,7 +102,7 @@ export function WalletControls() {
           <button
             onClick={() => setOpen((v) => !v)}
             disabled={busy}
-            style={btn('#374151', 'rgba(0,0,0,0.55)', '#e5e7eb')}
+            style={btn()}
           >
             {busy ? 'Connecting…' : 'Connect wallet'}
           </button>
@@ -119,7 +121,7 @@ export function WalletControls() {
         </>
       ) : (
         <>
-          <button onClick={() => setOpenAccounts((v) => !v)} style={btn('#374151', 'rgba(0,0,0,0.55)', '#e5e7eb')}>
+          <button onClick={() => setOpenAccounts((v) => !v)} style={btn()}>
             {short}
           </button>
 
@@ -148,20 +150,22 @@ export function WalletControls() {
         </>
       )}
 
-      {err && <div style={{ color: '#fca5a5', fontSize: 11, maxWidth: 260 }}>{err}</div>}
+      {err && <div style={{ color: accents.red, fontSize: 13, maxWidth: 260, fontFamily: fonts.body }}>{err}</div>}
     </div>
   )
 }
 
-function btn(border: string, bg: string, color: string) {
+function btn() {
   return {
     padding: '8px 12px',
-    borderRadius: 8,
-    border: `1px solid ${border}`,
-    background: bg,
-    color,
+    borderRadius: 0,
+    border: borders.standard,
+    background: palette.wood900,
+    color: palette.paper,
     cursor: 'pointer',
-    fontSize: 12,
+    fontSize: 14,
+    fontFamily: fonts.body,
+    boxShadow: shadows.hardSmall,
   } as const
 }
 
@@ -171,22 +175,22 @@ function menu() {
     top: '100%',
     right: 0,
     marginTop: 6,
-    background: '#111827',
-    border: '1px solid #374151',
-    borderRadius: 10,
+    background: palette.wood900,
+    border: borders.standard,
+    borderRadius: 0,
     minWidth: 320,
     padding: 8,
-    zIndex: 2000,
-    boxShadow: '0 10px 30px rgba(0,0,0,0.45)',
+    zIndex: zIndex.dropdown,
+    boxShadow: shadows.hard,
   } as const
 }
 
 function menuTitle() {
-  return { color: '#9ca3af', fontSize: 11, padding: '6px 8px' } as const
+  return { color: text.muted, fontSize: 13, padding: '6px 8px', fontFamily: fonts.body } as const
 }
 
 function menuText() {
-  return { color: '#6b7280', fontSize: 12, padding: '6px 8px' } as const
+  return { color: text.faint, fontSize: 14, padding: '6px 8px', fontFamily: fonts.body } as const
 }
 
 function menuItem(active = false, danger = false) {
@@ -194,11 +198,12 @@ function menuItem(active = false, danger = false) {
     width: '100%',
     textAlign: 'left',
     padding: '8px 10px',
-    borderRadius: 8,
+    borderRadius: 0,
     border: 'none',
-    background: active ? 'rgba(59,130,246,0.18)' : 'transparent',
-    color: danger ? '#fca5a5' : active ? '#93c5fd' : '#e5e7eb',
+    background: active ? `${accents.gold}30` : 'transparent',
+    color: danger ? accents.red : active ? accents.gold : palette.paper,
     cursor: 'pointer',
-    fontSize: 12,
+    fontSize: 14,
+    fontFamily: fonts.body,
   } as const
 }

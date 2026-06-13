@@ -1,8 +1,9 @@
 /**
- * AgentModal | v0.6.0 | 2026-06-13
+ * AgentModal | v0.7.0 | 2026-06-13
  * Purpose: Agent dossier — Overview (actions) + Predictions / Evolution /
  * Memory tabs. WAI-ARIA dialog + tabs pattern, focus trap, keyboard nav.
  * T14: refactored to use PixelButton + design-spec palette.
+ * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
  */
 
 import React, { useEffect, useState } from 'react'
@@ -17,25 +18,11 @@ import { useAuthStore } from '@/store/authStore'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
 import { useRovingTabs } from '@/lib/a11y/useRovingTabs'
 import { PixelButton } from '@/components/ui/PixelButton'
+import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 type Tab = 'overview' | 'predictions' | 'evolution' | 'memory'
 const TABS: readonly Tab[] = ['overview', 'predictions', 'evolution', 'memory'] as const
 const MODAL_TITLE_ID = 'agent-modal-title'
-
-/* ── Design-spec tokens ────────────────────────────────────────────── */
-const C = {
-  bg: '#0c0c0c',
-  wood900: '#181009',
-  wood700: '#3a3020',
-  wood500: '#7a7060',
-  paper: '#f4ede2',
-  dim: '#d5cec0',
-  gold: '#e8a44a',
-  green: '#39c04a',
-  red: '#c03030',
-  fontBody: '"VT323", "Press Start 2P", monospace',
-  fontHeader: '"Press Start 2P", monospace',
-} as const
 
 export function AgentModal() {
   const selected = useGameStore((s) => s.ui.selectedAgentId)
@@ -100,7 +87,7 @@ export function AgentModal() {
         position: 'absolute', inset: 0,
         background: 'rgba(0,0,0,0.6)',
         display: 'flex', justifyContent: 'flex-end',
-        zIndex: 70,
+        zIndex: zIndex.modal,
       }}
     >
       <div
@@ -111,10 +98,10 @@ export function AgentModal() {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 440, height: '100%',
-          background: C.wood900,
-          borderLeft: `2px solid ${C.wood700}`,
-          padding: 16, color: C.paper,
-          fontFamily: C.fontBody,
+          background: palette.wood900,
+          borderLeft: borders.standard,
+          padding: 16, color: palette.paper,
+          fontFamily: fonts.body,
           display: 'flex', flexDirection: 'column',
         }}
       >
@@ -123,12 +110,12 @@ export function AgentModal() {
           <div>
             <div
               id={MODAL_TITLE_ID}
-              style={{ fontSize: 12, fontWeight: 700, fontFamily: C.fontHeader, color: C.gold, letterSpacing: '-0.5px' }}
+              style={{ fontSize: 12, fontWeight: 700, fontFamily: fonts.header, color: accents.gold, letterSpacing: '-0.5px' }}
             >
               {agent.name}
             </div>
-            <div style={{ fontSize: 16, color: C.wood500, marginTop: 2 }}>{agent.role}</div>
-            <div style={{ marginTop: 8, fontSize: 14, color: C.dim }}>
+            <div style={{ fontSize: 16, color: text.muted, marginTop: 2 }}>{agent.role}</div>
+            <div style={{ marginTop: 8, fontSize: 14, color: text.dim }}>
               Status: <b>{agent.status}</b>
             </div>
           </div>
@@ -168,8 +155,8 @@ export function AgentModal() {
                   </PixelButton>
                 )}
               </div>
-              {err && <div role="alert" style={{ marginTop: 10, color: C.red, fontSize: 14 }}>{err}</div>}
-              <div style={{ marginTop: 16, fontSize: 14, color: C.wood500 }}>Last thought:</div>
+              {err && <div role="alert" style={{ marginTop: 10, color: accents.red, fontSize: 14 }}>{err}</div>}
+              <div style={{ marginTop: 16, fontSize: 14, color: text.muted }}>Last thought:</div>
               <div style={{ marginTop: 6, fontSize: 15 }}>{agent.lastThought ?? '—'}</div>
             </>
           )}
@@ -178,7 +165,7 @@ export function AgentModal() {
           {tab === 'memory' && <MemoryTab agentId={agentId} />}
         </div>
 
-        <div style={{ marginTop: 12, fontSize: 12, color: C.wood500, borderTop: `2px solid ${C.wood700}`, paddingTop: 8 }}>
+        <div style={{ marginTop: 12, fontSize: 12, color: text.muted, borderTop: borders.standard, paddingTop: 8 }}>
           Identity: {viewer ? `Sui (${viewer.role})` : 'Guest'}
         </div>
       </div>
@@ -206,7 +193,7 @@ function useFetch<T>(load: () => Promise<T>, deps: unknown[]) {
 function PredictionsTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentPredictions(agentId), [agentId])
   if (loading) return <Hint>Loading predictions…</Hint>
-  if (err) return <Hint color={C.red}>{err}</Hint>
+  if (err) return <Hint color={accents.red}>{err}</Hint>
   const items = (data?.items ?? []).slice().reverse()
   if (!items.length) return <Hint>No predictions yet — waiting for the next fixture window.</Hint>
 
@@ -214,8 +201,8 @@ function PredictionsTab({ agentId }: { agentId: string }) {
   const correct = resolved.filter((p) => p.outcome!.correct).length
   return (
     <div>
-      <div style={{ fontSize: 14, color: C.wood500, marginBottom: 8 }}>
-        Record: <b style={{ color: C.paper }}>{correct}/{resolved.length}</b> resolved · {items.length} total
+      <div style={{ fontSize: 14, color: text.muted, marginBottom: 8 }}>
+        Record: <b style={{ color: palette.paper }}>{correct}/{resolved.length}</b> resolved · {items.length} total
       </div>
       {items.map((p) => <PredictionRow key={p.predictionId ?? `${p.matchId}:${p.createdAt}`} p={p} />)}
     </div>
@@ -224,19 +211,19 @@ function PredictionsTab({ agentId }: { agentId: string }) {
 
 function PredictionRow({ p }: { p: PredictionItem }) {
   const badge = p.outcome ? (p.outcome.correct ? '✓' : '✗') : '…'
-  const badgeColor = p.outcome ? (p.outcome.correct ? C.green : C.red) : C.wood500
+  const badgeColor = p.outcome ? (p.outcome.correct ? accents.green : accents.red) : text.muted
   return (
     <div style={card()}>
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
-        <span style={{ color: C.dim }}>{p.matchId}</span>
+        <span style={{ color: text.dim }}>{p.matchId}</span>
         <span style={{ color: badgeColor, fontWeight: 700 }} aria-label={p.outcome ? (p.outcome.correct ? 'Correct' : 'Incorrect') : 'Pending'}>{badge}</span>
       </div>
       <div style={{ marginTop: 4, fontSize: 15 }}>
         Pick <b>{p.pick}</b> · confidence <b>{Math.round(p.confidence * 100)}%</b>
-        {typeof p.paramsVersion === 'number' && <span style={{ color: C.wood500 }}> · params v{p.paramsVersion}</span>}
+        {typeof p.paramsVersion === 'number' && <span style={{ color: text.muted }}> · params v{p.paramsVersion}</span>}
       </div>
-      <div style={{ marginTop: 4, fontSize: 14, color: C.wood500 }}>{p.reasoning}</div>
-      <div style={{ marginTop: 4, fontSize: 12, color: C.wood500 }}>{new Date(p.createdAt).toLocaleString()}</div>
+      <div style={{ marginTop: 4, fontSize: 14, color: text.muted }}>{p.reasoning}</div>
+      <div style={{ marginTop: 4, fontSize: 12, color: text.muted }}>{new Date(p.createdAt).toLocaleString()}</div>
     </div>
   )
 }
@@ -244,7 +231,7 @@ function PredictionRow({ p }: { p: PredictionItem }) {
 function EvolutionTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentEvolution(agentId), [agentId])
   if (loading) return <Hint>Loading evolution history…</Hint>
-  if (err) return <Hint color={C.red}>{err}</Hint>
+  if (err) return <Hint color={accents.red}>{err}</Hint>
   const items = (data?.items ?? []).slice().reverse()
   if (!items.length) return <Hint>No evolutions yet — the agent evolves after sleeping on resolved matches.</Hint>
   return (
@@ -258,21 +245,21 @@ function EvolutionRow({ ev }: { ev: EvolutionItem }) {
   const diff = Object.entries(ev.parameterDiff ?? {})
   return (
     <div style={card()}>
-      <div style={{ fontSize: 14, color: C.gold, fontWeight: 700 }}>
+      <div style={{ fontSize: 14, color: accents.gold, fontWeight: 700 }}>
         {typeof ev.fromVersion === 'number' ? `v${ev.fromVersion} → v${ev.toVersion}` : 'evolution'}
-        {ev.evolutionType && <span style={{ color: C.wood500, fontWeight: 400 }}> · {ev.evolutionType}</span>}
+        {ev.evolutionType && <span style={{ color: text.muted, fontWeight: 400 }}> · {ev.evolutionType}</span>}
       </div>
       <div style={{ marginTop: 4, fontSize: 15 }}>{ev.summary}</div>
       {diff.length > 0 && (
         <div style={{ marginTop: 6, fontSize: 13, fontFamily: 'monospace' }}>
           {diff.map(([k, v]) => (
-            <div key={k} style={{ color: v >= 0 ? C.green : C.red }}>
+            <div key={k} style={{ color: v >= 0 ? accents.green : accents.red }}>
               {k}: {v >= 0 ? '+' : ''}{v.toFixed(3)}
             </div>
           ))}
         </div>
       )}
-      <div style={{ marginTop: 4, fontSize: 12, color: C.wood500 }}>{new Date(ev.createdAt).toLocaleString()}</div>
+      <div style={{ marginTop: 4, fontSize: 12, color: text.muted }}>{new Date(ev.createdAt).toLocaleString()}</div>
     </div>
   )
 }
@@ -280,14 +267,14 @@ function EvolutionRow({ ev }: { ev: EvolutionItem }) {
 function MemoryTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentParams(agentId), [agentId])
   if (loading) return <Hint>Reading long-term memory…</Hint>
-  if (err) return <Hint color={C.red}>{err}</Hint>
+  if (err) return <Hint color={accents.red}>{err}</Hint>
   const params = data?.params
   if (!params) return <Hint>No persisted memory yet — first sleep cycle pending.</Hint>
   const topics = Object.entries(params.topicCalibration ?? {})
   return (
     <div>
       <div style={card()}>
-        <div style={{ fontSize: 14, color: C.wood500 }}>Current parameters (persisted on Walrus Memory)</div>
+        <div style={{ fontSize: 14, color: text.muted }}>Current parameters (persisted on Walrus Memory)</div>
         <div style={{ marginTop: 6, fontSize: 15 }}>
           Version <b>v{params.version}</b>
         </div>
@@ -295,12 +282,12 @@ function MemoryTab({ agentId }: { agentId: string }) {
         <ParamBar label="hedging level" value={params.hedgingLevel} range={1} />
         {topics.length > 0 && (
           <>
-            <div style={{ marginTop: 10, fontSize: 13, color: C.wood500 }}>Topic calibration</div>
+            <div style={{ marginTop: 10, fontSize: 13, color: text.muted }}>Topic calibration</div>
             {topics.map(([k, v]) => <ParamBar key={k} label={k} value={v} range={0.3} />)}
           </>
         )}
         {params.updatedAt && (
-          <div style={{ marginTop: 8, fontSize: 12, color: C.wood500 }}>updated {new Date(params.updatedAt).toLocaleString()}</div>
+          <div style={{ marginTop: 8, fontSize: 12, color: text.muted }}>updated {new Date(params.updatedAt).toLocaleString()}</div>
         )}
       </div>
       <Hint>
@@ -316,11 +303,11 @@ function ParamBar({ label, value, range }: { label: string; value: number; range
   const half = Math.abs(pct) * 50
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 13, fontFamily: 'monospace' }}>
-      <span style={{ width: 120, color: C.wood500, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+      <span style={{ width: 120, color: text.muted, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
       <div
         style={{
-          flex: 1, height: 6, background: C.bg,
-          border: `1px solid ${C.wood700}`, borderRadius: 0,
+          flex: 1, height: 6, background: palette.surface,
+          border: borders.rule, borderRadius: 0,
           position: 'relative',
         }}
         role="meter"
@@ -332,28 +319,28 @@ function ParamBar({ label, value, range }: { label: string; value: number; range
         <div style={{
           position: 'absolute', top: 0, height: '100%',
           left: pct >= 0 ? '50%' : `${50 - half}%`, width: `${half}%`,
-          background: pct >= 0 ? C.gold : C.red,
+          background: pct >= 0 ? accents.gold : accents.red,
         }} />
-        <div style={{ position: 'absolute', left: '50%', top: -1, width: 1, height: 'calc(100% + 2px)', background: C.wood700 }} />
+        <div style={{ position: 'absolute', left: '50%', top: -1, width: 1, height: 'calc(100% + 2px)', background: palette.wood700 }} />
       </div>
-      <span style={{ width: 52, textAlign: 'right', color: C.dim }}>{value >= 0 ? '+' : ''}{value.toFixed(3)}</span>
+      <span style={{ width: 52, textAlign: 'right', color: text.dim }}>{value >= 0 ? '+' : ''}{value.toFixed(3)}</span>
     </div>
   )
 }
 
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
-function Hint({ children, color = C.wood500 }: { children: React.ReactNode; color?: string }) {
+function Hint({ children, color = text.muted }: { children: React.ReactNode; color?: string }) {
   return <div style={{ fontSize: 14, color, marginTop: 8 }}>{children}</div>
 }
 
 function card() {
   return {
-    background: C.bg,
-    border: `2px solid ${C.wood700}`,
+    background: palette.surface,
+    border: borders.standard,
     borderRadius: 0,
     padding: 10,
     marginBottom: 8,
-    boxShadow: `2px 2px 0 ${C.bg}`,
+    boxShadow: shadows.hardSmall,
   } as const
 }

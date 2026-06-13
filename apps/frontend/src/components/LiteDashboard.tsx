@@ -1,9 +1,10 @@
 /**
- * LiteDashboard.tsx | v1.1.0 | 2026-06-13
+ * LiteDashboard.tsx | v1.2.0 | 2026-06-13
  * Purpose: No-canvas dashboard showing live agent data, leaderboard,
  * and match info. Reads from existing zustand stores — no new sockets.
  * Mobile-first, no animations.
  * T15: embeds StatsReport (predictions table + Brier chart).
+ * T33: migrated to shared tokens (all hex → token imports).
  */
 
 import React, { useEffect, useState, useMemo } from 'react'
@@ -11,6 +12,7 @@ import { useGameStore } from '@/store/gameStore'
 import type { WorldAgentState } from '@moneyball/shared/events'
 import { getAgentPredictions, getMatches, getAgentParams } from '@/lib/api'
 import { StatsReport } from '@/components/StatsReport'
+import { palette, accents, text, fonts, borders, shadows } from '@/styles/tokens'
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
@@ -66,10 +68,14 @@ function AgentCard({
             ...styles.statusBadge,
             background:
               agent.status === 'idle'
-                ? '#374151'
+                ? palette.wood700
                 : agent.status === 'thinking'
-                  ? '#1e40af'
-                  : '#065f46',
+                  ? accents.gold
+                  : accents.green,
+            color:
+              agent.status === 'thinking' || agent.status !== 'idle'
+                ? palette.wood900
+                : palette.paper,
           }}
         >
           {agent.status}
@@ -132,7 +138,7 @@ function MatchCard({ match }: { match: MatchInfo }) {
         <span>{match.awayTeam}</span>
       </div>
       <div style={styles.matchTime}>
-        {match.status === 'live' ? '🔴 LIVE' : time}
+        {match.status === 'live' ? '■ LIVE' : time}
       </div>
     </div>
   )
@@ -157,7 +163,7 @@ function Leaderboard({
 
   return (
     <div style={styles.section}>
-      <h2 style={styles.sectionTitle}>🏆 Leaderboard</h2>
+      <h2 style={styles.sectionTitle}>LEADERBOARD</h2>
       <div style={styles.leaderboard}>
         {sorted.map((a, i) => (
           <div key={a.agentId} style={styles.leaderRow}>
@@ -304,11 +310,11 @@ export function LiteDashboard() {
     <div style={styles.root}>
       {/* Connection status */}
       <div style={styles.header}>
-        <h1 style={styles.title}>⚽ Moneyball Cabinet</h1>
+        <h1 style={styles.title}>MONEYBALL CABINET</h1>
         <span
           style={{
             ...styles.connectionDot,
-            background: isConnected ? '#34d399' : '#ef4444',
+            background: isConnected ? accents.green : accents.red,
           }}
           aria-label={isConnected ? 'Connected' : 'Disconnected'}
         />
@@ -317,7 +323,7 @@ export function LiteDashboard() {
       {/* Matches */}
       {displayMatches.length > 0 && (
         <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>📺 Matches</h2>
+          <h2 style={styles.sectionTitle}>MATCHES</h2>
           {displayMatches.map((m) => (
             <MatchCard key={m.id} match={m} />
           ))}
@@ -326,7 +332,7 @@ export function LiteDashboard() {
 
       {/* Agents */}
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>🤖 Agents</h2>
+        <h2 style={styles.sectionTitle}>AGENTS</h2>
         <div style={styles.agentsGrid}>
           {agents.map((agent) => (
             <AgentCard
@@ -353,14 +359,14 @@ export function LiteDashboard() {
 
       {/* T15: Detailed predictions + Brier chart */}
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>╠═ Scouting Report</h2>
+        <h2 style={styles.sectionTitle}>SCOUTING REPORT</h2>
         <StatsReport />
       </div>
 
       {/* Recent results */}
       {matches.recent.length > 0 && (
         <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>📋 Recent Results</h2>
+          <h2 style={styles.sectionTitle}>RECENT RESULTS</h2>
           {matches.recent.slice(0, 5).map((m) => (
             <MatchCard key={m.id} match={m} />
           ))}
@@ -377,9 +383,9 @@ const styles: Record<string, React.CSSProperties> = {
     position: 'absolute',
     inset: 0,
     overflow: 'auto',
-    background: '#0f172a',
-    color: '#e2e8f0',
-    fontFamily: "'Courier New', monospace",
+    background: palette.surface,
+    color: palette.paper,
+    fontFamily: fonts.body,
     padding: '16px',
     paddingBottom: '80px',
   },
@@ -390,27 +396,30 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: 12,
     fontWeight: 700,
     margin: 0,
-    color: '#f1f5f9',
+    color: accents.gold,
+    fontFamily: fonts.header,
+    letterSpacing: '-0.5px',
   },
   connectionDot: {
     width: 10,
     height: 10,
-    borderRadius: '50%',
+    borderRadius: 0,
     flexShrink: 0,
   },
   section: {
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: 600,
-    color: '#94a3b8',
+    color: text.muted,
     marginBottom: 8,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.5px',
+    fontFamily: fonts.header,
   },
   agentsGrid: {
     display: 'grid',
@@ -421,14 +430,15 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'block',
     width: '100%',
     textAlign: 'left' as const,
-    background: '#1e293b',
-    border: '1px solid #334155',
-    borderRadius: 8,
+    background: palette.wood900,
+    border: borders.standard,
+    borderRadius: 0,
     padding: 12,
     cursor: 'pointer',
-    color: '#e2e8f0',
-    fontFamily: "'Courier New', monospace",
-    fontSize: 13,
+    color: palette.paper,
+    fontFamily: fonts.body,
+    fontSize: 14,
+    boxShadow: shadows.hardSmall,
   },
   cardHeader: {
     display: 'flex',
@@ -438,103 +448,106 @@ const styles: Record<string, React.CSSProperties> = {
   },
   agentName: {
     fontWeight: 700,
-    fontSize: 14,
+    fontSize: 15,
   },
   statusBadge: {
-    fontSize: 10,
+    fontSize: 11,
     padding: '2px 6px',
-    borderRadius: 4,
-    color: '#e2e8f0',
+    borderRadius: 0,
+    color: palette.paper,
     textTransform: 'uppercase' as const,
+    fontFamily: fonts.header,
+    letterSpacing: '-0.5px',
   },
   cardRole: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: text.muted,
     marginBottom: 8,
   },
   cardPrediction: {
     marginBottom: 4,
   },
   label: {
-    color: '#64748b',
-    fontSize: 11,
+    color: text.faint,
+    fontSize: 13,
   },
   pick: {
     fontWeight: 600,
-    color: '#fbbf24',
+    color: accents.gold,
   },
   confidence: {
-    color: '#94a3b8',
-    fontSize: 11,
+    color: text.muted,
+    fontSize: 13,
   },
   cardStats: {
     display: 'flex',
     justifyContent: 'space-between',
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 13,
+    color: text.muted,
     marginTop: 4,
   },
   accuracy: {
-    color: '#34d399',
+    color: accents.green,
     fontWeight: 600,
   },
   cardMeta: {
-    fontSize: 10,
-    color: '#475569',
+    fontSize: 12,
+    color: text.faint,
     marginTop: 4,
     fontStyle: 'italic' as const,
   },
   matchCard: {
-    background: '#1e293b',
-    border: '1px solid #334155',
-    borderRadius: 6,
+    background: palette.wood900,
+    border: borders.standard,
+    borderRadius: 0,
     padding: '8px 12px',
     marginBottom: 6,
+    boxShadow: shadows.hardSmall,
   },
   matchTeams: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 600,
   },
   matchVs: {
-    color: '#64748b',
-    fontSize: 11,
+    color: text.faint,
+    fontSize: 13,
   },
   matchScore: {
-    color: '#fbbf24',
+    color: accents.gold,
     fontWeight: 700,
-    fontSize: 15,
+    fontSize: 16,
   },
   matchTime: {
-    fontSize: 10,
-    color: '#64748b',
+    fontSize: 12,
+    color: text.faint,
     marginTop: 4,
   },
   leaderboard: {
-    background: '#1e293b',
-    border: '1px solid #334155',
-    borderRadius: 8,
+    background: palette.wood900,
+    border: borders.standard,
+    borderRadius: 0,
     overflow: 'hidden',
   },
   leaderRow: {
     display: 'flex',
     alignItems: 'center',
     padding: '8px 12px',
-    borderBottom: '1px solid #334155',
-    fontSize: 13,
+    borderBottom: borders.rule,
+    fontSize: 14,
   },
   leaderRank: {
     width: 32,
     fontWeight: 700,
-    color: '#fbbf24',
+    color: accents.gold,
   },
   leaderName: {
     flex: 1,
   },
   leaderScore: {
     fontWeight: 600,
-    color: '#34d399',
+    color: accents.green,
   },
 }
