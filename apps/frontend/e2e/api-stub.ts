@@ -99,8 +99,22 @@ app.get('/api/public/agents/:id/predictions', (req, res) => {
   res.json({ items })
 })
 
-app.get('/api/public/agents/:id/evolution', (_req, res) => {
-  res.json({ items: [] })
+const EVOLUTIONS: Record<string, unknown[]> = {
+  dr_morgan: [
+    {
+      agentId: 'dr_morgan',
+      createdAt: '2026-06-16T02:00:00Z',
+      summary: 'Recalibrated after an xG miss.',
+      fromVersion: 1,
+      toVersion: 2,
+      evolutionType: 'weight_tuning',
+      parameterDiff: { injury_weight_adjustment: 0.15, confidenceBias: -0.03 },
+    },
+  ],
+}
+
+app.get('/api/public/agents/:id/evolution', (req, res) => {
+  res.json({ items: EVOLUTIONS[req.params.id] ?? [] })
 })
 
 app.get('/api/public/agents/:id/params', (req, res) => {

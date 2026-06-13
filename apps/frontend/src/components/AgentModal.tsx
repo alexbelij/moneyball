@@ -6,6 +6,7 @@
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
  * T26: added Method tab surfacing each agent's methodology from agent-config.
  * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
+ * T28: Evolution tab renders a deterministic human-readable story per event.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -22,6 +23,7 @@ import { useRovingTabs } from '@/lib/a11y/useRovingTabs'
 import { PixelButton } from '@/components/ui/PixelButton'
 import { AgentPerfChart } from '@/components/AgentPerfChart'
 import { buildAgentPerfSeries } from '@/lib/agentPerf'
+import { buildEvolutionStory } from '@/lib/evolutionStory'
 import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
 
 type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'memory'
@@ -374,14 +376,18 @@ function EvolutionTab({ agentId }: { agentId: string }) {
 }
 
 function EvolutionRow({ ev }: { ev: EvolutionItem }) {
+  // T28: deterministic, human-readable story derived from the event deltas.
+  const story = buildEvolutionStory(ev)
   const diff = Object.entries(ev.parameterDiff ?? {})
   return (
     <div style={card()}>
-      <div style={{ fontSize: 14, color: accents.gold, fontWeight: 700 }}>
-        {typeof ev.fromVersion === 'number' ? `v${ev.fromVersion} → v${ev.toVersion}` : 'evolution'}
-        {ev.evolutionType && <span style={{ color: text.muted, fontWeight: 400 }}> · {ev.evolutionType}</span>}
-      </div>
-      <div style={{ marginTop: 4, fontSize: 15 }}>{ev.summary}</div>
+      <div style={{ fontSize: 14, color: accents.gold, fontWeight: 700 }}>{story.headline}</div>
+      {/* Human-readable narrative */}
+      <div style={{ marginTop: 4, fontSize: 15 }}>{story.narrative}</div>
+      {/* Original engine summary, if it differs from the narrative */}
+      {ev.summary && ev.summary !== story.narrative && (
+        <div style={{ marginTop: 4, fontSize: 13, color: text.muted }}>{ev.summary}</div>
+      )}
       {diff.length > 0 && (
         <div style={{ marginTop: 6, fontSize: 13, fontFamily: 'monospace' }}>
           {diff.map(([k, v]) => (
