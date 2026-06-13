@@ -1,0 +1,206 @@
+/**
+ * pixel.module.css | v1.0.0 | 2026-06-13
+ * Purpose: SNES UI kit — room palette, 2px pixel borders, no border-radius.
+ * T14: PixelButton, PixelModal, PixelToast shared styles.
+ * Design-spec: --bg-black #0c0c0c, --paper #f4ede2, --wood-900 #181009,
+ * 2px hard borders, border-radius: 0, 8px grid.
+ */
+
+/* ── Tokens ──────────────────────────────────────────────────────── */
+
+:root {
+  --px-bg: #0c0c0c;
+  --px-paper: #f4ede2;
+  --px-wood-900: #181009;
+  --px-wood-700: #3a3020;
+  --px-wood-500: #7a7060;
+  --px-accent-gold: #e8a44a;
+  --px-accent-red: #c03030;
+  --px-accent-green: #39c04a;
+  --px-font-header: 'Press Start 2P', monospace;
+  --px-font-body: 'VT323', 'Press Start 2P', monospace;
+}
+
+/* ── PixelButton ─────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-family: var(--px-font-body);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--px-paper);
+  background: var(--px-wood-900);
+  border: 2px solid var(--px-wood-700);
+  border-radius: 0;
+  cursor: pointer;
+  user-select: none;
+  /* Bevel: bright top-left, dark bottom-right */
+  box-shadow:
+    inset 1px 1px 0 rgba(244, 237, 226, 0.12),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.3),
+    2px 2px 0 #000;
+  transition: background 120ms steps(2), box-shadow 120ms steps(2);
+}
+
+.btn:hover {
+  background: #241a0e;
+  border-color: var(--px-accent-gold);
+}
+
+.btn:active,
+.btnPressed {
+  box-shadow:
+    inset -1px -1px 0 rgba(244, 237, 226, 0.08),
+    inset 1px 1px 0 rgba(0, 0, 0, 0.4);
+  transform: translate(1px, 1px);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--px-accent-gold);
+  outline-offset: 2px;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btnPrimary {
+  background: var(--px-accent-gold);
+  color: var(--px-bg);
+  border-color: #b8842a;
+}
+
+.btnPrimary:hover {
+  background: #d4932e;
+}
+
+.btnDanger {
+  background: var(--px-accent-red);
+  color: var(--px-paper);
+  border-color: #901818;
+}
+
+.btnDanger:hover {
+  background: #a02020;
+}
+
+.btnGhost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--px-wood-500);
+}
+
+.btnGhost:hover {
+  color: var(--px-paper);
+  border-color: var(--px-wood-700);
+}
+
+.btnSmall {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* ── PixelModal ──────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.modal {
+  position: relative;
+  width: 560px;
+  max-width: 94vw;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--px-wood-900);
+  border: 2px solid var(--px-wood-700);
+  border-radius: 0;
+  box-shadow: 4px 4px 0 #000;
+  padding: 16px;
+  color: var(--px-paper);
+  font-family: var(--px-font-body);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--px-wood-700);
+}
+
+.modalTitle {
+  font-family: var(--px-font-header);
+  font-size: 12px;
+  letter-spacing: -0.5px;
+  color: var(--px-accent-gold);
+  margin: 0;
+}
+
+.modalClose {
+  composes: btn;
+  composes: btnGhost;
+  padding: 2px 6px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* ── PixelToast ──────────────────────────────────────────────────── */
+
+.toastContainer {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  padding: 8px 14px;
+  font-family: var(--px-font-body);
+  font-size: 14px;
+  color: var(--px-paper);
+  background: var(--px-wood-900);
+  border: 2px solid var(--px-wood-700);
+  border-radius: 0;
+  box-shadow: 2px 2px 0 #000;
+  max-width: 360px;
+}
+
+.toastInfo {
+  border-left: 4px solid var(--px-accent-gold);
+}
+
+.toastSuccess {
+  border-left: 4px solid var(--px-accent-green);
+}
+
+.toastError {
+  border-left: 4px solid var(--px-accent-red);
+}
+
+/* ── Reduced motion (design-spec §5) ────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}

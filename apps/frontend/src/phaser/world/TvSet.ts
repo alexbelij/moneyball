@@ -1,19 +1,26 @@
 /**
- * TvSet | v0.1.0 | 2026-06-12
+ * TvSet | v0.2.0 | 2026-06-13
  * Purpose: Cabinet TV with the three spec states (docs/interactivity-spec.md):
  * `off` (black screen overlay + red LED), `static` (noise flicker + green LED,
  * "no broadcast"), `live` (broadcast available; MVP renders the noise loop +
  * green LED until match-frame art lands). Click toggles power. Broadcast
  * availability is driven externally via setBroadcast().
+ * T17: hover outline + glow per interactivity-spec; FocusableProp for keyboard nav.
  */
 
 import Phaser from 'phaser'
 import { GameEventBus } from '@/events/GameEventBus'
 import type { PropDef, TvStatesSpec } from './propTypes'
+import type { FocusableProp } from './WorldLayer'
+
+const OUTLINE_COLOR = 0xfff7d6
+const GLOW_ALPHA = 0.14
+const OUTLINE_PX = 2
 
 export type TvState = 'off' | 'static' | 'live'
 
-export class TvSet extends Phaser.GameObjects.Container {
+export class TvSet extends Phaser.GameObjects.Container implements FocusableProp {
+  readonly propId: string
   private spec: TvStatesSpec
   private base: Phaser.GameObjects.Image
   private overlay: Phaser.GameObjects.Image
@@ -27,6 +34,11 @@ export class TvSet extends Phaser.GameObjects.Container {
   private frameKeys: Array<string | null>
   private offKey: string
 
+  /* Hover / focus outline (same technique as PropSprite). */
+  private outlineImages: Phaser.GameObjects.Image[] = []
+  private glowImg?: Phaser.GameObjects.Image
+  private focused = false
+
   constructor(
     scene: Phaser.Scene,
     def: PropDef,
@@ -36,18 +48,36 @@ export class TvSet extends Phaser.GameObjects.Container {
   ) {
     super(scene, def.x, def.y)
     if (!def.tv) throw new Error('TvSet requires a tv spec')
+    this.propId = def.id
     this.spec = def.tv
     this.frameKeys = frameKeys
     this.offKey = offKey
 
+    // Outline pass (behind base).
+    const offsets = [
+      [-OUTLINE_PX, 0],
+      [OUTLINE_PX, 0],
+      [0, -OUTLINE_PX],
+      [0, OUTLINE_PX],
+    ] as const
+    for (const [dx, dy] of offsets) {
+      const o = scene.add.image(dx, dy, baseKey).setOrigin(0, 0)
+      o.setTintFill(OUTLINE_COLOR).setVisible(false)
+      this.outlineImages.push(o)
+      this.add(o)
+    }
+
     this.base = scene.add.image(0, 0, baseKey).setOrigin(0, 0)
     this.base.setInteractive({ pixelPerfect: true, cursor: 'pointer' })
-    this.base.on('pointerdown', () => {
-      this.powered = !this.powered
-      GameEventBus.emit('prop:click', { propId: def.id })
-      this.applyState()
-    })
+    this.base.on('pointerover', () => this.setHighlight(true))
+    this.base.on('pointerout', () => { if (!this.focused) this.setHighlight(false) })
+    this.base.on('pointerdown', () => this.activate())
     this.add(this.base)
+
+    // Glow pass (on top of base, below overlay so screen content stays visible).
+    this.glowImg = scene.add.image(0, 0, baseKey).setOrigin(0, 0)
+    this.glowImg.setTintFill(0xffffff).setAlpha(0).setVisible(false)
+    this.add(this.glowImg)
 
     const { x: ox, y: oy } = this.spec.overlay_offset
     // First non-null frame as initial texture; overlay visibility is state-driven.
@@ -73,6 +103,24 @@ export class TvSet extends Phaser.GameObjects.Container {
     if (this.broadcast === on) return
     this.broadcast = on
     this.applyState()
+  }
+
+  /** Keyboard focus ring. */
+  setFocused(on: boolean) {
+    this.focused = on
+    this.setHighlight(on)
+  }
+
+  /** Trigger click action (pointer or keyboard). */
+  activate() {
+    this.powered = !this.powered
+    GameEventBus.emit('prop:click', { propId: this.propId })
+    this.applyState()
+  }
+
+  private setHighlight(on: boolean) {
+    for (const o of this.outlineImages) o.setVisible(on)
+    if (this.glowImg) this.glowImg.setVisible(on).setAlpha(on ? GLOW_ALPHA : 0)
   }
 
   private applyState() {
