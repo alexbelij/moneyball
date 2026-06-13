@@ -62,16 +62,32 @@
 - Do NOT fake real stats. This is a transparency task, not a data-integration task.
 - (Real xG/odds integration = separate future task, needs owner budget decision.)
 
-# ── GATED ON OWNER DECISION — DO NOT START WITHOUT EXPLICIT GO ───────────────────
-## T31 — Agent chat (DECISION NEEDED: LLM vs deterministic)
-# Option A (deterministic, no new infra): templated Q&A — the agent answers from its
-#   methodology + current params + its memory (last predictions/evolutions). Cheap,
-#   on-brand with the zero-LLM MVP, fully auditable. Limited conversational range.
-# Option B (LLM-backed): real chat. Requires an LLM provider key, a backend chat route
-#   (socket.io room per agent + rate limit + cost guard), and reverses the no-LLM MVP
-#   decision. Richer, but cost + non-determinism + judging-criteria implications.
-# Deliver a 1-page design for the chosen option BEFORE coding. Branch task/T31-chat.
+# ── DECIDED (13.06): full version, LLM chat = Option B. Football-only, memory-aware. ──
+# BLOCKER: needs an LLM provider API key in backend env (owner provides; prefer a
+# free/cheap tier — Gemini Flash / Groq — to avoid spend; key is a SECRET, never in repo,
+# never shared with the second Viktor). Do NOT start coding the live call until the key
+# env var name is fixed; you CAN build everything behind an LLMClient interface + a
+# deterministic fallback so tests/CI never need the key.
 
-## T32 — LLM-dynamic personality (only if T31=Option B)
-# If we add an LLM anyway: optionally generate roasts/thoughts/match-commentary via LLM
-# with the deterministic templates as fallback. Same cost guard. Owner go required.
+## T31 — Agent chat (LLM-backed, football-only, memory-aware) — deliver 1-pg design first
+- Backend: POST `/api/agents/:id/chat` (or socket room). Per-user, auth-gated.
+- Context assembled DETERMINISTICALLY and injected as system prompt: agent profile
+  (personality/methodology/catchphrases from agent-config), CURRENT AgentParams (so the
+  chat reflects the agent's evolution), its recent predictions, and THIS user's MemWal
+  memory (disagree history). => the user can literally feel the memory change through
+  conversation ("last time you said 70%, now you hedge to 60% — why?"). This is the
+  Memory-Depth selling point, not a generic chatbot.
+- INVARIANT (decision rule "LLM never mutates numbers"): the LLM only PHRASES; every
+  number (pick/confidence/Brier) comes from the deterministic engine. LLM must never
+  invent predictions or alter params.
+- PERSONA LOCK: the agent talks ONLY about football, as if obsessed with it. Hard
+  guardrail — any off-topic question (politics, code, personal) is deflected in-character
+  ("I only think in xG"). Enforce in system prompt + a cheap topic filter.
+- Cost guard: per-user/session rate limit, max tokens, daily cap; deterministic fallback
+  message if the provider is down/over budget. Pixel chat UI per design-spec (new tab in
+  AgentModal or docked panel). vitest: context assembler is pure; persona-filter unit tests.
+
+## T32 — LLM-dynamic personality (optional, same guardrails)
+- Reuse the LLMClient: optionally generate roasts / room thought-bubbles / match
+  commentary in-character, with the T28/T29 deterministic templates as fallback. Same
+  football-only persona lock + cost guard. Numbers still come from the engine, never LLM.
