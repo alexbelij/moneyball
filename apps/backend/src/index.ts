@@ -1,6 +1,7 @@
 /**
- * backend entrypoint | v0.4.0 | 2026-06-09
+ * backend entrypoint | v0.5.0 | 2026-06-14
  * Purpose: Express + Socket.io shared world + MemWal persistence + Sui auth + JWT.
+ * T40a: global unhandledRejection/uncaughtException guards + Express error middleware.
  */
 
 import 'dotenv/config'
@@ -25,6 +26,15 @@ import { ManualMatchProvider } from './matches/manualProvider'
 import { MatchWorker } from './matches/matchWorker'
 import type { AgentMethodology, MethodologyType } from './matches/predictionEngine'
 import agentConfig from './agents/agent-config.v1.json'
+
+// ── T40a: global crash guards ──────────────────────────────────────────
+process.on('unhandledRejection', (reason) => {
+  console.error('[GLOBAL] unhandledRejection — process stays alive:', reason)
+})
+
+process.on('uncaughtException', (err) => {
+  console.error('[GLOBAL] uncaughtException — process stays alive:', err)
+})
 
 function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) return true
@@ -57,6 +67,14 @@ async function main() {
   const publicEvents = new AgentEventService()
   registerAgentEventRoutes(app, publicEvents)
   registerAdminRoutes(app)
+
+  // ── T40a: Express error middleware (4 args — must come after all routes) ─
+  app.use((err: any, _req: any, res: any, _next: any) => {
+    console.error('[express.error]', err)
+    if (!res.headersSent) {
+      res.status(500).json({ ok: false, error: 'INTERNAL' })
+    }
+  })
 
   const server = http.createServer(app)
 

@@ -1,9 +1,11 @@
 /**
- * agentEventService | v0.2.0 | 2026-06-12
+ * agentEventService | v0.3.0 | 2026-06-14
  * Purpose: Store and retrieve public agent events (predictions, outcomes,
  * evolution) via MemWal. v0.2: prediction events carry id/topic/rawConfidence/
  * paramsVersion (sleep-worker migration step 1); outcomes are separate
  * append-only events merged into predictions on read.
+ * v0.3 (T40a): graceful degradation — recall() errors return [] instead of
+ * propagating, preventing unhandled rejections that crash the process.
  */
 
 import { MemWal } from '@mysten-incubation/memwal'
@@ -143,17 +145,22 @@ export class AgentEventService {
       return (this.localLog.filter(e => e.type === 'outcome' && e.agentId === agentId) as AgentOutcomeEvent[])
         .slice(-limit)
     }
-    const client = this.getClient(agentId)
-    const res: any = await client.recall(this.anchor(agentId, 'outcome'))
-    const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
+    try {
+      const client = this.getClient(agentId)
+      const res: any = await client.recall(this.anchor(agentId, 'outcome'))
+      const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
 
-    const parsed = results
-      .map(r => extractJson(r.text ?? r.content ?? ''))
-      .filter(Boolean)
-      .filter((x: any) => x.type === 'outcome' && x.agentId === agentId) as AgentOutcomeEvent[]
+      const parsed = results
+        .map(r => extractJson(r.text ?? r.content ?? ''))
+        .filter(Boolean)
+        .filter((x: any) => x.type === 'outcome' && x.agentId === agentId) as AgentOutcomeEvent[]
 
-    parsed.sort((a, b) => (a.resolvedAt < b.resolvedAt ? 1 : -1))
-    return parsed.slice(0, limit)
+      parsed.sort((a, b) => (a.resolvedAt < b.resolvedAt ? 1 : -1))
+      return parsed.slice(0, limit)
+    } catch (err) {
+      console.error('[agentEvents.listOutcomes] recall failed, returning []:', err)
+      return []
+    }
   }
 
   async addEvolution(input: Omit<AgentEvolutionEvent, 'schemaVersion' | 'type' | 'createdAt'>) {
@@ -182,28 +189,33 @@ export class AgentEventService {
         return o ? { ...p, outcome: { correct: o.correct, resolvedAt: o.resolvedAt } } : p
       })
     }
-    const client = this.getClient(agentId)
-    const res: any = await client.recall(this.anchor(agentId, 'prediction'))
-    const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
-
-    const parsed = results
-      .map(r => extractJson(r.text ?? r.content ?? ''))
-      .filter(Boolean)
-      .filter((x: any) => x.type === 'prediction' && x.agentId === agentId) as AgentPredictionEvent[]
-
-    parsed.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-    const top = parsed.slice(0, limit)
-
-    // Merge outcomes by predictionId (best effort — recall is approximate).
     try {
-      const outcomes = await this.listOutcomes(agentId)
-      const byPrediction = new Map(outcomes.map(o => [o.predictionId, o]))
-      return top.map(p => {
-        const o = p.predictionId ? byPrediction.get(p.predictionId) : undefined
-        return o ? { ...p, outcome: { correct: o.correct, resolvedAt: o.resolvedAt } } : p
-      })
-    } catch {
-      return top
+      const client = this.getClient(agentId)
+      const res: any = await client.recall(this.anchor(agentId, 'prediction'))
+      const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
+
+      const parsed = results
+        .map(r => extractJson(r.text ?? r.content ?? ''))
+        .filter(Boolean)
+        .filter((x: any) => x.type === 'prediction' && x.agentId === agentId) as AgentPredictionEvent[]
+
+      parsed.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      const top = parsed.slice(0, limit)
+
+      // Merge outcomes by predictionId (best effort — recall is approximate).
+      try {
+        const outcomes = await this.listOutcomes(agentId)
+        const byPrediction = new Map(outcomes.map(o => [o.predictionId, o]))
+        return top.map(p => {
+          const o = p.predictionId ? byPrediction.get(p.predictionId) : undefined
+          return o ? { ...p, outcome: { correct: o.correct, resolvedAt: o.resolvedAt } } : p
+        })
+      } catch {
+        return top
+      }
+    } catch (err) {
+      console.error('[agentEvents.listPredictions] recall failed, returning []:', err)
+      return []
     }
   }
 
@@ -212,16 +224,21 @@ export class AgentEventService {
       return (this.localLog.filter(e => e.type === 'evolution' && e.agentId === agentId) as AgentEvolutionEvent[])
         .slice(-limit).reverse()
     }
-    const client = this.getClient(agentId)
-    const res: any = await client.recall(this.anchor(agentId, 'evolution'))
-    const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
+    try {
+      const client = this.getClient(agentId)
+      const res: any = await client.recall(this.anchor(agentId, 'evolution'))
+      const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
 
-    const parsed = results
-      .map(r => extractJson(r.text ?? r.content ?? ''))
-      .filter(Boolean)
-      .filter((x: any) => x.type === 'evolution' && x.agentId === agentId) as AgentEvolutionEvent[]
+      const parsed = results
+        .map(r => extractJson(r.text ?? r.content ?? ''))
+        .filter(Boolean)
+        .filter((x: any) => x.type === 'evolution' && x.agentId === agentId) as AgentEvolutionEvent[]
 
-    parsed.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-    return parsed.slice(0, limit)
+      parsed.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      return parsed.slice(0, limit)
+    } catch (err) {
+      console.error('[agentEvents.listEvolution] recall failed, returning []:', err)
+      return []
+    }
   }
 }

@@ -1,4 +1,11 @@
+/**
+ * apiRoutes | v0.3.0 | 2026-06-14
+ * Purpose: User-facing API routes (identity, roasts, data-source, thoughts).
+ * T40a: all async routes wrapped in asyncHandler (crash-guard).
+ */
+
 import type { Express } from 'express'
+import { asyncHandler } from './asyncHandler'
 import { getUserSummaryStore } from '../memory/storeFactory'
 import { AgentPersonaService } from '../agents/agentPersonaService'
 import { getDataSourceSummary } from '../matches/dataSource'
@@ -18,7 +25,7 @@ function getUserId(req: any): { userId: string; kind: 'sui' | 'guest' } | null {
 }
 
 export function registerApiRoutes(app: Express, personas: AgentPersonaService = new AgentPersonaService()) {
-  app.get('/api/me/summary', async (req, res) => {
+  app.get('/api/me/summary', asyncHandler(async (req, res) => {
     const id = getUserId(req)
     if (!id) return res.status(401).json({ ok: false, error: 'MISSING_IDENTITY' })
 
@@ -26,9 +33,9 @@ export function registerApiRoutes(app: Express, personas: AgentPersonaService = 
     const summary = await store.getOrCreate(id.userId)
 
     res.json({ ok: true, summary, meta: { storage: process.env.STORAGE_BACKEND ?? 'file', identity: id.kind } })
-  })
+  }))
 
-  app.post('/api/me/disagree', async (req, res) => {
+  app.post('/api/me/disagree', asyncHandler(async (req, res) => {
     const id = getUserId(req)
     if (!id) return res.status(401).json({ ok: false, error: 'MISSING_IDENTITY' })
     const agentId = String(req.body?.agentId ?? '')
@@ -38,9 +45,9 @@ export function registerApiRoutes(app: Express, personas: AgentPersonaService = 
     const summary = await store.recordDisagree(id.userId, agentId)
 
     res.json({ ok: true, summary, meta: { storage: process.env.STORAGE_BACKEND ?? 'file', identity: id.kind } })
-  })
+  }))
 
-  app.post('/api/roast', async (req, res) => {
+  app.post('/api/roast', asyncHandler(async (req, res) => {
     const id = getUserId(req)
     if (!id) return res.status(401).json({ ok: false, error: 'MISSING_IDENTITY' })
     const agentId = String(req.body?.agentId ?? '')
@@ -72,7 +79,7 @@ export function registerApiRoutes(app: Express, personas: AgentPersonaService = 
         identity: id.kind,
       },
     })
-  })
+  }))
 
   // T30: honest provenance of the prediction engine's model inputs.
   app.get('/api/public/data-source', (_req, res) => {

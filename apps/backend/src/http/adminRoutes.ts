@@ -1,5 +1,12 @@
+/**
+ * adminRoutes | v0.2.0 | 2026-06-14
+ * Purpose: Admin-only endpoints (simulate day progression).
+ * T40a: async routes wrapped in asyncHandler (crash-guard).
+ */
+
 import type { Express } from 'express'
 import { requireAdmin } from './jwtMiddleware'
+import { asyncHandler } from './asyncHandler'
 import { getUserSummaryStore } from '../memory/storeFactory'
 
 function getGuestId(req: any): string | null {
@@ -17,7 +24,7 @@ function getUserId(req: any): { userId: string; kind: 'sui' | 'guest' } | null {
 }
 
 export function registerAdminRoutes(app: Express) {
-  app.post('/api/admin/simulate/day-plus-one', requireAdmin, async (req, res) => {
+  app.post('/api/admin/simulate/day-plus-one', requireAdmin, asyncHandler(async (req, res) => {
     const id = getUserId(req)
     if (!id) return res.status(401).json({ ok: false, error: 'MISSING_IDENTITY' })
 
@@ -26,5 +33,5 @@ export function registerAdminRoutes(app: Express) {
     const summary = await store.recordDisagree(id.userId, agentId)
 
     res.json({ ok: true, summary, meta: { storage: process.env.STORAGE_BACKEND ?? 'file', identity: id.kind } })
-  })
+  }))
 }

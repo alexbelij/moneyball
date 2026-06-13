@@ -1,11 +1,13 @@
 /**
- * matchRoutes | v0.1.0 | 2026-06-12
+ * matchRoutes | v0.2.0 | 2026-06-14
  * Purpose: Public match feed (TV/StatsBoard) + admin manual match control
  * (fallback provider, demo flow) + admin sleep trigger.
+ * T40a: all async routes wrapped in asyncHandler (crash-guard).
  */
 
 import type { Express } from 'express'
 import { requireAdmin } from './jwtMiddleware'
+import { asyncHandler } from './asyncHandler'
 import type { MatchWorker } from '../matches/matchWorker'
 import type { ManualMatchProvider } from '../matches/manualProvider'
 import type { SleepService } from '../agents/sleepService'
@@ -30,17 +32,17 @@ export function registerMatchRoutes(
     })
   })
 
-  app.get('/api/public/agents/:agentId/params', async (req, res) => {
+  app.get('/api/public/agents/:agentId/params', asyncHandler(async (req, res) => {
     const agentId = String(req.params.agentId)
     if (!deps.agentIds.includes(agentId)) {
       return res.status(404).json({ ok: false, error: 'UNKNOWN_AGENT' })
     }
     const params = await deps.sleep.getParams(agentId)
     res.json({ ok: true, params })
-  })
+  }))
 
   // ── Admin: manual match control (works with any provider as a demo lane) ─
-  app.post('/api/admin/matches', requireAdmin, (req, res) => {
+  app.post('/api/admin/matches', requireAdmin, asyncHandler(async (req, res) => {
     if (!deps.manual) return res.status(400).json({ ok: false, error: 'MANUAL_PROVIDER_DISABLED' })
     const homeTeam = String(req.body?.homeTeam ?? '').slice(0, 60)
     const awayTeam = String(req.body?.awayTeam ?? '').slice(0, 60)
@@ -57,9 +59,9 @@ export function registerMatchRoutes(
     deps.worker.upsert(match)
     void deps.worker.tick()
     res.json({ ok: true, match })
-  })
+  }))
 
-  app.post('/api/admin/matches/:id/resolve', requireAdmin, async (req, res) => {
+  app.post('/api/admin/matches/:id/resolve', requireAdmin, asyncHandler(async (req, res) => {
     if (!deps.manual) return res.status(400).json({ ok: false, error: 'MANUAL_PROVIDER_DISABLED' })
     const homeScore = Number(req.body?.homeScore)
     const awayScore = Number(req.body?.awayScore)
@@ -71,14 +73,14 @@ export function registerMatchRoutes(
     deps.worker.upsert(match)
     await deps.worker.tick()
     res.json({ ok: true, match })
-  })
+  }))
 
-  app.post('/api/admin/agents/:agentId/sleep', requireAdmin, async (req, res) => {
+  app.post('/api/admin/agents/:agentId/sleep', requireAdmin, asyncHandler(async (req, res) => {
     const agentId = String(req.params.agentId)
     if (!deps.agentIds.includes(agentId)) {
       return res.status(404).json({ ok: false, error: 'UNKNOWN_AGENT' })
     }
     const result = await deps.sleep.runIfDue(agentId)
     res.json({ ok: true, result })
-  })
+  }))
 }
