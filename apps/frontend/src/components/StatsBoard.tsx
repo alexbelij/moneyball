@@ -1,12 +1,14 @@
 /**
- * StatsBoard | v0.1.0 | 2026-06-12
+ * StatsBoard | v0.2.0 | 2026-06-13
  * Purpose: Scouts' leaderboard — per-agent record/accuracy/streak computed
  * client-side from the public predictions feed (no extra backend endpoint).
+ * T15: embeds StatsReport (predictions table + Brier chart) below leaderboard.
  */
 
 import React, { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { getAgentPredictions, type PredictionItem } from '@/lib/api'
+import { StatsReport } from '@/components/StatsReport'
 
 interface Row {
   agentId: string
@@ -121,6 +123,11 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
       )}
       <div style={{ marginTop: 8, fontSize: 10, color: '#6b7280' }}>
         Click a scout to open their dossier. Records update as WC2026 matches finish.
+      </div>
+
+      {/* T15: Detailed predictions + Brier chart */}
+      <div style={{ marginTop: 14 }}>
+        <StatsReport />
       </div>
     </div>
   )
