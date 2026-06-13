@@ -99,6 +99,21 @@ app.get('/api/public/agents/:id/predictions', (req, res) => {
   res.json({ items })
 })
 
+app.get('/api/public/agents/:id/thoughts', (req, res) => {
+  // T29: minimal thought-bubble fixture so room cycling renders in preview/e2e.
+  res.json({
+    ok: true,
+    agentId: req.params.id,
+    states: {
+      analyzing: ['Recomputing xG with wind correction…', 'Data loaded. Their defense leaks.'],
+      watching: ['Observing the run of play.'],
+      coffee: ['Refueling. Numbers can wait 30s.'],
+      arguing: ['Your “gut feeling” has -15% EV.'],
+      busy: ['Crunching the next fixture window.'],
+    },
+  })
+})
+
 const EVOLUTIONS: Record<string, unknown[]> = {
   dr_morgan: [
     {

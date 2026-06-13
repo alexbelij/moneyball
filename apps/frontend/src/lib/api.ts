@@ -122,6 +122,16 @@ export async function getAgentEvolution(agentId: string) {
   })
 }
 
+/** Thought-bubble states → flavour lines, for room cycling (T29). */
+export type AgentThoughtStates = Record<string, string[]>
+
+export async function getAgentThoughts(agentId: string) {
+  return apiFetch<{ ok: true; agentId: string; states: AgentThoughtStates }>(
+    `/api/public/agents/${agentId}/thoughts`,
+    { method: 'GET' },
+  )
+}
+
 export interface AgentParamsInfo {
   agentId: string
   version: number

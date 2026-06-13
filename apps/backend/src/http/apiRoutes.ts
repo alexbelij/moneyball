@@ -1,5 +1,6 @@
 import type { Express } from 'express'
 import { getUserSummaryStore } from '../memory/storeFactory'
+import { AgentPersonaService } from '../agents/agentPersonaService'
 
 function getGuestId(req: any): string | null {
   const v = req.header('x-guest-id')
@@ -15,7 +16,7 @@ function getUserId(req: any): { userId: string; kind: 'sui' | 'guest' } | null {
   return null
 }
 
-export function registerApiRoutes(app: Express) {
+export function registerApiRoutes(app: Express, personas: AgentPersonaService = new AgentPersonaService()) {
   app.get('/api/me/summary', async (req, res) => {
     const id = getUserId(req)
     if (!id) return res.status(401).json({ ok: false, error: 'MISSING_IDENTITY' })
@@ -48,13 +49,36 @@ export function registerApiRoutes(app: Express) {
     const summary = await store.getOrCreate(id.userId)
     const disagree = summary.agentDisagreeCounts[agentId] ?? 0
 
+    // T29: personality-driven roast — pick from the agent's own roastLines,
+    // deterministic per (user, agent, UTC day). Falls back to a generic line
+    // for unknown agents (e.g. agents with no configured roastLines).
+    const persona = personas.roastFor(agentId, id.userId)
     const text =
-      disagree === 0
+      persona ??
+      (disagree === 0
         ? `Day 1 vibe: you haven't argued with me yet. Give it time.`
         : disagree < 3
           ? `I remember you argued with me (${disagree}x). That's… predictable.`
-          : `You argue with me (${disagree}x). At this point it's your methodology, not mine.`
+          : `You argue with me (${disagree}x). At this point it's your methodology, not mine.`)
 
-    res.json({ ok: true, text, meta: { disagree, storage: process.env.STORAGE_BACKEND ?? 'file', identity: id.kind } })
+    res.json({
+      ok: true,
+      text,
+      meta: {
+        disagree,
+        source: persona ? 'persona' : 'generic',
+        storage: process.env.STORAGE_BACKEND ?? 'file',
+        identity: id.kind,
+      },
+    })
+  })
+
+  // T29: public thought bubbles for room cycling (flavour text, grouped by
+  // live-state). Secret-free, read-only.
+  app.get('/api/public/agents/:agentId/thoughts', (req, res) => {
+    const agentId = String(req.params.agentId)
+    const states = personas.thoughtsFor(agentId)
+    if (!states) return res.status(404).json({ ok: false, error: 'UNKNOWN_AGENT' })
+    res.json({ ok: true, agentId, states })
   })
 }

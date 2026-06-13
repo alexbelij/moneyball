@@ -1,6 +1,17 @@
 import Phaser from 'phaser'
 import type { WorldAgentState } from '@moneyball/shared/events'
 import { GameEventBus } from '@/events/GameEventBus'
+import { palette } from '@/styles/tokens'
+
+/** Convert a CSS hex token (e.g. "#f4ede2") to a Phaser numeric color. */
+function hex(c: string): number {
+  return Phaser.Display.Color.HexStringToColor(c).color
+}
+
+// T29: design-spec thought-bubble palette (paper card, hard wood border).
+const BUBBLE_BG = hex(palette.paper) // #f4ede2
+const BUBBLE_BORDER = hex(palette.wood700) // #341d0e
+const BUBBLE_TEXT = hex(palette.wood900) // #181009
 
 export class AgentSprite extends Phaser.GameObjects.Container {
   private id: string
@@ -33,16 +44,21 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     this.thoughtText?.destroy()
     this.thoughtBg?.destroy()
 
+    // T29: pixel paper card with a hard 2px wood border (no rounded corners),
+    // matching the design-spec dialog/bubble styling.
     this.thoughtText = this.scene.add.text(0, -70, text, {
-      fontSize: '10px',
-      color: '#111827',
+      fontFamily: 'VT323, monospace',
+      fontSize: '14px',
+      color: Phaser.Display.Color.IntegerToColor(BUBBLE_TEXT).rgba,
       wordWrap: { width: 180 },
       align: 'center',
     }).setOrigin(0.5, 0.5)
 
     const w = Math.min(this.thoughtText.width + 14, 200)
     const h = this.thoughtText.height + 10
-    this.thoughtBg = this.scene.add.rectangle(0, -70, w, h, 0xffffff, 0.92).setStrokeStyle(1, 0xcccccc)
+    this.thoughtBg = this.scene.add
+      .rectangle(0, -70, w, h, BUBBLE_BG, 1)
+      .setStrokeStyle(2, BUBBLE_BORDER)
 
     this.add([this.thoughtBg, this.thoughtText])
 

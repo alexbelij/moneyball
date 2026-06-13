@@ -7,6 +7,9 @@
  * T17: keyboard nav (Tab/Shift-Tab cycle, Enter/Space activate).
  * T19: cleans up PropStateController on shutdown.
  * T25: AmbientLayer (dust motes + lamp flicker) above props, below UI.
+ * T29: auto-cycles personality thought bubbles by live agent status
+ *      (reduced-motion safe; pauses with wallet flow). Phaser wiring is
+ *      visual — verified via e2e, not jsdom unit tests.
  */
 
 import Phaser from 'phaser'
@@ -15,6 +18,8 @@ import { AgentSprite } from '@/phaser/sprites/AgentSprite'
 import { GameEventBus } from '@/events/GameEventBus'
 import { WorldLayer, type FocusableProp } from '@/phaser/world/WorldLayer'
 import { AmbientLayer } from '@/phaser/world/AmbientLayer'
+import { getAgentThoughts, type AgentThoughtStates } from '@/lib/api'
+import { mapStatusToThoughtState, thoughtForCycle } from '@/lib/thoughtCycle'
 
 export class CabinetScene extends Phaser.Scene {
   private sprites = new Map<string, AgentSprite>()
@@ -29,6 +34,12 @@ export class CabinetScene extends Phaser.Scene {
   private pendingThoughts = new Map<string, { text: string; duration?: number }>()
   private onThought?: (p: { agentId: string; text: string; duration?: number }) => void
   private onLive?: (p: { live: boolean }) => void
+
+  /* T29: room thought-bubble cycling */
+  private thoughtCache = new Map<string, AgentThoughtStates>()
+  private thoughtFetching = new Set<string>()
+  private thoughtTick = 0
+  private thoughtCycleTimer?: Phaser.Time.TimerEvent
 
   /* Keyboard navigation state */
   private focusIndex = -1
@@ -103,6 +114,18 @@ export class CabinetScene extends Phaser.Scene {
     this.onLive = ({ live }) => this.world?.setBroadcast(live)
     GameEventBus.on('matches:live', this.onLive)
 
+    // T29: auto-cycle personality thought bubbles based on each agent's live
+    // status. Uses this.time so it freezes with the wallet-flow pause. Skipped
+    // entirely when the user prefers reduced motion (bubbles still appear on
+    // explicit thought:show events).
+    if (!this.prefersReducedMotion()) {
+      this.thoughtCycleTimer = this.time.addEvent({
+        delay: 5200,
+        loop: true,
+        callback: () => this.cycleThoughts(),
+      })
+    }
+
     // Apply initial pause state (in case UI started wallet flow before scene)
     this.setPaused(useGameStore.getState().ui.isWalletFlowActive)
 
@@ -123,8 +146,50 @@ export class CabinetScene extends Phaser.Scene {
     this.world?.getStateController()?.destroy()
     this.ambient?.destroy()
     this.syncTimer?.remove(false)
+    this.thoughtCycleTimer?.remove(false)
     this.unsubAgents?.()
     this.unsubWallet?.()
+  }
+
+  private prefersReducedMotion(): boolean {
+    return typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  }
+
+  /**
+   * T29: one cycle pass — pick a random visible agent, map its live status to a
+   * thought state, and show a deterministic line from its configured bubbles.
+   * Thought sets are lazily fetched + cached per agent. Skipped while paused.
+   */
+  private cycleThoughts() {
+    if (useGameStore.getState().ui.isWalletFlowActive) return
+    const agents = Object.values(useGameStore.getState().agents)
+    if (agents.length === 0) return
+
+    this.thoughtTick += 1
+    // Rotate which agent speaks each tick to avoid all bubbles firing at once.
+    const agent = agents[this.thoughtTick % agents.length]
+    const sprite = this.sprites.get(agent.agentId)
+    if (!sprite) return
+
+    const bubbles = this.thoughtCache.get(agent.agentId)
+    if (!bubbles) {
+      this.ensureThoughts(agent.agentId)
+      return
+    }
+    const state = mapStatusToThoughtState(agent.status)
+    const text = thoughtForCycle(agent.agentId, state, bubbles, this.thoughtTick)
+    if (text) sprite.showThought(text, 3000)
+  }
+
+  private ensureThoughts(agentId: string) {
+    if (this.thoughtCache.has(agentId) || this.thoughtFetching.has(agentId)) return
+    this.thoughtFetching.add(agentId)
+    getAgentThoughts(agentId)
+      .then((r) => { this.thoughtCache.set(agentId, r.states) })
+      .catch(() => { /* no thoughts available — silently skip cycling for this agent */ })
+      .finally(() => { this.thoughtFetching.delete(agentId) })
   }
 
   private handleKeyboard(evt: KeyboardEvent) {
