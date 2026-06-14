@@ -1,11 +1,12 @@
 /**
- * StatsBoard | v0.4.0 | 2026-06-13
+ * StatsBoard | v0.5.0 | 2026-06-14
  * Purpose: Scouts' leaderboard — per-agent record/accuracy/streak computed
  * client-side from the public predictions feed (no extra backend endpoint).
- * T15: embeds StatsReport (predictions table + Brier chart) below leaderboard.
- * T33: migrated to shared tokens.
+ * T49: typography scale — header ≥10px, body ≥16px; responsive layout.
  * T34: pixel reskin — paper leaderboard panel, wood-ramp rows, SNES header,
  *      pixel-medal rank, PixelButton "CLOSE" (no emoji icons).
+ * T33: migrated to shared tokens.
+ * T15: embeds StatsReport (predictions table + Brier chart) below leaderboard.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -13,7 +14,7 @@ import { useGameStore } from '@/store/gameStore'
 import { getAgentPredictions, type PredictionItem } from '@/lib/api'
 import { StatsReport } from '@/components/StatsReport'
 import { PixelButton, RankMedal } from '@/components/ui'
-import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 interface Row {
   agentId: string
@@ -84,21 +85,21 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
       padding: 14, color: palette.paper, boxShadow: shadows.hard,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ fontSize: 11, fontWeight: 700, fontFamily: fonts.header, letterSpacing: '-0.5px', color: accents.gold }}>SCOUT LEADERBOARD</div>
+        <div style={{ ...typo.hdrSm, fontWeight: 700, fontFamily: fonts.header, letterSpacing: '-0.5px', color: accents.gold }}>SCOUT LEADERBOARD</div>
         <PixelButton size="small" onClick={onClose} aria-label="Close leaderboard">CLOSE</PixelButton>
       </div>
 
-      {err && <div style={{ marginTop: 10, color: accents.red, fontSize: 12 }}>{err}</div>}
-      {!rows && !err && <div style={{ marginTop: 10, color: text.muted, fontSize: 12, fontFamily: fonts.body }}>Crunching the numbers…</div>}
+      {err && <div style={{ marginTop: 10, color: accents.red, ...typo.body, fontFamily: fonts.body }}>{err}</div>}
+      {!rows && !err && <div style={{ marginTop: 10, color: text.muted, ...typo.body, fontFamily: fonts.body }}>Crunching the numbers…</div>}
 
       {rows && (
         /* Paper leaderboard panel */
         <div style={{
           marginTop: 10, background: palette.paper, color: palette.wood900,
           border: borders.standard, borderRadius: 0, boxShadow: shadows.hardSmall,
-          overflow: 'hidden',
+          overflowX: 'auto',
         }}>
-          <table style={{ width: '100%', fontSize: 15, borderCollapse: 'collapse', fontFamily: fonts.body }}>
+          <table style={{ width: '100%', minWidth: 380, ...typo.data, borderCollapse: 'collapse', fontFamily: fonts.body }}>
             <thead>
               <tr style={{ background: palette.wood700, color: palette.paper, textAlign: 'left' }}>
                 <th style={thHead()}>#</th>
@@ -136,7 +137,7 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
           </table>
         </div>
       )}
-      <div style={{ marginTop: 8, fontSize: 12, color: text.faint, fontFamily: fonts.body }}>
+      <div style={{ marginTop: 8, ...typo.caption, color: text.faint, fontFamily: fonts.body }}>
         Click a scout to open their dossier. Records update as WC2026 matches finish.
       </div>
 
@@ -155,7 +156,7 @@ function StreakChip({ streak }: { streak: number }) {
   return (
     <span style={{
       display: 'inline-block', padding: '1px 5px',
-      fontFamily: fonts.header, fontSize: 9, lineHeight: '16px',
+      fontFamily: fonts.header, ...typo.hdrXs,
       background: win ? accents.green : accents.red,
       color: win ? palette.wood900 : palette.paper,
       border: `2px solid ${palette.wood900}`, boxShadow: shadows.hardSmall,
@@ -167,7 +168,7 @@ function StreakChip({ streak }: { streak: number }) {
 
 function thHead() {
   return {
-    padding: '6px 8px', fontFamily: fonts.header, fontSize: 9,
+    padding: '6px 8px', fontFamily: fonts.header, ...typo.hdrXs,
     letterSpacing: '-0.5px', textTransform: 'uppercase' as const, fontWeight: 400,
   } as const
 }

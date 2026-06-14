@@ -3,6 +3,7 @@
  * Purpose: Single source of truth for design-spec palette, typography,
  * spacing, border, shadow, and z-index tokens.
  *
+ * T49: typography scale (fontSize + lineHeight ramp); breakpoint constant.
  * T35: added semantic `overlay` scrim token.
  * Canonical reference: docs/design-spec.md v1.0.0
  * Rule: grep for raw `#` hex in src/components/ should yield ≈ 0 results
@@ -86,6 +87,40 @@ export const fonts = {
   /** Body / data / tables. */
   body:   '"VT323", "Press Start 2P", monospace',
 } as const
+
+/**
+ * T49: Typography scale — fontSize + lineHeight pairs.
+ * Rules:
+ *   - Press Start 2P (fonts.header): only `hdr*` sizes (≥ 12px, short labels).
+ *   - VT323 (fonts.body): `body*` / `data*` / `caption` sizes (body ≥ 16px).
+ *   - Never use fonts.header with body/data sizes.
+ */
+export const type = {
+  /* ── Header scale (Press Start 2P — short labels only) ────────── */
+  /** Large header: 14px (used sparingly). */
+  hdrLg:    { fontSize: 14, lineHeight: '20px' },
+  /** Standard header: 12px (section titles, HUD labels). */
+  hdr:      { fontSize: 12, lineHeight: '18px' },
+  /** Small header: 11px (stat labels, tab badges). */
+  hdrSm:    { fontSize: 11, lineHeight: '16px' },
+  /** Table header: 10px (dense column headers). */
+  hdrXs:    { fontSize: 10, lineHeight: '14px' },
+
+  /* ── Body scale (VT323 — body, data, captions) ────────────────── */
+  /** Large body text: 18px. */
+  bodyLg:   { fontSize: 18, lineHeight: '24px' },
+  /** Standard body / paragraphs: 16px. */
+  body:     { fontSize: 16, lineHeight: '22px' },
+  /** Data values / table cells: 16px (same as body, distinct name). */
+  data:     { fontSize: 16, lineHeight: '20px' },
+  /** Smaller data / secondary: 14px (minimum for VT323 body). */
+  dataSm:   { fontSize: 14, lineHeight: '18px' },
+  /** Captions / timestamps: 13px. */
+  caption:  { fontSize: 13, lineHeight: '16px' },
+} as const
+
+/** Responsive breakpoint — mobile-first at 480px. */
+export const BP_MOBILE = 480
 
 /* ══════════════════════════════════════════════════════════════════════
  * §4 — COMPONENTS (SNES dialog language)
@@ -200,4 +235,7 @@ export const T = {
   overlay,
   // Chart
   chartGrid,
+  // Type scale
+  type,
+  BP_MOBILE,
 } as const

@@ -1,5 +1,5 @@
 /**
- * StatsReport | v1.2.0 | 2026-06-13
+ * StatsReport | v1.3.0 | 2026-06-14
  * Purpose: Interactive predictions table + rolling Brier score SVG chart.
  * T15: hand-rolled SVG (no chart deps), pixel-styled per design-spec,
  * hover tooltips, keyboard-accessible data points.
@@ -11,7 +11,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { getAgentPredictions, type PredictionItem } from '@/lib/api'
 import { buildAllBrierSeries, type AgentBrierSeries, type BrierPoint } from '@/lib/brierSeries'
-import { palette, accents, text, fonts, borders, shadows, agentColors, chartGrid } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, agentColors, chartGrid, type as typo } from '@/styles/tokens'
 
 /* ── Agent IDs ──────────────────────────────────────────────────────── */
 
@@ -126,7 +126,7 @@ export function StatsReport() {
       {/* Chart */}
       {resolvedCount < 2 ? (
         <div style={{
-          padding: 16, textAlign: 'center', color: text.muted, fontSize: 14,
+          padding: 16, textAlign: 'center', color: text.muted, ...typo.dataSm,
           border: borders.standard, background: palette.surface, marginBottom: 12,
         }}>
           Need ≥2 resolved matches per agent to draw the accuracy chart.
@@ -141,8 +141,9 @@ export function StatsReport() {
         background: palette.surface,
         maxHeight: 320,
         overflowY: 'auto',
+        overflowX: 'auto',
       }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+        <table style={{ width: '100%', minWidth: 360, borderCollapse: 'collapse', ...typo.dataSm }}>
           <thead style={{ position: 'sticky', top: 0, background: palette.wood900, zIndex: 1 }}>
             <tr>
               {(['agentId', 'matchId', 'confidence', 'brierScore'] as SortKey[]).map((key) => (
@@ -158,7 +159,7 @@ export function StatsReport() {
                     color: sortKey === key ? palette.paper : text.muted,
                     borderBottom: borders.standard,
                     userSelect: 'none',
-                    fontSize: 11, fontFamily: fonts.header, letterSpacing: '-0.5px',
+                    ...typo.hdrSm, fontFamily: fonts.header, letterSpacing: '-0.5px',
                   }}
                 >
                   {HEADER_LABELS[key]} {sortKey === key ? (sortDir === 'asc' ? '▲' : '▼') : ''}
@@ -270,7 +271,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
       padding: 4, position: 'relative',
     }}>
       <div style={{
-        fontSize: 11, fontFamily: fonts.header, color: text.muted,
+        ...typo.hdrSm, fontFamily: fonts.header, color: text.muted,
         padding: '4px 8px', letterSpacing: '-0.5px',
       }}>
         ROLLING BRIER SCORE
@@ -369,7 +370,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
             background: palette.wood900,
             border: borders.standard,
             padding: '4px 8px',
-            fontSize: 12, fontFamily: fonts.body,
+            ...typo.caption, fontFamily: fonts.body,
             color: palette.paper,
             whiteSpace: 'pre-line',
             pointerEvents: 'none',
@@ -384,7 +385,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
       {/* Legend */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 10, padding: '4px 8px',
-        fontSize: 11, fontFamily: fonts.body, color: text.muted,
+        ...typo.hdrSm, fontFamily: fonts.body, color: text.muted,
       }}>
         {data.map((s) => (
           <span key={s.agentId} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

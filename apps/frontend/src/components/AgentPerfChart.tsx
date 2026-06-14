@@ -1,5 +1,5 @@
 /**
- * AgentPerfChart | v1.0.0 | 2026-06-13
+ * AgentPerfChart | v1.1.0 | 2026-06-14
  * Purpose: Compact single-agent performance chart for the dossier (T27).
  * Hand-rolled SVG (no chart deps), pixel-styled per design-spec. Plots the
  * agent's rolling Brier score over resolved matches, draws vertical markers
@@ -10,7 +10,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 import type { AgentPerfPoint, AgentPerfSeries } from '@/lib/agentPerf'
 import { versionChangeIndices } from '@/lib/agentPerf'
-import { palette, accents, text, fonts, borders, shadows, agentColors, chartGrid } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, agentColors, chartGrid, type as typo } from '@/styles/tokens'
 
 const CHART_W = 408
 const CHART_H = 150
@@ -68,10 +68,10 @@ export function AgentPerfChart({ series }: { series: AgentPerfSeries }) {
         display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
         padding: '4px 8px',
       }}>
-        <span style={{ fontSize: 11, fontFamily: fonts.header, color: text.muted, letterSpacing: '-0.5px' }}>
+        <span style={{ ...typo.hdrSm, fontFamily: fonts.header, color: text.muted, letterSpacing: '-0.5px' }}>
           ROLLING BRIER
         </span>
-        <span style={{ fontSize: 13, color: text.dim }}>
+        <span style={{ ...typo.caption, color: text.dim }}>
           acc <b style={{ color: accents.green }}>{accStr}</b> · brier <b style={{ color }}>{brierStr}</b>
         </span>
       </div>
@@ -140,7 +140,7 @@ export function AgentPerfChart({ series }: { series: AgentPerfSeries }) {
           top: `${((tooltip.y / CHART_H) * 100) - 6}%`,
           transform: 'translate(-50%, -100%)',
           background: palette.wood900, border: borders.standard, padding: '4px 8px',
-          fontSize: 12, fontFamily: fonts.body, color: palette.paper,
+          ...typo.caption, fontFamily: fonts.body, color: palette.paper,
           whiteSpace: 'pre-line', pointerEvents: 'none', zIndex: 10,
           boxShadow: shadows.hardSmall,
         }}>

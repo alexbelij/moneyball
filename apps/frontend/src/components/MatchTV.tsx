@@ -1,14 +1,15 @@
 /**
- * MatchTV | v0.2.0 | 2026-06-13
+ * MatchTV | v0.3.0 | 2026-06-14
  * Purpose: Cabinet TV ticker — live/next/recent WC2026 matches from the
  * public match feed. Polls every 30s; collapsible to a one-line bar.
+ * T49: typography scale — body ≥16px; responsive max-width.
  * T33: migrated to shared tokens.
  */
 
 import React, { useEffect, useState } from 'react'
 import { getMatches, type MatchInfo } from '@/lib/api'
 import { GameEventBus } from '@/events/GameEventBus'
-import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 const POLL_MS = 30_000
 
@@ -44,7 +45,7 @@ export function MatchTV() {
       position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
       zIndex: zIndex.matchTV, width: open ? 460 : 'auto', maxWidth: '92vw',
       background: palette.wood900, border: borders.standard, borderRadius: 0,
-      color: palette.paper, fontSize: 14, fontFamily: fonts.body,
+      color: palette.paper, ...typo.body, fontFamily: fonts.body,
       overflow: 'hidden', boxShadow: shadows.hardSmall,
     }}>
       <button
@@ -52,7 +53,7 @@ export function MatchTV() {
         style={{
           display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px',
           background: 'none', border: 0, color: palette.paper, cursor: 'pointer',
-          fontSize: 14, fontFamily: fonts.body,
+          ...typo.body, fontFamily: fonts.body,
         }}
       >
         {live ? <span style={{ color: accents.red }}>■ </span> : <span style={{ color: accents.gold }}>▶ </span>}
@@ -73,7 +74,7 @@ export function MatchTV() {
 function Section({ title, items, empty }: { title: string; items: MatchInfo[]; empty: string }) {
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ color: text.muted, fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>
+      <div style={{ color: text.muted, ...typo.caption, fontFamily: fonts.body, textTransform: 'uppercase', letterSpacing: 0.5 }}>{title}</div>
       {items.length === 0 && <div style={{ color: text.faint, marginTop: 2 }}>{empty}</div>}
       {items.map((m) => (
         <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>

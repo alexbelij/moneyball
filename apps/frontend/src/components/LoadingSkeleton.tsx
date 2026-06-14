@@ -1,5 +1,5 @@
 /**
- * LoadingSkeleton | v1.1.0 | 2026-06-13
+ * LoadingSkeleton | v1.2.0 | 2026-06-14
  * Purpose: SNES-styled loading skeleton shown until Phaser scene:ready fires.
  * T13: pixel-art frame, animated dots (CSS only), design-spec palette.
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
@@ -8,7 +8,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { GameEventBus } from '@/events/GameEventBus'
-import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 /** Hook: returns true once GameEventBus 'scene:ready' has fired. */
 export function useSceneReady(): boolean {
@@ -60,7 +60,7 @@ export function LoadingSkeleton() {
         {/* CRT scanline effect */}
         <div style={{
           fontFamily: fonts.header,
-          fontSize: 12,
+          ...typo.hdr,
           color: accents.gold,
           letterSpacing: '-0.5px',
           marginBottom: 12,
@@ -88,7 +88,7 @@ export function LoadingSkeleton() {
 
         <div style={{
           fontFamily: fonts.body,
-          fontSize: 18,
+          ...typo.bodyLg,
           color: text.dim,
           minWidth: 160,
         }}>
@@ -97,7 +97,7 @@ export function LoadingSkeleton() {
 
         <div style={{
           fontFamily: fonts.body,
-          fontSize: 14,
+          ...typo.dataSm,
           color: text.muted,
           marginTop: 8,
         }}>

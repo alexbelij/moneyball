@@ -1,6 +1,7 @@
 /**
- * HUD | v0.7.0 | 2026-06-13
+ * HUD | v0.9.0 | 2026-06-14
  * Purpose: Connection indicator + wallet controls + sign-in/out.
+ * T49: typography scale — body ≥16px; right cluster wraps on narrow screens.
  * T33: migrated to shared tokens.
  */
 
@@ -11,7 +12,7 @@ import { useSuiAuth } from '@/hooks/useSuiAuth'
 import { useAuthStore } from '@/store/authStore'
 import { WalletControls } from '@/components/WalletControls'
 import { PixelButton } from '@/components/ui'
-import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 export function HUD() {
   const isConnected = useGameStore((s) => s.ui.isConnected)
@@ -31,7 +32,7 @@ export function HUD() {
         position: 'absolute', top: 12, left: 12, zIndex: zIndex.hud,
         background: palette.wood900, padding: '6px 10px',
         border: borders.standard, borderRadius: 0,
-        color: palette.paper, fontSize: 14, fontFamily: fonts.body,
+        color: palette.paper, ...typo.body, fontFamily: fonts.body,
         boxShadow: shadows.hardSmall,
       }}>
         <span style={{
@@ -44,6 +45,8 @@ export function HUD() {
       <div style={{
         position: 'absolute', top: 12, right: 12, zIndex: zIndex.hudRight,
         display: 'flex', gap: 8, alignItems: 'center',
+        flexWrap: 'wrap', justifyContent: 'flex-end',
+        maxWidth: 'calc(100vw - 24px)',
         pointerEvents: 'auto',
       }}>
         <WalletControls />
@@ -78,7 +81,7 @@ export function HUD() {
           borderRadius: 0,
           color: accents.red,
           padding: '6px 10px',
-          fontSize: 14, fontFamily: fonts.body,
+          ...typo.body, fontFamily: fonts.body,
           pointerEvents: 'none',
           boxShadow: shadows.hardSmall,
         }}>

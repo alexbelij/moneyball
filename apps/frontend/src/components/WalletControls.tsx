@@ -1,5 +1,5 @@
 /**
- * WalletControls | v0.3.0 | 2026-06-13
+ * WalletControls | v0.4.0 | 2026-06-14
  * Purpose: Deterministic wallet UX (connect/disconnect/switch account) + pause integration.
  * T33: migrated to shared tokens.
  */
@@ -16,7 +16,7 @@ import {
 } from '@mysten/dapp-kit'
 import { useGameStore } from '@/store/gameStore'
 import { PixelButton } from '@/components/ui'
-import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 export function WalletControls() {
   const wallets = useWallets()
@@ -147,7 +147,7 @@ export function WalletControls() {
         </>
       )}
 
-      {err && <div style={{ color: accents.red, fontSize: 13, maxWidth: 260, fontFamily: fonts.body }}>{err}</div>}
+      {err && <div style={{ color: accents.red, ...typo.caption, maxWidth: 260, fontFamily: fonts.body }}>{err}</div>}
     </div>
   )
 }
@@ -169,11 +169,11 @@ function menu() {
 }
 
 function menuTitle() {
-  return { color: text.muted, fontSize: 13, padding: '6px 8px', fontFamily: fonts.body } as const
+  return { color: text.muted, ...typo.caption, padding: '6px 8px', fontFamily: fonts.body } as const
 }
 
 function menuText() {
-  return { color: text.faint, fontSize: 14, padding: '6px 8px', fontFamily: fonts.body } as const
+  return { color: text.faint, ...typo.dataSm, padding: '6px 8px', fontFamily: fonts.body } as const
 }
 
 function menuItem(active = false, danger = false) {
@@ -186,7 +186,7 @@ function menuItem(active = false, danger = false) {
     background: active ? `${accents.gold}30` : 'transparent',
     color: danger ? accents.red : active ? accents.gold : palette.paper,
     cursor: 'pointer',
-    fontSize: 14,
+    ...typo.dataSm,
     fontFamily: fonts.body,
   } as const
 }
