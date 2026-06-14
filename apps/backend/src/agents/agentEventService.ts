@@ -1,16 +1,24 @@
 /**
- * agentEventService | v0.3.0 | 2026-06-14
+ * agentEventService | v0.4.0 | 2026-06-14
  * Purpose: Store and retrieve public agent events (predictions, outcomes,
  * evolution) via MemWal. v0.2: prediction events carry id/topic/rawConfidence/
  * paramsVersion (sleep-worker migration step 1); outcomes are separate
  * append-only events merged into predictions on read.
  * v0.3 (T40a): graceful degradation — recall() errors return [] instead of
  * propagating, preventing unhandled rejections that crash the process.
+ * v0.4 (T40b): write-through materialized read-model. All list* methods read
+ * from deterministic in-memory indexes (populated on every add* call), never
+ * from recall(). MemWal remains the durable/provenance store. Index is
+ * persisted to disk (debounced) and reloaded on boot; best-effort hydrate
+ * from MemWal at startup merges without duplicates.
  */
 
 import { MemWal } from '@mysten-incubation/memwal'
 import { env } from '../config/env'
 import { MemWalWriteQueue } from '../memory/memwalWriteQueue'
+import { readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { dirname, resolve } from 'path'
+import { fileURLToPath } from 'url'
 
 export type AgentEventType = 'prediction' | 'outcome' | 'evolution'
 
@@ -67,14 +75,177 @@ function extractJson(text: string): any | null {
   try { return JSON.parse(jsonPart) } catch { return null }
 }
 
+// ── Persistence path ─────────────────────────────────────────────────────
+let _dataDir: string
+try {
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+  _dataDir = resolve(__dirname, '../../.data')
+} catch {
+  _dataDir = resolve(process.cwd(), '.data')
+}
+const INDEX_PATH = resolve(_dataDir, 'agent-index.json')
+
 export class AgentEventService {
   // Cache MemWal clients per agent namespace
   private clients = new Map<string, ReturnType<typeof MemWal.create>>()
   private writeQueues = new Map<string, MemWalWriteQueue>()
-  /** Dev fallback (no MEMWAL_KEY): keep events in-process so the pipeline still works. */
+  /** Dev fallback (no MEMWAL_KEY): skip MemWal writes. Index still works. */
   private readonly enabled = Boolean(env.MEMWAL_KEY)
-  private readonly localLog: AgentEvent[] = []
 
+  // ── T40b: Write-through materialized read-model ──────────────────────
+  private predictionIndex = new Map<string, AgentPredictionEvent[]>()
+  private evolutionIndex = new Map<string, AgentEvolutionEvent[]>()
+  private outcomeIndex = new Map<string, AgentOutcomeEvent[]>()
+  private predictionKeys = new Set<string>()
+  private evolutionKeys = new Set<string>()
+  private outcomeKeys = new Set<string>()
+  private persistTimer: ReturnType<typeof setTimeout> | null = null
+  private dirty = false
+
+  constructor() {
+    this.loadFromDisk()
+  }
+
+  // ── Dedup key helpers ────────────────────────────────────────────────
+  private predKey(ev: AgentPredictionEvent): string {
+    return ev.predictionId ?? `pred:${ev.agentId}:${ev.matchId}:${ev.createdAt}`
+  }
+
+  private evoKey(ev: AgentEvolutionEvent): string {
+    return `evo:${ev.agentId}:${ev.createdAt}:${(ev.summary ?? '').slice(0, 40)}`
+  }
+
+  private outKey(ev: AgentOutcomeEvent): string {
+    return `out:${ev.predictionId}`
+  }
+
+  // ── Index insertion (with dedup) ─────────────────────────────────────
+  private indexPrediction(ev: AgentPredictionEvent): boolean {
+    const key = this.predKey(ev)
+    if (this.predictionKeys.has(key)) return false
+    this.predictionKeys.add(key)
+    const arr = this.predictionIndex.get(ev.agentId) ?? []
+    arr.push(ev)
+    this.predictionIndex.set(ev.agentId, arr)
+    return true
+  }
+
+  private indexEvolution(ev: AgentEvolutionEvent): boolean {
+    const key = this.evoKey(ev)
+    if (this.evolutionKeys.has(key)) return false
+    this.evolutionKeys.add(key)
+    const arr = this.evolutionIndex.get(ev.agentId) ?? []
+    arr.push(ev)
+    this.evolutionIndex.set(ev.agentId, arr)
+    return true
+  }
+
+  private indexOutcome(ev: AgentOutcomeEvent): boolean {
+    const key = this.outKey(ev)
+    if (this.outcomeKeys.has(key)) return false
+    this.outcomeKeys.add(key)
+    const arr = this.outcomeIndex.get(ev.agentId) ?? []
+    arr.push(ev)
+    this.outcomeIndex.set(ev.agentId, arr)
+    return true
+  }
+
+  // ── Disk persistence (debounced) ─────────────────────────────────────
+  private schedulePersist() {
+    this.dirty = true
+    if (this.persistTimer) return
+    this.persistTimer = setTimeout(() => {
+      this.persistTimer = null
+      if (this.dirty) this.persistToDisk()
+    }, 2000)
+  }
+
+  private persistToDisk() {
+    try {
+      const data = {
+        predictions: Object.fromEntries(this.predictionIndex),
+        evolution: Object.fromEntries(this.evolutionIndex),
+        outcomes: Object.fromEntries(this.outcomeIndex),
+      }
+      mkdirSync(_dataDir, { recursive: true })
+      writeFileSync(INDEX_PATH, JSON.stringify(data), 'utf-8')
+      this.dirty = false
+      console.log(`[agentEvents.persist] saved to ${INDEX_PATH}`)
+    } catch (err) {
+      console.error('[agentEvents.persist] write failed:', err)
+    }
+  }
+
+  private loadFromDisk() {
+    try {
+      const raw = readFileSync(INDEX_PATH, 'utf-8')
+      const data = JSON.parse(raw) as {
+        predictions?: Record<string, AgentPredictionEvent[]>
+        evolution?: Record<string, AgentEvolutionEvent[]>
+        outcomes?: Record<string, AgentOutcomeEvent[]>
+      }
+      let loaded = 0
+      if (data.predictions) {
+        for (const [agentId, events] of Object.entries(data.predictions)) {
+          for (const ev of events) {
+            ev.agentId = agentId // safety: ensure agentId matches key
+            if (this.indexPrediction(ev)) loaded++
+          }
+        }
+      }
+      if (data.evolution) {
+        for (const [agentId, events] of Object.entries(data.evolution)) {
+          for (const ev of events) {
+            ev.agentId = agentId
+            if (this.indexEvolution(ev)) loaded++
+          }
+        }
+      }
+      if (data.outcomes) {
+        for (const [agentId, events] of Object.entries(data.outcomes)) {
+          for (const ev of events) {
+            ev.agentId = agentId
+            if (this.indexOutcome(ev)) loaded++
+          }
+        }
+      }
+      if (loaded > 0) console.log(`[agentEvents.loadFromDisk] restored ${loaded} events`)
+    } catch {
+      // No file or corrupt — start fresh (expected on first boot)
+    }
+  }
+
+  // ── Best-effort MemWal hydrate (call once at boot, non-blocking) ────
+  async hydrate(agentIds: string[]) {
+    if (!this.enabled) return
+    let merged = 0
+    for (const agentId of agentIds) {
+      for (const type of ['prediction', 'evolution', 'outcome'] as const) {
+        try {
+          const client = this.getClient(agentId)
+          const res: any = await client.recall(this.anchor(agentId, type))
+          const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
+          for (const r of results) {
+            const ev = extractJson(r.text ?? r.content ?? '')
+            if (!ev || ev.agentId !== agentId || ev.type !== type) continue
+            ev.schemaVersion = ev.schemaVersion ?? '1.0'
+            if (type === 'prediction' && this.indexPrediction(ev)) merged++
+            if (type === 'evolution' && this.indexEvolution(ev)) merged++
+            if (type === 'outcome' && this.indexOutcome(ev)) merged++
+          }
+        } catch (err) {
+          console.error(`[agentEvents.hydrate] recall failed for ${agentId}/${type}:`, err)
+          // Best-effort: continue with next
+        }
+      }
+    }
+    if (merged > 0) {
+      console.log(`[agentEvents.hydrate] merged ${merged} events from MemWal`)
+      this.schedulePersist()
+    }
+  }
+
+  // ── MemWal client / queue helpers (unchanged) ────────────────────────
   private getClient(agentId: string) {
     const ns = `mwc-agent:${agentId}`
     const cached = this.clients.get(ns)
@@ -110,6 +281,7 @@ export class AgentEventService {
     return `moneyball:agent_event type=${type} agentId=${agentId}`
   }
 
+  // ── Write methods (index first, then MemWal) ─────────────────────────
   async addPrediction(input: Omit<AgentPredictionEvent, 'schemaVersion' | 'type' | 'createdAt'>) {
     const ev: AgentPredictionEvent = {
       schemaVersion: '1.0',
@@ -118,10 +290,15 @@ export class AgentEventService {
       ...input,
     }
 
-    if (!this.enabled) { this.localLog.push(ev); return ev }
-    const text = `${this.anchor(ev.agentId, 'prediction')}\n${JSON.stringify(ev)}`
-    this.getQueue(ev.agentId).enqueue(`prediction:${ev.predictionId ?? ev.matchId}`, text)
-    console.log('[prediction.enqueue]', ev.agentId, ev.matchId, ev.pick)
+    // T40b: always write-through to index (deduped)
+    this.indexPrediction(ev)
+    this.schedulePersist()
+
+    if (this.enabled) {
+      const text = `${this.anchor(ev.agentId, 'prediction')}\n${JSON.stringify(ev)}`
+      this.getQueue(ev.agentId).enqueue(`prediction:${ev.predictionId ?? ev.matchId}`, text)
+      console.log('[prediction.enqueue]', ev.agentId, ev.matchId, ev.pick)
+    }
     return ev
   }
 
@@ -133,34 +310,15 @@ export class AgentEventService {
       ...input,
     }
 
-    if (!this.enabled) { this.localLog.push(ev); return ev }
-    const text = `${this.anchor(ev.agentId, 'outcome')}\n${JSON.stringify(ev)}`
-    this.getQueue(ev.agentId).enqueue(`outcome:${ev.predictionId}`, text)
-    console.log('[outcome.enqueue]', ev.agentId, ev.predictionId, ev.correct)
+    this.indexOutcome(ev)
+    this.schedulePersist()
+
+    if (this.enabled) {
+      const text = `${this.anchor(ev.agentId, 'outcome')}\n${JSON.stringify(ev)}`
+      this.getQueue(ev.agentId).enqueue(`outcome:${ev.predictionId}`, text)
+      console.log('[outcome.enqueue]', ev.agentId, ev.predictionId, ev.correct)
+    }
     return ev
-  }
-
-  async listOutcomes(agentId: string, limit = 100): Promise<AgentOutcomeEvent[]> {
-    if (!this.enabled) {
-      return (this.localLog.filter(e => e.type === 'outcome' && e.agentId === agentId) as AgentOutcomeEvent[])
-        .slice(-limit)
-    }
-    try {
-      const client = this.getClient(agentId)
-      const res: any = await client.recall(this.anchor(agentId, 'outcome'))
-      const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
-
-      const parsed = results
-        .map(r => extractJson(r.text ?? r.content ?? ''))
-        .filter(Boolean)
-        .filter((x: any) => x.type === 'outcome' && x.agentId === agentId) as AgentOutcomeEvent[]
-
-      parsed.sort((a, b) => (a.resolvedAt < b.resolvedAt ? 1 : -1))
-      return parsed.slice(0, limit)
-    } catch (err) {
-      console.error('[agentEvents.listOutcomes] recall failed, returning []:', err)
-      return []
-    }
   }
 
   async addEvolution(input: Omit<AgentEvolutionEvent, 'schemaVersion' | 'type' | 'createdAt'>) {
@@ -171,74 +329,47 @@ export class AgentEventService {
       ...input,
     }
 
-    if (!this.enabled) { this.localLog.push(ev); return ev }
-    const text = `${this.anchor(ev.agentId, 'evolution')}\n${JSON.stringify(ev)}`
-    this.getQueue(ev.agentId).enqueue(`evolution:${ev.createdAt}`, text)
-    console.log('[evolution.enqueue]', ev)
+    this.indexEvolution(ev)
+    this.schedulePersist()
+
+    if (this.enabled) {
+      const text = `${this.anchor(ev.agentId, 'evolution')}\n${JSON.stringify(ev)}`
+      this.getQueue(ev.agentId).enqueue(`evolution:${ev.createdAt}`, text)
+      console.log('[evolution.enqueue]', ev)
+    }
     return ev
   }
 
+  // ── Read methods (T40b: always from index, deterministic) ────────────
+  async listOutcomes(agentId: string, limit = 100): Promise<AgentOutcomeEvent[]> {
+    const items = this.outcomeIndex.get(agentId) ?? []
+    return items
+      .slice()
+      .sort((a, b) => (a.resolvedAt < b.resolvedAt ? 1 : -1))
+      .slice(0, limit)
+  }
+
   async listPredictions(agentId: string, limit = 20): Promise<AgentPredictionEvent[]> {
-    if (!this.enabled) {
-      const preds = (this.localLog.filter(e => e.type === 'prediction' && e.agentId === agentId) as AgentPredictionEvent[])
-        .slice(-limit).reverse()
-      const outs = this.localLog.filter(e => e.type === 'outcome' && e.agentId === agentId) as AgentOutcomeEvent[]
-      const byPrediction = new Map(outs.map(o => [o.predictionId, o]))
-      return preds.map(p => {
-        const o = p.predictionId ? byPrediction.get(p.predictionId) : undefined
-        return o ? { ...p, outcome: { correct: o.correct, resolvedAt: o.resolvedAt } } : p
-      })
-    }
-    try {
-      const client = this.getClient(agentId)
-      const res: any = await client.recall(this.anchor(agentId, 'prediction'))
-      const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
+    const preds = this.predictionIndex.get(agentId) ?? []
+    const sorted = preds
+      .slice()
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, limit)
 
-      const parsed = results
-        .map(r => extractJson(r.text ?? r.content ?? ''))
-        .filter(Boolean)
-        .filter((x: any) => x.type === 'prediction' && x.agentId === agentId) as AgentPredictionEvent[]
-
-      parsed.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-      const top = parsed.slice(0, limit)
-
-      // Merge outcomes by predictionId (best effort — recall is approximate).
-      try {
-        const outcomes = await this.listOutcomes(agentId)
-        const byPrediction = new Map(outcomes.map(o => [o.predictionId, o]))
-        return top.map(p => {
-          const o = p.predictionId ? byPrediction.get(p.predictionId) : undefined
-          return o ? { ...p, outcome: { correct: o.correct, resolvedAt: o.resolvedAt } } : p
-        })
-      } catch {
-        return top
-      }
-    } catch (err) {
-      console.error('[agentEvents.listPredictions] recall failed, returning []:', err)
-      return []
-    }
+    // Merge outcomes by predictionId
+    const outcomes = this.outcomeIndex.get(agentId) ?? []
+    const byPrediction = new Map(outcomes.map(o => [o.predictionId, o]))
+    return sorted.map(p => {
+      const o = p.predictionId ? byPrediction.get(p.predictionId) : undefined
+      return o ? { ...p, outcome: { correct: o.correct, resolvedAt: o.resolvedAt } } : p
+    })
   }
 
   async listEvolution(agentId: string, limit = 20): Promise<AgentEvolutionEvent[]> {
-    if (!this.enabled) {
-      return (this.localLog.filter(e => e.type === 'evolution' && e.agentId === agentId) as AgentEvolutionEvent[])
-        .slice(-limit).reverse()
-    }
-    try {
-      const client = this.getClient(agentId)
-      const res: any = await client.recall(this.anchor(agentId, 'evolution'))
-      const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
-
-      const parsed = results
-        .map(r => extractJson(r.text ?? r.content ?? ''))
-        .filter(Boolean)
-        .filter((x: any) => x.type === 'evolution' && x.agentId === agentId) as AgentEvolutionEvent[]
-
-      parsed.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-      return parsed.slice(0, limit)
-    } catch (err) {
-      console.error('[agentEvents.listEvolution] recall failed, returning []:', err)
-      return []
-    }
+    const items = this.evolutionIndex.get(agentId) ?? []
+    return items
+      .slice()
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, limit)
   }
 }
