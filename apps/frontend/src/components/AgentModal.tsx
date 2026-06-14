@@ -1,15 +1,14 @@
 /**
- * AgentModal | v0.10.0 | 2026-06-14
+ * AgentModal | v0.11.0 | 2026-06-14
  * Purpose: Agent dossier — Overview (actions) + Method / Predictions /
  * Evolution / Before/After / Memory tabs. WAI-ARIA dialog + tabs, focus trap.
- * T14: refactored to use PixelButton + design-spec palette.
+ * T49: typography scale — body ≥16px, header ≥10px; responsive drawer.
+ * T36: "Day 1 vs Day N" before/after comparison panel — the demo money-shot.
  * T35: scrim backdrop uses semantic `overlay` token.
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
- * T26: added Method tab surfacing each agent's methodology from agent-config.
- * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
- * T28: Evolution tab renders a deterministic human-readable story per event.
  * T30: Method tab discloses honest model-input provenance (synthetic v1).
- * T36: "Day 1 vs Day N" before/after comparison panel — the demo money-shot.
+ * T28: Evolution tab renders a deterministic human-readable story per event.
+ * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -28,7 +27,7 @@ import { PixelButton } from '@/components/ui/PixelButton'
 import { AgentPerfChart } from '@/components/AgentPerfChart'
 import { buildAgentPerfSeries } from '@/lib/agentPerf'
 import { buildEvolutionStory } from '@/lib/evolutionStory'
-import { palette, accents, text, fonts, borders, shadows, zIndex, overlay } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, overlay, type as typo } from '@/styles/tokens'
 
 type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'before-after' | 'memory'
 const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'before-after', 'memory'] as const
@@ -107,7 +106,7 @@ export function AgentModal() {
         aria-labelledby={MODAL_TITLE_ID}
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: 440, height: '100%',
+          width: '100%', maxWidth: 440, height: '100%',
           background: palette.wood900,
           borderLeft: borders.standard,
           padding: 16, color: palette.paper,
@@ -120,12 +119,12 @@ export function AgentModal() {
           <div>
             <div
               id={MODAL_TITLE_ID}
-              style={{ fontSize: 12, fontWeight: 700, fontFamily: fonts.header, color: accents.gold, letterSpacing: '-0.5px' }}
+              style={{ ...typo.hdr, fontWeight: 700, fontFamily: fonts.header, color: accents.gold, letterSpacing: '-0.5px' }}
             >
               {agent.name}
             </div>
-            <div style={{ fontSize: 16, color: text.muted, marginTop: 2 }}>{agent.role}</div>
-            <div style={{ marginTop: 8, fontSize: 14, color: text.dim }}>
+            <div style={{ ...typo.body, color: text.muted, marginTop: 2 }}>{agent.role}</div>
+            <div style={{ marginTop: 8, ...typo.body, color: text.dim }}>
               Status: <b>{agent.status}</b>
             </div>
           </div>
@@ -143,7 +142,7 @@ export function AgentModal() {
               size="small"
               onClick={() => setTab(t)}
               {...getTabProps(t)}
-              style={{ textTransform: t === 'before-after' ? 'none' : 'capitalize', fontSize: 12 }}
+              style={{ textTransform: t === 'before-after' ? 'none' : 'capitalize', fontSize: typo.hdr.fontSize }}
             >
               {t === 'before-after' ? 'Day1 vs Now' : t}
             </PixelButton>
@@ -165,9 +164,9 @@ export function AgentModal() {
                   </PixelButton>
                 )}
               </div>
-              {err && <div role="alert" style={{ marginTop: 10, color: accents.red, fontSize: 14 }}>{err}</div>}
-              <div style={{ marginTop: 16, fontSize: 14, color: text.muted }}>Last thought:</div>
-              <div style={{ marginTop: 6, fontSize: 15 }}>{agent.lastThought ?? '—'}</div>
+              {err && <div role="alert" style={{ marginTop: 10, color: accents.red, ...typo.body }}>{err}</div>}
+              <div style={{ marginTop: 16, ...typo.body, color: text.muted }}>Last thought:</div>
+              <div style={{ marginTop: 6, ...typo.body }}>{agent.lastThought ?? '—'}</div>
             </>
           )}
           {tab === 'method' && <MethodTab agentId={agentId} />}
@@ -177,7 +176,7 @@ export function AgentModal() {
           {tab === 'memory' && <MemoryTab agentId={agentId} />}
         </div>
 
-        <div style={{ marginTop: 12, fontSize: 12, color: text.muted, borderTop: borders.standard, paddingTop: 8 }}>
+        <div style={{ marginTop: 12, ...typo.caption, color: text.muted, borderTop: borders.standard, paddingTop: 8 }}>
           Identity: {viewer ? `Sui (${viewer.role})` : 'Guest'}
         </div>
       </div>
@@ -217,8 +216,8 @@ export function MethodTab({ agentId }: { agentId: string }) {
       {/* Personality */}
       <div style={card()}>
         <SectionLabel>Approach</SectionLabel>
-        <div style={{ fontSize: 15, marginTop: 4 }}>{profile.personality}</div>
-        <div style={{ marginTop: 8, fontSize: 12, color: text.muted }}>
+        <div style={{ ...typo.body, marginTop: 4 }}>{profile.personality}</div>
+        <div style={{ marginTop: 8, ...typo.caption, color: text.muted }}>
           model: <b style={{ color: accents.gold }}>{m.type}</b>
         </div>
       </div>
@@ -228,7 +227,7 @@ export function MethodTab({ agentId }: { agentId: string }) {
         <div style={card()}>
           <SectionLabel>Catchphrases</SectionLabel>
           {profile.catchphrases.map((c, i) => (
-            <div key={i} style={{ fontSize: 15, marginTop: 4, color: text.dim, fontStyle: 'italic' }}>
+            <div key={i} style={{ ...typo.body, marginTop: 4, color: text.dim, fontStyle: 'italic' }}>
               “{c}”
             </div>
           ))}
@@ -243,7 +242,7 @@ export function MethodTab({ agentId }: { agentId: string }) {
             style={{
               margin: '6px 0 0', padding: 8,
               background: palette.surface, border: borders.rule, borderRadius: 0,
-              fontSize: 13, color: accents.green, fontFamily: 'monospace',
+              ...typo.caption, color: accents.green, fontFamily: 'monospace',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}
           >
@@ -257,16 +256,16 @@ export function MethodTab({ agentId }: { agentId: string }) {
         <div style={card()}>
           <SectionLabel>Rules</SectionLabel>
           {m.description && (
-            <div style={{ fontSize: 13, color: text.muted, marginTop: 4 }}>{m.description}</div>
+            <div style={{ ...typo.caption, color: text.muted, marginTop: 4 }}>{m.description}</div>
           )}
           {m.rules.map((r, i) => (
             <div
               key={i}
               style={{ marginTop: 8, paddingTop: 8, borderTop: i === 0 ? 'none' : borders.rule }}
             >
-              <div style={{ fontSize: 14, color: accents.gold, fontWeight: 700 }}>{r.name}</div>
-              <div style={{ fontSize: 13, color: text.dim, marginTop: 2 }}>{r.logic}</div>
-              <div style={{ fontSize: 13, color: accents.green, marginTop: 2, fontFamily: 'monospace' }}>
+              <div style={{ ...typo.dataSm, color: accents.gold, fontWeight: 700 }}>{r.name}</div>
+              <div style={{ ...typo.caption, color: text.dim, marginTop: 2 }}>{r.logic}</div>
+              <div style={{ ...typo.caption, color: accents.green, marginTop: 2, fontFamily: 'monospace' }}>
                 → {r.effect}
               </div>
             </div>
@@ -282,7 +281,7 @@ export function MethodTab({ agentId }: { agentId: string }) {
             {params.map(([k, v]) => (
               <div
                 key={k}
-                style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontFamily: 'monospace', marginTop: 2 }}
+                style={{ display: 'flex', justifyContent: 'space-between', ...typo.caption, fontFamily: 'monospace', marginTop: 2 }}
               >
                 <span style={{ color: text.muted }}>{k}</span>
                 <span style={{ color: palette.paper }}>{v}</span>
@@ -296,7 +295,7 @@ export function MethodTab({ agentId }: { agentId: string }) {
       {m.evolutionTrigger && (
         <div style={card()}>
           <SectionLabel>How it evolves</SectionLabel>
-          <div style={{ fontSize: 14, marginTop: 4, color: text.dim }}>{m.evolutionTrigger}</div>
+          <div style={{ ...typo.dataSm, marginTop: 4, color: text.dim }}>{m.evolutionTrigger}</div>
         </div>
       )}
 
@@ -318,7 +317,7 @@ export function DataInputsCard() {
     <div style={card()}>
       <SectionLabel>Data inputs</SectionLabel>
       <div style={{
-        fontSize: 13, color: accents.gold, marginTop: 4, display: 'flex',
+        ...typo.caption, color: accents.gold, marginTop: 4, display: 'flex',
         alignItems: 'center', gap: 6,
       }}>
         <SourceBadge source="synthetic" />
@@ -332,9 +331,9 @@ export function DataInputsCard() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <SourceBadge source={inp.source} />
-              <span style={{ fontSize: 14, color: palette.paper }}>{inp.label}</span>
+              <span style={{ ...typo.dataSm, color: palette.paper }}>{inp.label}</span>
             </div>
-            <div style={{ fontSize: 13, color: text.muted, marginTop: 2 }}>{inp.detail}</div>
+            <div style={{ ...typo.caption, color: text.muted, marginTop: 2 }}>{inp.detail}</div>
           </div>
         ))}
       </div>
@@ -346,7 +345,7 @@ function SourceBadge({ source }: { source: 'synthetic' | 'manual' | 'live' }) {
   const color = source === 'live' ? accents.green : source === 'manual' ? text.dim : accents.red
   return (
     <span style={{
-      fontSize: 10, fontFamily: fonts.header, letterSpacing: '-0.5px',
+      ...typo.hdrXs, fontFamily: fonts.header, letterSpacing: '-0.5px',
       textTransform: 'uppercase', color: palette.wood900,
       background: color, padding: '2px 5px', border: borders.rule,
       whiteSpace: 'nowrap',
@@ -360,7 +359,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        fontSize: 11, fontFamily: fonts.header, color: text.muted,
+        ...typo.hdrSm, fontFamily: fonts.header, color: text.muted,
         letterSpacing: '-0.5px', textTransform: 'uppercase',
       }}
     >
@@ -387,13 +386,13 @@ function PredictionsTab({ agentId }: { agentId: string }) {
         <AgentPerfChart series={perf} />
       ) : (
         <div style={{
-          fontSize: 13, color: text.muted, border: borders.standard,
+          ...typo.caption, color: text.muted, border: borders.standard,
           background: palette.surface, padding: 10, marginBottom: 8, textAlign: 'center',
         }}>
           Need ≥2 resolved matches to chart this scout's accuracy.
         </div>
       )}
-      <div style={{ fontSize: 14, color: text.muted, marginBottom: 8 }}>
+      <div style={{ ...typo.dataSm, color: text.muted, marginBottom: 8 }}>
         Record: <b style={{ color: palette.paper }}>{correct}/{resolved.length}</b> resolved · {items.length} total
       </div>
       {items.map((p) => <PredictionRow key={p.predictionId ?? `${p.matchId}:${p.createdAt}`} p={p} />)}
@@ -406,16 +405,16 @@ function PredictionRow({ p }: { p: PredictionItem }) {
   const badgeColor = p.outcome ? (p.outcome.correct ? accents.green : accents.red) : text.muted
   return (
     <div style={card()}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', ...typo.dataSm }}>
         <span style={{ color: text.dim }}>{p.matchId}</span>
         <span style={{ color: badgeColor, fontWeight: 700 }} aria-label={p.outcome ? (p.outcome.correct ? 'Correct' : 'Incorrect') : 'Pending'}>{badge}</span>
       </div>
-      <div style={{ marginTop: 4, fontSize: 15 }}>
+      <div style={{ marginTop: 4, ...typo.body }}>
         Pick <b>{p.pick}</b> · confidence <b>{Math.round(p.confidence * 100)}%</b>
         {typeof p.paramsVersion === 'number' && <span style={{ color: text.muted }}> · params v{p.paramsVersion}</span>}
       </div>
-      <div style={{ marginTop: 4, fontSize: 14, color: text.muted }}>{p.reasoning}</div>
-      <div style={{ marginTop: 4, fontSize: 12, color: text.muted }}>{new Date(p.createdAt).toLocaleString()}</div>
+      <div style={{ marginTop: 4, ...typo.dataSm, color: text.muted }}>{p.reasoning}</div>
+      <div style={{ marginTop: 4, ...typo.caption, color: text.muted }}>{new Date(p.createdAt).toLocaleString()}</div>
     </div>
   )
 }
@@ -439,15 +438,15 @@ function EvolutionRow({ ev }: { ev: EvolutionItem }) {
   const diff = Object.entries(ev.parameterDiff ?? {})
   return (
     <div style={card()}>
-      <div style={{ fontSize: 14, color: accents.gold, fontWeight: 700 }}>{story.headline}</div>
+      <div style={{ ...typo.dataSm, color: accents.gold, fontWeight: 700 }}>{story.headline}</div>
       {/* Human-readable narrative */}
-      <div style={{ marginTop: 4, fontSize: 15 }}>{story.narrative}</div>
+      <div style={{ marginTop: 4, ...typo.body }}>{story.narrative}</div>
       {/* Original engine summary, if it differs from the narrative */}
       {ev.summary && ev.summary !== story.narrative && (
-        <div style={{ marginTop: 4, fontSize: 13, color: text.muted }}>{ev.summary}</div>
+        <div style={{ marginTop: 4, ...typo.caption, color: text.muted }}>{ev.summary}</div>
       )}
       {diff.length > 0 && (
-        <div style={{ marginTop: 6, fontSize: 13, fontFamily: 'monospace' }}>
+        <div style={{ marginTop: 6, ...typo.caption, fontFamily: 'monospace' }}>
           {diff.map(([k, v]) => (
             <div key={k} style={{ color: v >= 0 ? accents.green : accents.red }}>
               {k}: {v >= 0 ? '+' : ''}{v.toFixed(3)}
@@ -455,7 +454,7 @@ function EvolutionRow({ ev }: { ev: EvolutionItem }) {
           ))}
         </div>
       )}
-      <div style={{ marginTop: 4, fontSize: 12, color: text.muted }}>{new Date(ev.createdAt).toLocaleString()}</div>
+      <div style={{ marginTop: 4, ...typo.caption, color: text.muted }}>{new Date(ev.createdAt).toLocaleString()}</div>
     </div>
   )
 }
@@ -498,7 +497,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
         borderWidth: 2,
       }}>
         <SectionLabel>Day 1 → Day {diff.paramsVersion > 0 ? diff.paramsVersion : 'N'}</SectionLabel>
-        <div style={{ fontSize: 15, marginTop: 6, lineHeight: 1.5 }}>
+        <div style={{ ...typo.body, marginTop: 6 }}>
           {diff.summary}
         </div>
       </div>
@@ -512,17 +511,17 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
             marginTop: 8, fontSize: 15, fontFamily: 'monospace',
           }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: text.muted }}>Early</div>
-              <div style={{ fontSize: 18, color: text.dim }}>{diff.brierEarly!.toFixed(3)}</div>
+              <div style={{ ...typo.hdrSm, color: text.muted }}>Early</div>
+              <div style={{ ...typo.bodyLg, color: text.dim }}>{diff.brierEarly!.toFixed(3)}</div>
             </div>
-            <div style={{ fontSize: 20, color: text.muted }}>→</div>
+            <div style={{ ...typo.bodyLg, color: text.muted }}>→</div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, color: text.muted }}>Late</div>
-              <div style={{ fontSize: 18, color: text.dim }}>{diff.brierLate!.toFixed(3)}</div>
+              <div style={{ ...typo.hdrSm, color: text.muted }}>Late</div>
+              <div style={{ ...typo.bodyLg, color: text.dim }}>{diff.brierLate!.toFixed(3)}</div>
             </div>
             <div style={{
               marginLeft: 'auto',
-              fontSize: 16,
+              ...typo.body,
               fontWeight: 700,
               color: diff.brierDelta < -0.005 ? accents.green : diff.brierDelta > 0.005 ? accents.red : text.muted,
             }}>
@@ -531,7 +530,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
               {diff.brierDelta > 0.005 && ' ▲'}
             </div>
           </div>
-          <div style={{ fontSize: 12, color: text.muted, marginTop: 4 }}>
+          <div style={{ ...typo.caption, color: text.muted, marginTop: 4 }}>
             Lower Brier = better calibration. Negative delta = improvement.
           </div>
         </div>
@@ -544,7 +543,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
           {/* Table header */}
           <div style={{
             display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px',
-            fontSize: 11, color: text.muted, fontFamily: 'monospace',
+            ...typo.hdrSm, color: text.muted, fontFamily: 'monospace',
             paddingBottom: 4, borderBottom: borders.rule,
           }}>
             <span>Param</span>
@@ -557,7 +556,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
               key={d.key}
               style={{
                 display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px',
-                fontSize: 13, fontFamily: 'monospace',
+                ...typo.caption, fontFamily: 'monospace',
                 padding: '4px 0',
                 borderBottom: borders.rule,
               }}
@@ -580,7 +579,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
 
       {/* Evolution count */}
       <div style={{
-        fontSize: 12, color: text.muted, marginTop: 4, textAlign: 'center',
+        ...typo.caption, color: text.muted, marginTop: 4, textAlign: 'center',
       }}>
         {diff.evolutionCount} evolution event{diff.evolutionCount === 1 ? '' : 's'} · params v{diff.paramsVersion}
       </div>
@@ -598,20 +597,20 @@ function MemoryTab({ agentId }: { agentId: string }) {
   return (
     <div>
       <div style={card()}>
-        <div style={{ fontSize: 14, color: text.muted }}>Current parameters (persisted on Walrus Memory)</div>
-        <div style={{ marginTop: 6, fontSize: 15 }}>
+        <div style={{ ...typo.dataSm, color: text.muted }}>Current parameters (persisted on Walrus Memory)</div>
+        <div style={{ marginTop: 6, ...typo.body }}>
           Version <b>v{params.version}</b>
         </div>
         <ParamBar label="confidence bias" value={params.confidenceBias} range={0.3} />
         <ParamBar label="hedging level" value={params.hedgingLevel} range={1} />
         {topics.length > 0 && (
           <>
-            <div style={{ marginTop: 10, fontSize: 13, color: text.muted }}>Topic calibration</div>
+            <div style={{ marginTop: 10, ...typo.caption, color: text.muted }}>Topic calibration</div>
             {topics.map(([k, v]) => <ParamBar key={k} label={k} value={v} range={0.3} />)}
           </>
         )}
         {params.updatedAt && (
-          <div style={{ marginTop: 8, fontSize: 12, color: text.muted }}>updated {new Date(params.updatedAt).toLocaleString()}</div>
+          <div style={{ marginTop: 8, ...typo.caption, color: text.muted }}>updated {new Date(params.updatedAt).toLocaleString()}</div>
         )}
       </div>
       <Hint>
@@ -626,7 +625,7 @@ function ParamBar({ label, value, range }: { label: string; value: number; range
   const pct = Math.max(-1, Math.min(1, value / range))
   const half = Math.abs(pct) * 50
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 13, fontFamily: 'monospace' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, ...typo.caption, fontFamily: 'monospace' }}>
       <span style={{ width: 120, color: text.muted, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
       <div
         style={{
@@ -655,7 +654,7 @@ function ParamBar({ label, value, range }: { label: string; value: number; range
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
 function Hint({ children, color = text.muted }: { children: React.ReactNode; color?: string }) {
-  return <div style={{ fontSize: 14, color, marginTop: 8 }}>{children}</div>
+  return <div style={{ ...typo.dataSm, color, marginTop: 8 }}>{children}</div>
 }
 
 function card() {

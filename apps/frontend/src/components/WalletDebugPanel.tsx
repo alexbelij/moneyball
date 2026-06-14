@@ -1,12 +1,13 @@
 /**
- * WalletDebugPanel | v0.4.0 | 2026-06-13
+ * WalletDebugPanel | v0.5.0 | 2026-06-14
  * Purpose: Troubleshoot Wallet Standard connectivity (Slush) + show accounts exposed.
+ * T49: typography scale — header ≥10px, body ≥16px.
  * T33: migrated to shared tokens.
  */
 
 import React, { useMemo, useState } from 'react'
 import { useWallets, useAccounts, useCurrentWallet, useCurrentAccount } from '@mysten/dapp-kit'
-import { palette, accents, text, fonts, borders, shadows, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 export function WalletDebugPanel() {
   const wallets = useWallets()
@@ -42,11 +43,11 @@ export function WalletDebugPanel() {
       position: 'absolute', top: 80, right: 12, zIndex: zIndex.debug,
       background: palette.wood900, border: borders.standard,
       borderRadius: 0, padding: 10, color: palette.paper,
-      fontSize: 14, fontFamily: fonts.body,
-      width: 420, pointerEvents: 'auto',
+      ...typo.body, fontFamily: fonts.body,
+      width: 420, maxWidth: '92vw', pointerEvents: 'auto',
       boxShadow: shadows.hard,
     }}>
-      <div style={{ fontWeight: 700, marginBottom: 6, fontFamily: fonts.header, fontSize: 10, letterSpacing: '-0.5px' }}>WALLET DEBUG</div>
+      <div style={{ fontWeight: 700, marginBottom: 6, fontFamily: fonts.header, ...typo.hdrXs, letterSpacing: '-0.5px' }}>WALLET DEBUG</div>
 
       <div>Detected wallets: {wallets.length}</div>
       <div style={{ color: text.dim, marginBottom: 6 }}>
@@ -62,7 +63,7 @@ export function WalletDebugPanel() {
       <div>Current account: {currentAccount?.address ?? '—'}</div>
 
       <div style={{ marginTop: 10, paddingTop: 10, borderTop: borders.standard }}>
-        <div style={{ fontWeight: 700, marginBottom: 6, fontFamily: fonts.header, fontSize: 10, letterSpacing: '-0.5px' }}>DIRECT WALLET STANDARD CONNECT</div>
+        <div style={{ fontWeight: 700, marginBottom: 6, fontFamily: fonts.header, ...typo.hdrXs, letterSpacing: '-0.5px' }}>DIRECT WALLET STANDARD CONNECT</div>
         <button
           disabled={directBusy}
           onClick={directConnect}
@@ -73,7 +74,7 @@ export function WalletDebugPanel() {
             background: directBusy ? palette.wood900 : accents.gold,
             color: directBusy ? text.muted : palette.wood900,
             cursor: directBusy ? 'not-allowed' : 'pointer',
-            fontSize: 14, fontFamily: fonts.body, fontWeight: 700,
+            ...typo.dataSm, fontFamily: fonts.body, fontWeight: 700,
             boxShadow: shadows.hardSmall,
           }}
         >
@@ -95,7 +96,7 @@ export function WalletDebugPanel() {
             padding: 8,
             borderRadius: 0,
             border: borders.standard,
-            fontSize: 12,
+            ...typo.caption,
             color: text.dim,
           }}>
             {JSON.stringify(directResult, null, 2)}

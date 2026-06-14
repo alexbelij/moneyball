@@ -1,5 +1,5 @@
 /**
- * LiteDashboard.tsx | v1.2.0 | 2026-06-13
+ * LiteDashboard.tsx | v1.3.0 | 2026-06-14
  * Purpose: No-canvas dashboard showing live agent data, leaderboard,
  * and match info. Reads from existing zustand stores — no new sockets.
  * Mobile-first, no animations.
@@ -13,7 +13,7 @@ import type { WorldAgentState } from '@moneyball/shared/events'
 import { getAgentPredictions, getMatches, getAgentParams } from '@/lib/api'
 import { StatsReport } from '@/components/StatsReport'
 import { RankMedal } from '@/components/ui'
-import { palette, accents, text, fonts, borders, shadows } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, type as typo } from '@/styles/tokens'
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
@@ -410,7 +410,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 16,
   },
   title: {
-    fontSize: 12,
+    ...typo.hdr,
     fontWeight: 700,
     margin: 0,
     color: accents.gold,
@@ -427,7 +427,7 @@ const styles: Record<string, React.CSSProperties> = {
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 11,
+    ...typo.hdrSm,
     fontWeight: 600,
     color: text.muted,
     marginBottom: 8,
@@ -451,7 +451,7 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     color: palette.paper,
     fontFamily: fonts.body,
-    fontSize: 14,
+    ...typo.dataSm,
     boxShadow: shadows.hardSmall,
   },
   cardHeader: {
@@ -462,10 +462,10 @@ const styles: Record<string, React.CSSProperties> = {
   },
   agentName: {
     fontWeight: 700,
-    fontSize: 15,
+    ...typo.body,
   },
   statusBadge: {
-    fontSize: 11,
+    ...typo.hdrSm,
     padding: '2px 6px',
     borderRadius: 0,
     color: palette.paper,
@@ -474,7 +474,7 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '-0.5px',
   },
   cardRole: {
-    fontSize: 13,
+    ...typo.caption,
     color: text.muted,
     marginBottom: 8,
   },
@@ -483,7 +483,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   label: {
     color: text.faint,
-    fontSize: 13,
+    ...typo.caption,
   },
   pick: {
     fontWeight: 600,
@@ -491,12 +491,12 @@ const styles: Record<string, React.CSSProperties> = {
   },
   confidence: {
     color: text.muted,
-    fontSize: 13,
+    ...typo.caption,
   },
   cardStats: {
     display: 'flex',
     justifyContent: 'space-between',
-    fontSize: 13,
+    ...typo.caption,
     color: text.muted,
     marginTop: 4,
   },
@@ -505,7 +505,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
   },
   cardMeta: {
-    fontSize: 12,
+    ...typo.caption,
     color: text.faint,
     marginTop: 4,
     fontStyle: 'italic' as const,
@@ -522,20 +522,20 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: 14,
+    ...typo.dataSm,
     fontWeight: 600,
   },
   matchVs: {
     color: text.faint,
-    fontSize: 13,
+    ...typo.caption,
   },
   matchScore: {
     color: accents.gold,
     fontWeight: 700,
-    fontSize: 16,
+    ...typo.data,
   },
   matchTime: {
-    fontSize: 12,
+    ...typo.caption,
     color: text.faint,
     marginTop: 4,
   },
@@ -545,7 +545,7 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 5,
     color: accents.red,
     fontFamily: fonts.header,
-    fontSize: 9,
+    ...typo.hdrXs,
     letterSpacing: '-0.5px',
   },
   liveDot: {
@@ -568,7 +568,7 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: 8,
     padding: '8px 12px',
-    fontSize: 15,
+    ...typo.body,
     color: palette.wood900,
   },
   leaderName: {

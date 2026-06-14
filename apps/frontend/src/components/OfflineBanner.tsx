@@ -1,5 +1,5 @@
 /**
- * OfflineBanner | v2.0.0 | 2026-06-14
+ * OfflineBanner | v2.1.0 | 2026-06-14
  * Purpose: When the backend is waking (cold start / 502 / timeout), show an
  * in-character "the pundits are waking up…" pixel state with auto-retry,
  * instead of a raw error. Tokens only; reduced-motion respected.
@@ -11,7 +11,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
-import { palette, accents, fonts, zIndex, borders, shadows } from '@/styles/tokens'
+import { palette, accents, fonts, zIndex, borders, shadows, type as typo } from '@/styles/tokens'
 
 /** Lazy backend URL — avoids crash when VITE_BACKEND_URL is missing (tests). */
 function getBackendUrl(): string {
@@ -129,7 +129,7 @@ export function OfflineBanner() {
     >
       {/* Flavour line */}
       <div style={{
-        fontSize: 16,
+        ...typo.body,
         color: accents.gold,
         letterSpacing: '0.5px',
       }}>
@@ -174,7 +174,7 @@ export function OfflineBanner() {
       {/* Retry counter */}
       <div style={{
         marginTop: 6,
-        fontSize: 12,
+        ...typo.caption,
         color: palette.wood300,
         letterSpacing: '0.5px',
       }}>
