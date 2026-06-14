@@ -66,8 +66,13 @@ Twitter card, favicon, theme-color, canonical, or JSON-LD. Bad for sharing + jud
   (`SoftwareApplication` / `WebSite`).
 - Add a pixel-art **favicon** (svg + 32×32 png + apple-touch-icon) into `public/` and link it.
   Reuse the room/agent pixel aesthetic.
-- Produce an OG share image (1200×630) under `public/` (a clean cabinet hero still + title).
-  If you can't generate art, leave a TODO and ping lead — lead can generate the image.
+- Produce an OG share image (1200×630) under `public/` (a clean cabinet hero still + title)
+  AND the pixel favicon set. **You generate these images yourself** using your own image
+  tools (Anna's instruction — keep lead's credit pool free). Match the room/agent pixel
+  aesthetic (dark wood cabinet, warm amber, SNES bevel). Deliverables committed to `public/`:
+  `favicon.svg`, `favicon-32.png`, `apple-touch-icon.png` (180×180), `og-image.png` (1200×630).
+  Optimise PNGs (≤200 KB). If a generated asset looks off-brand, iterate before committing —
+  do NOT ship a placeholder.
 - Sanity-check `public/robots.txt` + `public/sitemap.xml` reflect the real Walrus URL
   (`https://taken.wal.app`).
 **Acceptance:** head validates; favicon shows in tab; OG/Twitter tags present; build green.
@@ -144,31 +149,103 @@ agent), `Verify on Walrus` (blob/object links — ties to T37 if present), `Lead
 
 ---
 
-## P3 — STRATEGIC / ECOSYSTEM (scope-gated — design doc first, ping lead before building)
+## P2 — STRATEGIC / ECOSYSTEM (Anna 14.06: SDK is IN the build plan, not just a doc)
 
-### T52 — "Deploy your agent to the Hive" — Agent Memory SDK (concept + thin slice)
-**Narrative:** strongest Walrus story = let other devs **deploy their own agent persona into
-the Hive** and get persistent, evolving memory on Walrus out of the box. Great for C2
-(Creativity) and the ecosystem pitch.
-**Step 1 (this pack):** a **design doc** `docs/agent-sdk-design.md` only — define the
-`AgentConfig` schema (persona + methodology + seed libraries, mirroring agent-config.v1.json),
-the public ingest endpoint shape, and how memory persists/evolves via the existing MemWal +
-read-model. Then STOP and ping lead for go/no-go on a thin implementation slice before the
-deadline. Do NOT build the full SDK without sign-off.
+> These three are the ecosystem story for the jury (C2 Creativity + C3 Tech). Each is a
+> **two-step marquee feature**: ship `docs/<slug>-design.md` FIRST on a `*-design` branch →
+> lead reviews → then implementation branch. The design step is fast (hours), NOT a reason to
+> defer — Anna wants a working **thin slice live** before judging, not a slideware doc.
 
-### T53 — Inter-agent interaction (agents reference each other)
-**Today:** agents do NOT talk to each other — each only emits independent ambient thoughts.
-**Opportunity:** let agents occasionally **react to a rival's prediction** ("Pythia's omen
-disagrees with my xG by 0.6 goals…") — a cheap deterministic cross-reference using existing
-predictions, no LLM required. Big authenticity/flair win.
-**Step 1 (this pack):** design doc `docs/inter-agent-design.md` (data source = existing
-per-agent predictions; deterministic pairing/templating; where it surfaces — thought bubbles
-or a "Cabinet chatter" ticker). STOP and ping lead before implementing.
+### T52 — Agent Memory SDK + "Hive" registry (BUILD a thin slice)
+**Narrative:** strongest Walrus story = other devs **deploy their own agent persona into the
+Hive** and get persistent, evolving memory on Walrus out of the box (we already have MemWal +
+the deterministic read-model under it).
+
+**Step 1 — design doc `docs/agent-sdk-design.md`:** define
+- `AgentConfig` schema (persona + methodology + seed libraries, mirroring
+  `agent-config.v1.json`): `id`, `displayName`, `persona`, `methodology`, `catchphrases`,
+  `seedPredictions?`, `owner` (Sui address), `source: "connected"`.
+- **`AgentRegistry`** abstraction holding BOTH built-in (`source:"core"`) and registered
+  (`source:"connected"`) agents — today the 5 agents are hardcoded with no `GET /api/public/agents`
+  listing route; the registry adds one.
+- Ingest endpoint shape `POST /api/hive/agents` (auth = Sui address / signed payload; rate-limited)
+  and how a connected agent's memory persists/evolves through the EXISTING MemWal + read-model
+  (no new durable schema — reuse `AgentEventService` keyed by the new agentId).
+- The minimal TS SDK surface in a new workspace package `packages/agent-sdk`:
+  `defineAgent(config)`, `connect({ baseUrl, signer })`, `submitPrediction(matchId, pick, confidence)`.
+
+**Step 2 — thin implementation slice (after lead GO):**
+- `AgentRegistry` + `GET /api/public/agents` returning core + connected agents with `source` flag.
+- `POST /api/hive/agents` register endpoint (validate config, assign agentId, persist registry
+  entry, wire into `AgentEventService` so its predictions/evolution flow through the same
+  read-model + MemWal). vitest: register → appears in list → submit prediction → readable back
+  deterministically.
+- `packages/agent-sdk` package with the 3 functions above + a runnable **example**
+  `examples/sample-agent.ts` that registers a demo persona and posts one prediction. This is the
+  "deploy your own agent" demo for the pitch.
+**Acceptance:** sample agent registers, shows in `/api/public/agents` as `connected`, its prediction
+is readable via the public read-model; backend+SDK vitest + tsc green.
+
+### T53 — Inter-agent interaction (agents reference each other) — BUILD
+**Today:** agents do NOT talk to each other — each only emits independent ambient thoughts
+(`index.ts` ~line 142, 1 s loop). **Opportunity:** agents occasionally **react to a rival's
+prediction** ("Pythia's omen disagrees with my xG by 0.6 goals…") — cheap, deterministic
+cross-reference over existing predictions, **no LLM required**. Big authenticity/flair win (C1+C2).
+
+**Step 1 — design doc `docs/inter-agent-design.md`:** data source = existing per-agent
+predictions on the same match; deterministic pairing (e.g. stable sort by agentId, pick the
+biggest confidence/pick divergence); deterministic templating per persona; surface = thought
+bubbles AND/OR a "Cabinet chatter" ticker. Define how it stays test-stable (no RNG).
+**Step 2 — implementation (after lead GO):** a pure `lib/cabinetChatter.ts` builder (vitest:
+same fixtures → identical lines) feeding the ambient thought system unified in T45. Connected
+agents (T52) are first-class participants here.
+**Acceptance:** deterministic chatter lines reference real rival predictions; vitest green.
+
+### T54 — Connect an EXTERNAL agent into the conversation + "Connected" list (BUILD)
+**Anna 14.06:** add functions so a **third-party / external agent** can connect and talk WITH
+our agents, and the new agent **shows up in a list of connected agents** in the UI. This is the
+interactive, live face of T52's registry.
+
+**Step 1 — design doc `docs/connected-agents-design.md`:** specify
+- **Identity & registration:** an external agent connects via the T52 SDK (`connect()` with a
+  Sui address / signed handshake) → becomes a `source:"connected"` entry in `AgentRegistry`.
+  Decide auth (signed payload vs. issued connect-token) and rate limits.
+- **Message protocol (two directions):**
+  - *external → cabinet:* `POST /api/hive/agents/:id/message` (and/or `submitPrediction`) — the
+    external agent posts a thought/prediction; our deterministic engine + T53 chatter let our
+    agents **react** to it.
+  - *cabinet → external:* the external agent **subscribes** to cabinet messages — choose a
+    transport (Socket.io room `hive:agent:<id>` for live, plus a poll fallback
+    `GET /api/hive/agents/:id/inbox?since=`). Define the message envelope
+    (`{from, to?, kind, text, refPredictionId?, ts}`).
+  - SDK helpers: `onCabinetMessage(handler)` / `sendMessage(text)`.
+- **Liveness:** `lastSeenAt` heartbeat → connected agents show `online | idle | offline`.
+- **Safety:** validate/escape all external text before it ever renders (XSS), cap message rate,
+  size limits; external agents can NEVER write numbers into our deterministic engine (same memory
+  invariant — they submit their OWN predictions under their OWN agentId only).
+
+**Step 2 — thin implementation slice (after lead GO):**
+- **UI "Connected agents" panel** (reuse the modal/overlay shell from T48/T51, opened from the
+  menu): lists core + connected agents from `GET /api/public/agents`, with a `connected` badge,
+  owner (short Sui addr), online/idle/offline dot, and last message. Tokens-only (designDrift green).
+- Register + message endpoints + Socket.io `hive:agent:<id>` room + poll fallback.
+- Extend `packages/agent-sdk` with `onCabinetMessage` / `sendMessage`, and an
+  `examples/external-agent.ts` that connects, posts a prediction, prints cabinet reactions —
+  the **live demo**: "a stranger's agent just joined the cabinet and our agents are arguing with it."
+**Acceptance:** running `examples/external-agent.ts` makes a new agent appear in the Connected
+panel and exchange ≥1 message with our agents (visible in chatter); a11y + tokens + vitest green;
+no Cyrillic, no raw hex.
+
+> **Scoping note for the implementing agent:** these three compound. Build order = T52 (registry
+> + SDK foundation) → T53 (deterministic chatter) → T54 (external connect + UI). If time is tight
+> before 24.06, the MINIMUM viable ecosystem demo is: registry + `GET /api/public/agents` +
+> register endpoint + Connected-agents UI panel + the `examples/` script. Ping lead at each
+> design-doc gate.
 
 ---
 
 ## Lead-Viktor track (I handle these, not the implementing agent)
-- L5: generate favicon + OG share image art if T47 needs it.
 - L6: after any merge to `main` → re-seed prod + warm (ephemeral-disk rule).
 - L7: write any LLM keys into Render (kept off the implementing agent).
 - L8: final pre-judging re-seed + warm + smoke test of taken.wal.app.
+- L9: review every `*-design` doc (T52/T53/T54) at its gate before the implementation branch.
