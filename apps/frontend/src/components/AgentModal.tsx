@@ -1,15 +1,16 @@
 /**
- * AgentModal | v0.10.0 | 2026-06-14
+ * AgentModal | v1.0.0 | 2026-06-14
  * Purpose: Agent dossier — Overview (actions) + Method / Predictions /
  * Evolution / Before/After / Memory tabs. WAI-ARIA dialog + tabs, focus trap.
- * T14: refactored to use PixelButton + design-spec palette.
+ * T48: Redesigned from right-side drawer to centered modal (min(80vw,980px),
+ *   max-height 86vh), backdrop blur (CSS module), Phaser scene pause/resume
+ *   via GameEventBus, SNES-bevel frame from tokens.
+ * T36: "Day 1 vs Day N" before/after comparison panel — the demo money-shot.
  * T35: scrim backdrop uses semantic `overlay` token.
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
- * T26: added Method tab surfacing each agent's methodology from agent-config.
  * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
  * T28: Evolution tab renders a deterministic human-readable story per event.
  * T30: Method tab discloses honest model-input provenance (synthetic v1).
- * T36: "Day 1 vs Day N" before/after comparison panel — the demo money-shot.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -29,6 +30,7 @@ import { AgentPerfChart } from '@/components/AgentPerfChart'
 import { buildAgentPerfSeries } from '@/lib/agentPerf'
 import { buildEvolutionStory } from '@/lib/evolutionStory'
 import { palette, accents, text, fonts, borders, shadows, zIndex, overlay } from '@/styles/tokens'
+import css from './agentModal.module.css'
 
 type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'before-after' | 'memory'
 const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'before-after', 'memory'] as const
@@ -54,6 +56,13 @@ export function AgentModal() {
   })
 
   useEffect(() => { setTab('overview'); setErr(null) }, [selected])
+
+  /* T48: pause Phaser scene while modal is open */
+  useEffect(() => {
+    if (!agent) return
+    GameEventBus.emit('scene:pause', undefined)
+    return () => { GameEventBus.emit('scene:resume', undefined) }
+  }, [agent])
 
   if (!agent) return null
   const agentId = agent.agentId
@@ -92,11 +101,10 @@ export function AgentModal() {
 
   return (
     <div
+      className={css.scrim}
       onClick={close}
       style={{
-        position: 'absolute', inset: 0,
         background: overlay,
-        display: 'flex', justifyContent: 'flex-end',
         zIndex: zIndex.modal,
       }}
     >
@@ -107,12 +115,17 @@ export function AgentModal() {
         aria-labelledby={MODAL_TITLE_ID}
         onClick={(e) => e.stopPropagation()}
         style={{
-          width: 440, height: '100%',
+          width: 'min(80vw, 980px)',
+          maxHeight: '86vh',
           background: palette.wood900,
-          borderLeft: borders.standard,
-          padding: 16, color: palette.paper,
+          border: borders.standard,
+          boxShadow: `${shadows.hard}, ${shadows.bevelInset}`,
+          padding: 20,
+          color: palette.paper,
           fontFamily: fonts.body,
-          display: 'flex', flexDirection: 'column',
+          display: 'flex',
+          flexDirection: 'column',
+          overflowY: 'auto',
         }}
       >
         {/* Header */}
@@ -229,7 +242,7 @@ export function MethodTab({ agentId }: { agentId: string }) {
           <SectionLabel>Catchphrases</SectionLabel>
           {profile.catchphrases.map((c, i) => (
             <div key={i} style={{ fontSize: 15, marginTop: 4, color: text.dim, fontStyle: 'italic' }}>
-              “{c}”
+              "{c}"
             </div>
           ))}
         </div>
