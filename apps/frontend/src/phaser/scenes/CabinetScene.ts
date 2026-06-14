@@ -1,5 +1,5 @@
 /**
- * CabinetScene | v0.8.0 | 2026-06-13
+ * CabinetScene | v0.9.0 | 2026-06-14
  * Purpose: Main cabinet scene. Composes the bg-space WorldLayer (background,
  * props.json props, TV states, wall clock, y-sorted table occlusion) with
  * agent sprites, wallet-flow pause, thought bubbles, and keyboard navigation
@@ -34,6 +34,11 @@ export class CabinetScene extends Phaser.Scene {
   private pendingThoughts = new Map<string, { text: string; duration?: number }>()
   private onThought?: (p: { agentId: string; text: string; duration?: number }) => void
   private onLive?: (p: { live: boolean }) => void
+
+  /** T48: track whether a UI modal is requesting scene pause. */
+  private modalPaused = false
+  private onScenePause?: () => void
+  private onSceneResume?: () => void
 
   /* T29: room thought-bubble cycling */
   private thoughtCache = new Map<string, AgentThoughtStates>()
@@ -80,10 +85,10 @@ export class CabinetScene extends Phaser.Scene {
       () => this.syncAgents(),
     )
 
-    // Wallet-flow pause subscription
+    // Wallet-flow pause subscription (T48: merged with modal pause via refreshPause)
     this.unsubWallet = useGameStore.subscribe(
       (s) => s.ui.isWalletFlowActive,
-      (active) => this.setPaused(active),
+      () => this.refreshPause(),
     )
 
     // Immediate sync
@@ -99,9 +104,9 @@ export class CabinetScene extends Phaser.Scene {
       },
     })
 
-    // Thought bubbles (buffer while paused)
+    // Thought bubbles (buffer while paused — wallet flow or modal)
     this.onThought = ({ agentId, text, duration }) => {
-      const paused = useGameStore.getState().ui.isWalletFlowActive
+      const paused = useGameStore.getState().ui.isWalletFlowActive || this.modalPaused
       if (paused) {
         this.pendingThoughts.set(agentId, { text, duration })
         return
@@ -113,6 +118,12 @@ export class CabinetScene extends Phaser.Scene {
     // TV broadcast state from the match feed poller (MatchTV)
     this.onLive = ({ live }) => this.world?.setBroadcast(live)
     GameEventBus.on('matches:live', this.onLive)
+
+    // T48: scene:pause/resume from UI modals (AgentModal)
+    this.onScenePause = () => { this.modalPaused = true; this.refreshPause() }
+    this.onSceneResume = () => { this.modalPaused = false; this.refreshPause() }
+    GameEventBus.on('scene:pause', this.onScenePause)
+    GameEventBus.on('scene:resume', this.onSceneResume)
 
     // T29: auto-cycle personality thought bubbles based on each agent's live
     // status. Uses this.time so it freezes with the wallet-flow pause. Skipped
@@ -127,7 +138,7 @@ export class CabinetScene extends Phaser.Scene {
     }
 
     // Apply initial pause state (in case UI started wallet flow before scene)
-    this.setPaused(useGameStore.getState().ui.isWalletFlowActive)
+    this.refreshPause()
 
     // Keyboard navigation: Tab/Shift-Tab cycle props, Enter/Space activate
     this.input.keyboard?.on('keydown', (evt: KeyboardEvent) => {
@@ -143,6 +154,8 @@ export class CabinetScene extends Phaser.Scene {
   shutdown() {
     if (this.onThought) GameEventBus.off('thought:show', this.onThought)
     if (this.onLive) GameEventBus.off('matches:live', this.onLive)
+    if (this.onScenePause) GameEventBus.off('scene:pause', this.onScenePause)
+    if (this.onSceneResume) GameEventBus.off('scene:resume', this.onSceneResume)
     this.world?.getStateController()?.destroy()
     this.ambient?.destroy()
     this.syncTimer?.remove(false)
@@ -219,6 +232,12 @@ export class CabinetScene extends Phaser.Scene {
       this.interactiveList[this.focusIndex].setFocused(false)
       this.focusIndex = -1
     }
+  }
+
+  /** T48: combined pause state from wallet flow + modal overlay. */
+  private refreshPause() {
+    const paused = useGameStore.getState().ui.isWalletFlowActive || this.modalPaused
+    this.setPaused(paused)
   }
 
   private setPaused(paused: boolean) {
