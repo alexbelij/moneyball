@@ -1,7 +1,7 @@
 /**
- * AgentModal | v0.9.1 | 2026-06-13
+ * AgentModal | v0.10.0 | 2026-06-14
  * Purpose: Agent dossier — Overview (actions) + Method / Predictions /
- * Evolution / Memory tabs. WAI-ARIA dialog + tabs pattern, focus trap, kbd nav.
+ * Evolution / Before/After / Memory tabs. WAI-ARIA dialog + tabs, focus trap.
  * T14: refactored to use PixelButton + design-spec palette.
  * T35: scrim backdrop uses semantic `overlay` token.
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).
@@ -9,6 +9,7 @@
  * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
  * T28: Evolution tab renders a deterministic human-readable story per event.
  * T30: Method tab discloses honest model-input provenance (synthetic v1).
+ * T36: "Day 1 vs Day N" before/after comparison panel — the demo money-shot.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -18,6 +19,7 @@ import {
   getAgentProfile, getAgentPredictions, getAgentEvolution, getAgentParams, getDataSource,
   type PredictionItem, type EvolutionItem, type AgentProfile,
 } from '@/lib/api'
+import { buildBeforeAfterDiff, type BeforeAfterDiff, type ParamDiffEntry } from '@/lib/beforeAfterDiff'
 import { GameEventBus } from '@/events/GameEventBus'
 import { useAuthStore } from '@/store/authStore'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
@@ -28,8 +30,8 @@ import { buildAgentPerfSeries } from '@/lib/agentPerf'
 import { buildEvolutionStory } from '@/lib/evolutionStory'
 import { palette, accents, text, fonts, borders, shadows, zIndex, overlay } from '@/styles/tokens'
 
-type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'memory'
-const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'memory'] as const
+type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'before-after' | 'memory'
+const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'before-after', 'memory'] as const
 const MODAL_TITLE_ID = 'agent-modal-title'
 
 export function AgentModal() {
@@ -141,9 +143,9 @@ export function AgentModal() {
               size="small"
               onClick={() => setTab(t)}
               {...getTabProps(t)}
-              style={{ textTransform: 'capitalize', fontSize: 12 }}
+              style={{ textTransform: t === 'before-after' ? 'none' : 'capitalize', fontSize: 12 }}
             >
-              {t}
+              {t === 'before-after' ? 'Day1 vs Now' : t}
             </PixelButton>
           ))}
         </div>
@@ -171,6 +173,7 @@ export function AgentModal() {
           {tab === 'method' && <MethodTab agentId={agentId} />}
           {tab === 'predictions' && <PredictionsTab agentId={agentId} />}
           {tab === 'evolution' && <EvolutionTab agentId={agentId} />}
+          {tab === 'before-after' && <BeforeAfterTab agentId={agentId} />}
           {tab === 'memory' && <MemoryTab agentId={agentId} />}
         </div>
 
@@ -453,6 +456,134 @@ function EvolutionRow({ ev }: { ev: EvolutionItem }) {
         </div>
       )}
       <div style={{ marginTop: 4, fontSize: 12, color: text.muted }}>{new Date(ev.createdAt).toLocaleString()}</div>
+    </div>
+  )
+}
+
+/**
+ * T36: "Day 1 vs Day N" — the demo money-shot panel.
+ * Side-by-side comparison of where the agent started vs where it is now,
+ * with Brier improvement and a human-readable summary.
+ */
+function BeforeAfterTab({ agentId }: { agentId: string }) {
+  const { data, err, loading } = useFetch(async () => {
+    const [paramsRes, evoRes, predRes] = await Promise.all([
+      getAgentParams(agentId),
+      getAgentEvolution(agentId),
+      getAgentPredictions(agentId),
+    ])
+    return buildBeforeAfterDiff(
+      agentId,
+      paramsRes.params,
+      evoRes.items ?? [],
+      predRes.items ?? [],
+    )
+  }, [agentId])
+
+  if (loading) return <Hint>Computing before/after diff…</Hint>
+  if (err) return <Hint color={accents.red}>{err}</Hint>
+  if (!data) return <Hint>No data available.</Hint>
+  const diff = data as BeforeAfterDiff
+
+  if (diff.evolutionCount === 0) {
+    return <Hint>{diff.summary}</Hint>
+  }
+
+  return (
+    <div>
+      {/* Summary card */}
+      <div style={{
+        ...card(),
+        borderColor: accents.gold,
+        borderWidth: 2,
+      }}>
+        <SectionLabel>Day 1 → Day {diff.paramsVersion > 0 ? diff.paramsVersion : 'N'}</SectionLabel>
+        <div style={{ fontSize: 15, marginTop: 6, lineHeight: 1.5 }}>
+          {diff.summary}
+        </div>
+      </div>
+
+      {/* Brier delta card */}
+      {diff.brierDelta !== null && (
+        <div style={card()}>
+          <SectionLabel>Accuracy change (Brier score)</SectionLabel>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            marginTop: 8, fontSize: 15, fontFamily: 'monospace',
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: text.muted }}>Early</div>
+              <div style={{ fontSize: 18, color: text.dim }}>{diff.brierEarly!.toFixed(3)}</div>
+            </div>
+            <div style={{ fontSize: 20, color: text.muted }}>→</div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, color: text.muted }}>Late</div>
+              <div style={{ fontSize: 18, color: text.dim }}>{diff.brierLate!.toFixed(3)}</div>
+            </div>
+            <div style={{
+              marginLeft: 'auto',
+              fontSize: 16,
+              fontWeight: 700,
+              color: diff.brierDelta < -0.005 ? accents.green : diff.brierDelta > 0.005 ? accents.red : text.muted,
+            }}>
+              {diff.brierDelta < 0 ? '' : '+'}{diff.brierDelta.toFixed(3)}
+              {diff.brierDelta < -0.005 && ' ▼'}
+              {diff.brierDelta > 0.005 && ' ▲'}
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: text.muted, marginTop: 4 }}>
+            Lower Brier = better calibration. Negative delta = improvement.
+          </div>
+        </div>
+      )}
+
+      {/* Parameter diff table */}
+      <div style={card()}>
+        <SectionLabel>Parameter changes</SectionLabel>
+        <div style={{ marginTop: 8 }}>
+          {/* Table header */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px',
+            fontSize: 11, color: text.muted, fontFamily: 'monospace',
+            paddingBottom: 4, borderBottom: borders.rule,
+          }}>
+            <span>Param</span>
+            <span style={{ textAlign: 'right' }}>Day 1</span>
+            <span style={{ textAlign: 'right' }}>Now</span>
+            <span style={{ textAlign: 'right' }}>Delta</span>
+          </div>
+          {diff.diffs.map((d: ParamDiffEntry) => (
+            <div
+              key={d.key}
+              style={{
+                display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px',
+                fontSize: 13, fontFamily: 'monospace',
+                padding: '4px 0',
+                borderBottom: borders.rule,
+              }}
+            >
+              <span style={{ color: text.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {d.label}
+              </span>
+              <span style={{ textAlign: 'right', color: text.muted }}>{d.day1.toFixed(2)}</span>
+              <span style={{ textAlign: 'right', color: palette.paper }}>{d.dayN.toFixed(2)}</span>
+              <span style={{
+                textAlign: 'right', fontWeight: 700,
+                color: d.direction === 'up' ? accents.green : d.direction === 'down' ? accents.red : text.muted,
+              }}>
+                {d.delta >= 0 ? '+' : ''}{d.delta.toFixed(3)}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Evolution count */}
+      <div style={{
+        fontSize: 12, color: text.muted, marginTop: 4, textAlign: 'center',
+      }}>
+        {diff.evolutionCount} evolution event{diff.evolutionCount === 1 ? '' : 's'} · params v{diff.paramsVersion}
+      </div>
     </div>
   )
 }
