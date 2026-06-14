@@ -68,6 +68,9 @@ export type AgentEvent = AgentPredictionEvent | AgentOutcomeEvent | AgentEvoluti
 
 type RecallResult = { text?: string; content?: string }
 
+/** Wide recall window for boot hydration — MemWal recall is semantic top-K. */
+const HYDRATE_RECALL_TOPK = 500
+
 function extractJson(text: string): any | null {
   // Stored as: "moneyball:agent_event ...\n{json}"
   const idx = text.indexOf('\n')
@@ -83,7 +86,15 @@ try {
 } catch {
   _dataDir = resolve(process.cwd(), '.data')
 }
-const INDEX_PATH = resolve(_dataDir, 'agent-index.json')
+
+export interface AgentEventServiceOptions {
+  /**
+   * Where the read-model index is persisted. Defaults to <backend>/.data.
+   * Pass `null` to run fully in-memory (no disk read/write) — used by tests
+   * to get a clean cold-start without touching the shared on-disk index.
+   */
+  dataDir?: string | null
+}
 
 export class AgentEventService {
   // Cache MemWal clients per agent namespace
@@ -91,6 +102,11 @@ export class AgentEventService {
   private writeQueues = new Map<string, MemWalWriteQueue>()
   /** Dev fallback (no MEMWAL_KEY): skip MemWal writes. Index still works. */
   private readonly enabled = Boolean(env.MEMWAL_KEY)
+
+  // Disk persistence target (instance-level so tests can isolate / disable it).
+  private readonly persistEnabled: boolean
+  private readonly dataDir: string
+  private readonly indexPath: string
 
   // ── T40b: Write-through materialized read-model ──────────────────────
   private predictionIndex = new Map<string, AgentPredictionEvent[]>()
@@ -102,8 +118,11 @@ export class AgentEventService {
   private persistTimer: ReturnType<typeof setTimeout> | null = null
   private dirty = false
 
-  constructor() {
-    this.loadFromDisk()
+  constructor(opts: AgentEventServiceOptions = {}) {
+    this.persistEnabled = opts.dataDir !== null
+    this.dataDir = opts.dataDir ?? _dataDir
+    this.indexPath = resolve(this.dataDir, 'agent-index.json')
+    if (this.persistEnabled) this.loadFromDisk()
   }
 
   // ── Dedup key helpers ────────────────────────────────────────────────
@@ -112,6 +131,10 @@ export class AgentEventService {
   }
 
   private evoKey(ev: AgentEvolutionEvent): string {
+    // Prefer the sleep-worker runId (deterministic per agent+watermark) so the
+    // same evolution dedups across reboots/re-seeds regardless of createdAt.
+    // Fall back to createdAt+summary for legacy events that predate runId.
+    if (ev.runId) return `evo:${ev.agentId}:run:${ev.runId}`
     return `evo:${ev.agentId}:${ev.createdAt}:${(ev.summary ?? '').slice(0, 40)}`
   }
 
@@ -152,6 +175,7 @@ export class AgentEventService {
 
   // ── Disk persistence (debounced) ─────────────────────────────────────
   private schedulePersist() {
+    if (!this.persistEnabled) return
     this.dirty = true
     if (this.persistTimer) return
     this.persistTimer = setTimeout(() => {
@@ -167,10 +191,10 @@ export class AgentEventService {
         evolution: Object.fromEntries(this.evolutionIndex),
         outcomes: Object.fromEntries(this.outcomeIndex),
       }
-      mkdirSync(_dataDir, { recursive: true })
-      writeFileSync(INDEX_PATH, JSON.stringify(data), 'utf-8')
+      mkdirSync(this.dataDir, { recursive: true })
+      writeFileSync(this.indexPath, JSON.stringify(data), 'utf-8')
       this.dirty = false
-      console.log(`[agentEvents.persist] saved to ${INDEX_PATH}`)
+      console.log(`[agentEvents.persist] saved to ${this.indexPath}`)
     } catch (err) {
       console.error('[agentEvents.persist] write failed:', err)
     }
@@ -178,7 +202,7 @@ export class AgentEventService {
 
   private loadFromDisk() {
     try {
-      const raw = readFileSync(INDEX_PATH, 'utf-8')
+      const raw = readFileSync(this.indexPath, 'utf-8')
       const data = JSON.parse(raw) as {
         predictions?: Record<string, AgentPredictionEvent[]>
         evolution?: Record<string, AgentEvolutionEvent[]>
@@ -223,7 +247,11 @@ export class AgentEventService {
       for (const type of ['prediction', 'evolution', 'outcome'] as const) {
         try {
           const client = this.getClient(agentId)
-          const res: any = await client.recall(this.anchor(agentId, type))
+          // High topK: MemWal recall is semantic top-K (no enumeration API), so
+          // a default small limit silently drops most events. Pull a wide window
+          // to maximise how much durable history we restore on boot. Dedup keeps
+          // it safe to over-fetch.
+          const res: any = await client.recall({ query: this.anchor(agentId, type), topK: HYDRATE_RECALL_TOPK, limit: HYDRATE_RECALL_TOPK })
           const results: RecallResult[] = (res?.results ?? []) as RecallResult[]
           for (const r of results) {
             const ev = extractJson(r.text ?? r.content ?? '')
@@ -282,12 +310,14 @@ export class AgentEventService {
   }
 
   // ── Write methods (index first, then MemWal) ─────────────────────────
-  async addPrediction(input: Omit<AgentPredictionEvent, 'schemaVersion' | 'type' | 'createdAt'>) {
+  async addPrediction(
+    input: Omit<AgentPredictionEvent, 'schemaVersion' | 'type' | 'createdAt'> & { createdAt?: string },
+  ) {
     const ev: AgentPredictionEvent = {
+      ...input,
       schemaVersion: '1.0',
       type: 'prediction',
-      createdAt: new Date().toISOString(),
-      ...input,
+      createdAt: input.createdAt ?? new Date().toISOString(),
     }
 
     // T40b: always write-through to index (deduped)
@@ -302,12 +332,14 @@ export class AgentEventService {
     return ev
   }
 
-  async addOutcome(input: Omit<AgentOutcomeEvent, 'schemaVersion' | 'type' | 'createdAt'>) {
+  async addOutcome(
+    input: Omit<AgentOutcomeEvent, 'schemaVersion' | 'type' | 'createdAt'> & { createdAt?: string },
+  ) {
     const ev: AgentOutcomeEvent = {
+      ...input,
       schemaVersion: '1.0',
       type: 'outcome',
-      createdAt: new Date().toISOString(),
-      ...input,
+      createdAt: input.createdAt ?? new Date().toISOString(),
     }
 
     this.indexOutcome(ev)
@@ -321,12 +353,14 @@ export class AgentEventService {
     return ev
   }
 
-  async addEvolution(input: Omit<AgentEvolutionEvent, 'schemaVersion' | 'type' | 'createdAt'>) {
+  async addEvolution(
+    input: Omit<AgentEvolutionEvent, 'schemaVersion' | 'type' | 'createdAt'> & { createdAt?: string },
+  ) {
     const ev: AgentEvolutionEvent = {
+      ...input,
       schemaVersion: '1.0',
       type: 'evolution',
-      createdAt: new Date().toISOString(),
-      ...input,
+      createdAt: input.createdAt ?? new Date().toISOString(),
     }
 
     this.indexEvolution(ev)
@@ -371,5 +405,58 @@ export class AgentEventService {
       .slice()
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
       .slice(0, limit)
+  }
+
+  // ── Synchronous index counters (cheap; for seed guards + /health) ────
+  predictionCount(agentId: string): number {
+    return this.predictionIndex.get(agentId)?.length ?? 0
+  }
+
+  outcomeCount(agentId: string): number {
+    return this.outcomeIndex.get(agentId)?.length ?? 0
+  }
+
+  evolutionCount(agentId: string): number {
+    return this.evolutionIndex.get(agentId)?.length ?? 0
+  }
+
+  /** Non-`noop` evolutions — the substantive ones the before/after panel shows. */
+  substantiveEvolutionCount(agentId: string): number {
+    return (this.evolutionIndex.get(agentId) ?? []).filter((e) => e.evolutionType !== 'noop').length
+  }
+
+  /**
+   * T57: read-model readiness snapshot for GET /health. Lets ops verify the
+   * index is warm (rebuilt from fixture / hydrated) after a redeploy without
+   * a manual re-seed.
+   */
+  readinessReport(agentIds: readonly string[]) {
+    const agents: Record<string, {
+      predictions: number
+      outcomes: number
+      evolutions: number
+      substantiveEvolutions: number
+    }> = {}
+    let predictions = 0
+    let outcomes = 0
+    let evolutions = 0
+    let substantiveEvolutions = 0
+    for (const agentId of agentIds) {
+      const p = this.predictionCount(agentId)
+      const o = this.outcomeCount(agentId)
+      const e = this.evolutionCount(agentId)
+      const s = this.substantiveEvolutionCount(agentId)
+      agents[agentId] = { predictions: p, outcomes: o, evolutions: e, substantiveEvolutions: s }
+      predictions += p
+      outcomes += o
+      evolutions += e
+      substantiveEvolutions += s
+    }
+    const ready = agentIds.every((id) => this.predictionCount(id) > 0)
+    return {
+      ready,
+      totals: { predictions, outcomes, evolutions, substantiveEvolutions },
+      agents,
+    }
   }
 }
