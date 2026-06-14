@@ -12,7 +12,7 @@
  * add the new surface below; mock its @/lib/api calls as shown for MatchTV.)
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 Object.defineProperty(window, 'WebGLRenderingContext', { value: class {}, writable: true, configurable: true })
 window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as any
@@ -22,7 +22,7 @@ vi.mock('@/lib/api', () => ({
 }))
 
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import { RankMedal } from '@/components/ui'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import { LoadingSkeleton } from '@/components/LoadingSkeleton'
@@ -71,15 +71,30 @@ describe('surface contract: RankMedal', () => {
   })
 })
 
-describe('surface contract: OfflineBanner', () => {
-  beforeEach(resetStore)
-  it('is a red, square, accessible status banner with a geometric glyph', () => {
+describe('surface contract: OfflineBanner (T41 waking-state)', () => {
+  beforeEach(() => {
+    resetStore()
+    vi.useFakeTimers()
+  })
+  afterEach(() => vi.useRealTimers())
+
+  it('shows nothing when connected', () => {
+    useGameStore.getState().setConnected(true)
     render(<OfflineBanner />)
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+
+  it('shows an accessible waking-state banner with gold accent after delay', async () => {
+    // isConnected defaults to false → waking kicks in after 800ms
+    render(<OfflineBanner />)
+    // Before delay: no banner
+    expect(screen.queryByRole('status')).toBeNull()
+    // Advance past the waking delay
+    await act(async () => { vi.advanceTimersByTime(900) })
     const banner = screen.getByRole('status')
-    expect(banner).toHaveTextContent(/offline/i)
-    expect(banner.textContent).toContain('■') // geometric glyph, not emoji
     expect(banner).toHaveAttribute('aria-live', 'polite')
-    expect(getComputedStyle(banner).color).toBe(rgb(accents.red))
+    // T41: waking-state flavour text, not raw "OFFLINE"
+    expect(banner).toHaveTextContent(/waking up|reviewing|brewing|sharpening|checking|consulting|cold-starting|warming/i)
     expect(banner.textContent).not.toMatch(EMOJI)
   })
 })

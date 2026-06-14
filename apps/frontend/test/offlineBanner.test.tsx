@@ -1,16 +1,16 @@
 /**
- * offlineBanner.test.tsx | v1.0.0 | 2026-06-13
- * Tests for T18: OfflineBanner visibility, gameStore reducer (cachePredictions,
- * connection state), and offline/online transitions.
+ * offlineBanner.test.tsx | v2.0.0 | 2026-06-14
+ * Tests for T18 + T41: OfflineBanner waking-state UX, gameStore reducer
+ * (cachePredictions, connection state), and offline/online transitions.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 Object.defineProperty(window, 'WebGLRenderingContext', { value: class {}, writable: true, configurable: true })
 window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as any
 
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, act } from '@testing-library/react'
 import { useGameStore } from '@/store/gameStore'
 import { OfflineBanner } from '@/components/OfflineBanner'
 import type { PredictionItem } from '@/lib/api'
@@ -23,12 +23,21 @@ const resetStore = () => {
   })
 }
 
-describe('OfflineBanner', () => {
-  beforeEach(resetStore)
+describe('OfflineBanner (T41 waking-state)', () => {
+  beforeEach(() => {
+    resetStore()
+    vi.useFakeTimers()
+  })
+  afterEach(() => vi.useRealTimers())
 
-  it('renders when disconnected', () => {
+  it('shows waking-state banner after delay when disconnected', async () => {
     render(<OfflineBanner />)
-    expect(screen.getByRole('status')).toHaveTextContent(/offline/i)
+    // Before 800ms delay: banner not visible yet (avoids flash)
+    expect(screen.queryByRole('status')).toBeNull()
+    // Advance past the waking delay
+    await act(async () => { vi.advanceTimersByTime(900) })
+    const banner = screen.getByRole('status')
+    expect(banner).toHaveTextContent(/waking up|reviewing|brewing|sharpening|checking|consulting|cold-starting|warming/i)
   })
 
   it('hides when connected', () => {
@@ -37,8 +46,9 @@ describe('OfflineBanner', () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it('has role="status" and aria-live for screen readers', () => {
+  it('has role="status" and aria-live for screen readers', async () => {
     render(<OfflineBanner />)
+    await act(async () => { vi.advanceTimersByTime(900) })
     const banner = screen.getByRole('status')
     expect(banner).toHaveAttribute('aria-live', 'polite')
   })
