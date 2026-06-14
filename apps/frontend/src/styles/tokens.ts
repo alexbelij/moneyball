@@ -1,5 +1,5 @@
 /**
- * tokens | v1.1.0 | 2026-06-13
+ * tokens | v1.2.0 | 2026-06-14
  * Purpose: Single source of truth for design-spec palette, typography,
  * spacing, border, shadow, and z-index tokens.
  *
@@ -44,17 +44,21 @@ export const accents = {
   green: '#39c04a',
 } as const
 
-/* ── Semantic text helpers (derived from palette) ────────────────── */
+/* ── Semantic text helpers ────────────────────────────────────────
+ * T46: text.muted and text.faint decoupled from palette wood tones
+ *      and brightened to pass WCAG AA ≥ 4.5:1 on wood900 (#181009).
+ *      palette.wood500 / wood300 are still available for borders/fills.
+ * ─────────────────────────────────────────────────────────────────── */
 
 export const text = {
   /** Primary text on dark backgrounds. */
   primary:  palette.paper,
   /** Slightly muted text. */
   dim:      '#d5cec0',
-  /** Secondary / label text. */
-  muted:    palette.wood500,
-  /** Very dim (captions, meta). */
-  faint:    palette.wood300,
+  /** Secondary / label text. WCAG AA 4.89:1 on wood900. */
+  muted:    '#9e7c54',
+  /** Very dim (captions, meta). WCAG AA 5.42:1 on wood900. */
+  faint:    '#a5845c',
 } as const
 
 /* ── Overlay / scrim (modal & wallet-flow backdrops) ─────────────── */
@@ -67,7 +71,7 @@ export const overlay = 'rgba(0,0,0,0.6)' as const
 export const agentColors: Record<string, string> = {
   dr_morgan:     '#e8a44a',
   scout_alvarez: '#4aade8',
-  viktor_kane:   '#c04a4a',
+  viktor_kane:   '#d45555',
   sofia_mendes:  '#7ae84a',
   madame_pythia: '#d64ae8',
 } as const
