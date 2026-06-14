@@ -11,3 +11,4 @@ img/*
 *.zip
 tools/*
 docs/migration.md
+.data

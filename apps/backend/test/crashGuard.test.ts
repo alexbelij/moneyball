@@ -74,18 +74,11 @@ describe('AgentEventService graceful degradation', () => {
     svc = new AgentEventService()
   })
 
-  it('listPredictions returns [] when recall rejects', async () => {
-    const mockClient = {
-      recall: vi.fn().mockRejectedValue(new Error('MemWal 429')),
-      remember: vi.fn(),
-      waitForRememberJob: vi.fn(),
-    }
-    vi.spyOn(svc as any, 'getClient').mockReturnValue(mockClient)
-    Object.defineProperty(svc, 'enabled', { value: true })
-
+  it('listPredictions returns [] when no events added (T40b: index-based)', async () => {
+    // T40b: reads come from in-memory index, not from recall().
+    // A fresh svc with no add* calls returns [].
     const result = await svc.listPredictions('dr_morgan')
     expect(result).toEqual([])
-    expect(mockClient.recall).toHaveBeenCalled()
   })
 
   it('listEvolution returns [] when recall rejects', async () => {
@@ -120,26 +113,17 @@ describe('AgentEventService graceful degradation', () => {
     expect(result).toEqual([])
   })
 
-  it('listEvolution returns valid events after recall succeeds', async () => {
-    const ev = {
-      schemaVersion: '1.0',
-      type: 'evolution',
+  it('listEvolution returns valid events via write-through index (T40b)', async () => {
+    // T40b: reads come from the in-memory index, not from recall()
+    await svc.addEvolution({
       agentId: 'dr_morgan',
-      createdAt: '2026-06-14T00:00:00Z',
-      summary: 'Adjusted calibration',
-    }
-    const mockClient = {
-      recall: vi.fn().mockResolvedValue({
-        results: [{ text: `moneyball:agent_event type=evolution agentId=dr_morgan\n${JSON.stringify(ev)}` }],
-      }),
-      remember: vi.fn(),
-      waitForRememberJob: vi.fn(),
-    }
-    vi.spyOn(svc as any, 'getClient').mockReturnValue(mockClient)
-    Object.defineProperty(svc, 'enabled', { value: true })
+      summary: 'Adjusted calibration after poor Brier score',
+      parameterDiff: { confidenceBias: -0.05 },
+    })
 
     const result = await svc.listEvolution('dr_morgan')
     expect(result.length).toBe(1)
-    expect(result[0].summary).toBe('Adjusted calibration')
+    expect(result[0].summary).toBe('Adjusted calibration after poor Brier score')
+    expect(result[0].parameterDiff).toEqual({ confidenceBias: -0.05 })
   })
 })

@@ -65,6 +65,10 @@ async function main() {
 
   registerApiRoutes(app)
   const publicEvents = new AgentEventService()
+  // T40b: best-effort hydrate from MemWal (non-blocking, won't crash on error)
+  void publicEvents.hydrate([
+    'dr_morgan', 'scout_alvarez', 'viktor_kane', 'sofia_mendes', 'madame_pythia',
+  ])
   registerAgentEventRoutes(app, publicEvents)
   registerAdminRoutes(app)
 
