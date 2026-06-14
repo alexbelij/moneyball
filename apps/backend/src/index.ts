@@ -26,6 +26,8 @@ import { ManualMatchProvider } from './matches/manualProvider'
 import { MatchWorker } from './matches/matchWorker'
 import type { AgentMethodology, MethodologyType } from './matches/predictionEngine'
 import agentConfig from './agents/agent-config.v1.json'
+import { AgentPersonaService } from './agents/agentPersonaService'
+import type { ThoughtState } from './agents/agentPersonaService'
 
 // ── T40a: global crash guards ──────────────────────────────────────────
 process.on('unhandledRejection', (reason) => {
@@ -139,20 +141,27 @@ async function main() {
     agentIds: agents.map((a) => a.agentId),
   })
 
-  const thoughts = [
-    'Scanning markets… recalibrating confidence.',
-    'Everyone agrees on the favorite. That’s my cue to doubt.',
-    'My gut says the captain is hiding fear.',
-    'Line moved without news. Someone knows something.',
-    'Numbers vibrate oddly today. Watch for chaos.',
-  ]
+  // -- T45: ambient thought loop -- persona-sourced, 7-12s jitter ------
+  const personaService = new AgentPersonaService()
+  const AMBIENT_STATES: ThoughtState[] = ['analyzing', 'watching', 'coffee', 'arguing', 'busy']
 
-  setInterval(() => {
-    const agents = world.getState().agents
-    const pick = agents[Math.floor(Math.random() * agents.length)]
-    const text = thoughts[Math.floor(Math.random() * thoughts.length)]
-    socketApi.broadcastThought(pick.agentId, text)
-  }, 1000)
+  function scheduleNextThought() {
+    const jitterMs = 7000 + Math.floor(Math.random() * 5000) // 7-12s
+    setTimeout(() => {
+      const agentList = world.getState().agents
+      if (agentList.length === 0) { scheduleNextThought(); return }
+      const pick = agentList[Math.floor(Math.random() * agentList.length)]
+      const persona = personaService.get(pick.agentId)
+      if (!persona) { scheduleNextThought(); return }
+      const state = AMBIENT_STATES[Math.floor(Math.random() * AMBIENT_STATES.length)]
+      const lines = persona.thoughtBubbles[state]
+      if (lines.length === 0) { scheduleNextThought(); return }
+      const text = lines[Math.floor(Math.random() * lines.length)]
+      socketApi.broadcastThought(pick.agentId, text)
+      scheduleNextThought()
+    }, jitterMs)
+  }
+  scheduleNextThought()
 
   server.listen(env.PORT, () => {
     console.log(`[backend] listening on http://localhost:${env.PORT}`)
