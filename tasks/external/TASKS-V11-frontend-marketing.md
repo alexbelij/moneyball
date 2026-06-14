@@ -116,6 +116,23 @@ is hard to read); inter-line spacing/weights are inconsistent. Not responsive on
   375×667 and 1440×900 (do NOT commit the artifacts).
 **Acceptance:** legible at 12px-free body, no horizontal overflow at 360–1440px; tests green.
 
+### T55 — Finish T31 STEP 2: memory-aware LLM chat with agents (carryover from V10)
+**Status:** the chat design doc was already accepted in V10 (`task/T31-chat`). STEP 1 landed;
+STEP 2 (the actual LLM chat) is still **optional polish — NOT a jury blocker**, so it ranks
+below the P0 blockers. It IS backend work, so it can proceed in parallel with the frontend P0.
+**Dependency:** do it AFTER T45 (English persona) — the chat must speak the same English voice.
+**Scope:**
+- Route `POST /api/agents/:agentId/chat`; 404 on unknown agentId; trim history; temp ~0.5.
+- Memory-aware in character: "connect your wallet so I remember you" + roast sourced from the
+  MemWal summary; **football-only persona**, deflect off-topic in-character.
+- Behind `LLMClient` with a **deterministic fallback** so CI stays green WITHOUT a key (keys go
+  into Render by lead, never to the implementing agent). NO new durable schema and NO durable
+  write from free chat (Sui write stays only via the existing "Disagree" button).
+- Keep the memory invariant: any number stays from the deterministic engine, never from chat text.
+**Acceptance:** chat endpoint returns in-character English; deterministic fallback path tested;
+backend vitest + tsc green; no Cyrillic.
+**Priority note:** if time is tight before 24.06, the ecosystem demo (T52–T54) and P0 outrank this.
+
 ---
 
 ## P2 — DELIGHT / NARRATIVE
@@ -144,8 +161,13 @@ small pixel **menu button / top bar**. Use hash routes (`#/about`, `#/how-it-wor
 deep-linkable share URLs that open the matching overlay — no scene reload.
 **Sections to ship:** `About` (the pitch + Walrus Memory World Cup framing), `How it works`
 (the day1→dayN memory loop, with a link to the Day1-vs-Now panel), `Methodology` (already per
-agent), `Verify on Walrus` (blob/object links — ties to T37 if present), `Leaderboard`.
-**Acceptance:** menu button opens overlays; hash deep-links work; a11y (focus trap) reused.
+agent), `Verify on Walrus` (blob/object links — ties to T37 if present), `Leaderboard`,
+`Connected agents` (T54).
+**Anna 14.06:** EVERY section must have REAL content — an empty/placeholder section is worse than
+no section. Do NOT invent extra menu items; add a new section ONLY if there is concrete content
+that none of the above covers (then propose it to lead first). Ship only the sections you can fill.
+**Acceptance:** every shipped section has real content; menu button opens overlays; hash deep-links
+work; a11y (focus trap) reused.
 
 ---
 
@@ -205,6 +227,11 @@ agents (T52) are first-class participants here.
 **Anna 14.06:** add functions so a **third-party / external agent** can connect and talk WITH
 our agents, and the new agent **shows up in a list of connected agents** in the UI. This is the
 interactive, live face of T52's registry.
+
+> **Anna confirmed 14.06:** the external agent answers with **its OWN LLM/logic** — we only
+> expose the two-way channel + memory + the Connected list. We do NOT run the stranger's brain;
+> our side stays deterministic. (A no-LLM deterministic-reply demo is an acceptable fallback if a
+> live external brain isn't ready by 24.06, but the channel must support a real external agent.)
 
 **Step 1 — design doc `docs/connected-agents-design.md`:** specify
 - **Identity & registration:** an external agent connects via the T52 SDK (`connect()` with a
