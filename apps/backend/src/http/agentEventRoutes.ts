@@ -1,8 +1,10 @@
 /**
- * agentEventRoutes | v0.3.0 | 2026-06-14
+ * agentEventRoutes | v0.4.0 | 2026-06-17
  * Purpose: Public read + admin write for agent predictions/evolution.
  * T26: adds public /profile (identity + methodology, no secrets).
  * T40a: all async routes wrapped in asyncHandler (crash-guard).
+ * T57: evolution endpoint filters noop by default (?includeNoops=1 for debug);
+ *      profile endpoint includes slept/evolved activity counter.
  */
 
 import type { Express } from 'express'
@@ -22,7 +24,15 @@ export function registerAgentEventRoutes(
     const agentId = String(req.params.agentId)
     const profile = profiles.get(agentId)
     if (!profile) return res.status(404).json({ ok: false, error: 'UNKNOWN_AGENT' })
-    res.json({ ok: true, profile })
+    // T57: slept/evolved counter — liveness feel without noise in the panel
+    const totalEvolutions = svc.evolutionCount(agentId)
+    const substantiveEvolutions = svc.substantiveEvolutionCount(agentId)
+    const slept = totalEvolutions - substantiveEvolutions // noop sleep cycles
+    res.json({
+      ok: true,
+      profile,
+      activity: { slept, evolved: substantiveEvolutions },
+    })
   })
 
   app.get('/api/public/agents/:agentId/predictions', asyncHandler(async (req, res) => {
@@ -33,7 +43,12 @@ export function registerAgentEventRoutes(
 
   app.get('/api/public/agents/:agentId/evolution', asyncHandler(async (req, res) => {
     const agentId = String(req.params.agentId)
-    const items = await svc.listEvolution(agentId, 30)
+    const includeNoops = req.query.includeNoops === '1'
+    const all = await svc.listEvolution(agentId, 30)
+    // T57: default = substantive only (noop hidden); ?includeNoops=1 for debug
+    const items = includeNoops
+      ? all
+      : all.filter((e) => e.evolutionType !== 'noop' && Object.keys(e.parameterDiff ?? {}).length > 0)
     res.json({ ok: true, agentId, items })
   }))
 

@@ -20,6 +20,7 @@ import { optionalJwt } from './http/jwtMiddleware'
 import { registerAgentEventRoutes } from './http/agentEventRoutes'
 import { registerMatchRoutes } from './http/matchRoutes'
 import { AgentEventService } from './agents/agentEventService'
+import { hasSeedBaseline, seedReadModel } from './agents/seedReadModel'
 import { SleepService } from './agents/sleepService'
 import { FootballDataProvider } from './matches/footballDataProvider'
 import { ManualMatchProvider } from './matches/manualProvider'
@@ -62,15 +63,41 @@ async function main() {
   // Optional JWT for other /api routes
   app.use('/api', optionalJwt)
 
-  app.get('/health', (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }))
+  registerApiRoutes(app)
+
+  const SEED_AGENTS = ['dr_morgan', 'scout_alvarez', 'viktor_kane', 'sofia_mendes', 'madame_pythia']
+  const publicEvents = new AgentEventService()
+
+  // ── T57: durable read-model on a cold start ──────────────────────────────
+  // The on-disk index is ephemeral (wiped on redeploy) and MemWal recall is
+  // best-effort top-K (no full enumeration). So: (1) await a wide hydrate from
+  // MemWal to restore whatever durable history we can, then (2) deterministically
+  // rebuild the demo baseline from the committed fixture if it's missing — no
+  // manual re-seed ritual. Both are idempotent (dedup by predictionId / runId).
+  // Bounded await: a hung MemWal relayer must never block the server from
+  // listening — we fall back to the deterministic rebuild below regardless.
+  await Promise.race([
+    publicEvents.hydrate(SEED_AGENTS).catch((err) => console.error('[boot.hydrate] failed (non-fatal):', err)),
+    new Promise<void>((r) => setTimeout(r, 15000)),
+  ])
+  try {
+    if (!(await hasSeedBaseline(publicEvents))) {
+      const r = await seedReadModel(publicEvents)
+      console.log('[boot.seed] read-model rebuilt from fixture:', r)
+    } else {
+      console.log('[boot.seed] read-model baseline already present — skipped rebuild')
+    }
+  } catch (err) {
+    console.error('[boot.seed] read-model rebuild failed (non-fatal):', err)
+  }
+
+  // T57: /health reports read-model readiness so a redeploy can be verified
+  // without a manual re-seed. Backwards compatible: keeps { ok, ts }.
+  app.get('/health', (_req, res) =>
+    res.json({ ok: true, ts: new Date().toISOString(), readModel: publicEvents.readinessReport(SEED_AGENTS) }),
+  )
   app.get('/', (_req, res) => res.type('text').send('Moneyball backend: ok'))
 
-  registerApiRoutes(app)
-  const publicEvents = new AgentEventService()
-  // T40b: best-effort hydrate from MemWal (non-blocking, won't crash on error)
-  void publicEvents.hydrate([
-    'dr_morgan', 'scout_alvarez', 'viktor_kane', 'sofia_mendes', 'madame_pythia',
-  ])
   registerAgentEventRoutes(app, publicEvents)
   registerAdminRoutes(app)
 
