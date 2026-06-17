@@ -14,9 +14,11 @@
  *   - Evolutions carry a STABLE runId → AgentEventService dedups by runId, so
  *     re-seeding never appends a second copy.
  *
- * This fixture contains ONLY substantive events. The `noop` auto-sleep events
- * that the live sleep cycle emits (and that pollute the before/after panel) are
- * intentionally NOT seeded here — they only ever arrive from the live workers.
+ * The fixture includes both substantive AND noop evolutions. Noop is honest:
+ * the sleep cycle really happened — the agent reflected but found nothing
+ * actionable. Store baseline: 3/3/3/2/2 (total). Read-filtered (panel)
+ * baseline: 2/2/2/1/1 (substantive only). Noop powers the "slept N" counter
+ * in the profile, giving a liveness feel without polluting Day1-vs-Now.
  */
 
 export const SEED_AGENT_IDS = [
@@ -115,3 +117,17 @@ export const SEED_EVOLUTIONS: readonly SeedEvolution[] = [
     parameterDiff: { contrarianism: 0.04, publicSentimentThreshold: 0.10, hedgingLevel: -0.04 }, fromVersion: 1, toVersion: 2,
   },
 ]
+
+/**
+ * One noop sleep cycle per agent — honest record that sleep happened but
+ * found nothing actionable. Store: 3/3/3/2/2 total, filtered: 2/2/2/1/1.
+ */
+export const SEED_NOOP_EVOLUTIONS: readonly SeedEvolution[] = SEED_AGENT_IDS.map((agentId) => ({
+  agentId,
+  runId: `seed:${agentId}:noop`,
+  createdAt: '2026-06-15T06:00:00.000Z',
+  summary: 'No actionable patterns detected. Parameters unchanged.',
+  parameterDiff: {},
+  fromVersion: agentId === 'sofia_mendes' || agentId === 'madame_pythia' ? 1 : 2,
+  toVersion: agentId === 'sofia_mendes' || agentId === 'madame_pythia' ? 1 : 2,
+}))

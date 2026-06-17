@@ -21,7 +21,7 @@ import { predictMatch, type AgentMethodology, type MethodologyType } from '../ma
 import { outcomeFromScore, type Match, type PickCode } from '../matches/types'
 import type { AgentEventService } from './agentEventService'
 import agentConfig from './agent-config.v1.json'
-import { SEED_AGENT_IDS, SEED_EVOLUTIONS, SEED_MATCHES, SEED_RESOLVED_AT, type SeedMatch } from './seedFixture'
+import { SEED_AGENT_IDS, SEED_EVOLUTIONS, SEED_NOOP_EVOLUTIONS, SEED_MATCHES, SEED_RESOLVED_AT, type SeedMatch } from './seedFixture'
 
 const pickLabel = (m: { homeTeam: string; awayTeam: string }, p: PickCode): string =>
   p === '1' ? `${m.homeTeam} win` : p === '2' ? `${m.awayTeam} win` : 'Draw'
@@ -126,6 +126,22 @@ export async function seedReadModel(svc: AgentEventService): Promise<SeedResult>
       fromVersion: evo.fromVersion,
       toVersion: evo.toVersion,
       evolutionType: 'param_update',
+    })
+    if (svc.evolutionCount(evo.agentId) > before) evolutions++
+  }
+
+  // T57: seed noop sleep cycles — honest record, powers "slept N" counter
+  for (const evo of SEED_NOOP_EVOLUTIONS) {
+    const before = svc.evolutionCount(evo.agentId)
+    await svc.addEvolution({
+      agentId: evo.agentId,
+      createdAt: evo.createdAt,
+      summary: evo.summary,
+      parameterDiff: evo.parameterDiff,
+      runId: evo.runId,
+      fromVersion: evo.fromVersion,
+      toVersion: evo.toVersion,
+      evolutionType: 'noop',
     })
     if (svc.evolutionCount(evo.agentId) > before) evolutions++
   }

@@ -36,7 +36,7 @@ describe('T57 read-model durability — cold-start rebuild', () => {
     const r = await seedReadModel(svc)
     expect(r.predictions).toBe(40) // 8 matches × 5 agents
     expect(r.outcomes).toBe(40)
-    expect(r.evolutions).toBe(8) // wave1 (5) + wave2 (3)
+    expect(r.evolutions).toBe(13) // wave1 (5) + wave2 (3) + noop (5)
 
     expect(await hasSeedBaseline(svc)).toBe(true)
 
@@ -53,22 +53,41 @@ describe('T57 read-model durability — cold-start rebuild', () => {
     }
   })
 
-  it('produces substantive (non-noop) evolutions 2/2/2/1/1 and zero noop', async () => {
+  it('store baseline 3/3/3/2/2 (incl 1 noop/agent), substantive 2/2/2/1/1', async () => {
     const svc = coldService()
     await seedReadModel(svc)
+    // Store totals: substantive + 1 noop per agent
     for (const a of TRIPLE) {
-      expect(svc.substantiveEvolutionCount(a), a).toBe(2)
-      expect(svc.evolutionCount(a), a).toBe(2)
+      expect(svc.evolutionCount(a), `${a} total`).toBe(3) // 2 substantive + 1 noop
+      expect(svc.substantiveEvolutionCount(a), `${a} substantive`).toBe(2)
     }
     for (const a of DOUBLE) {
-      expect(svc.substantiveEvolutionCount(a), a).toBe(1)
-      expect(svc.evolutionCount(a), a).toBe(1)
+      expect(svc.evolutionCount(a), `${a} total`).toBe(2) // 1 substantive + 1 noop
+      expect(svc.substantiveEvolutionCount(a), `${a} substantive`).toBe(1)
     }
-    // The fixture seeds NO noop events — only live workers emit those.
+    // Every evolution carries a stable runId for dedup
     for (const a of SEED_AGENT_IDS) {
       const evo = await svc.listEvolution(a, 100)
-      expect(evo.every((e) => e.evolutionType !== 'noop'), `${a} has no noop`).toBe(true)
       expect(evo.every((e) => Boolean(e.runId)), `${a} evolutions carry runId`).toBe(true)
+      // Exactly 1 noop per agent
+      const noops = evo.filter((e) => e.evolutionType === 'noop')
+      expect(noops.length, `${a} noop count`).toBe(1)
+      expect(Object.keys(noops[0].parameterDiff ?? {}).length, `${a} noop has empty diff`).toBe(0)
+    }
+  })
+
+  it('read-filtered baseline (panel default) = 2/2/2/1/1 — no noop', async () => {
+    const svc = coldService()
+    await seedReadModel(svc)
+    // Simulate what the GET /evolution endpoint returns by default (no ?includeNoops)
+    for (const a of SEED_AGENT_IDS) {
+      const all = await svc.listEvolution(a, 100)
+      const filtered = all.filter(
+        (e) => e.evolutionType !== 'noop' && Object.keys(e.parameterDiff ?? {}).length > 0,
+      )
+      const expected = TRIPLE.includes(a) ? 2 : 1
+      expect(filtered.length, `${a} filtered`).toBe(expected)
+      expect(filtered.every((e) => e.evolutionType !== 'noop'), `${a} no noop in filtered`).toBe(true)
     }
   })
 
@@ -126,9 +145,24 @@ describe('T57 read-model durability — cold-start rebuild', () => {
     expect(report.ready).toBe(true)
     expect(report.totals.predictions).toBe(40)
     expect(report.totals.outcomes).toBe(40)
+    expect(report.totals.evolutions).toBe(13) // 8 substantive + 5 noop
     expect(report.totals.substantiveEvolutions).toBe(8)
     expect(report.agents.dr_morgan.predictions).toBe(8)
+    expect(report.agents.dr_morgan.evolutions).toBe(3) // 2 substantive + 1 noop
     expect(report.agents.dr_morgan.substantiveEvolutions).toBe(2)
+    expect(report.agents.sofia_mendes.evolutions).toBe(2) // 1 substantive + 1 noop
     expect(report.agents.sofia_mendes.substantiveEvolutions).toBe(1)
+  })
+
+  it('slept/evolved counters: every agent shows "slept 1 · evolved N"', async () => {
+    const svc = coldService()
+    await seedReadModel(svc)
+    for (const a of SEED_AGENT_IDS) {
+      const total = svc.evolutionCount(a)
+      const substantive = svc.substantiveEvolutionCount(a)
+      const slept = total - substantive
+      expect(slept, `${a} slept`).toBe(1) // 1 noop per agent
+      expect(substantive, `${a} evolved`).toBeGreaterThanOrEqual(1)
+    }
   })
 })
