@@ -1,12 +1,15 @@
 /**
- * backend entrypoint | v0.5.0 | 2026-06-14
+ * backend entrypoint | v0.6.0 | 2026-06-17
  * Purpose: Express + Socket.io shared world + MemWal persistence + Sui auth + JWT.
  * T40a: global unhandledRejection/uncaughtException guards + Express error middleware.
+ * T56: security hardening — helmet, body-size limit, strict CORS for mutations,
+ *      consistent error envelope (never leak stack traces).
  */
 
 import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
+import helmet from 'helmet'
 import http from 'node:http'
 import { Server } from 'socket.io'
 import type { ClientToServerEvents, ServerToClientEvents, SocketData } from '@moneyball/shared/events'
@@ -39,6 +42,13 @@ process.on('uncaughtException', (err) => {
   console.error('[GLOBAL] uncaughtException — process stays alive:', err)
 })
 
+// ── T56: CORS helpers ──────────────────────────────────────────────────
+// Read-only GETs are allowed without Origin (curl, health checks, etc.).
+// Mutating methods (POST/PUT/PATCH/DELETE) from a browser MUST send an Origin
+// matching the allowlist — reject if missing or unrecognised.
+// In dev (empty CORS_ORIGINS) all origins are allowed.
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
 function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) return true
   if (env.CORS_ORIGINS.length === 0) return true
@@ -48,6 +58,27 @@ function isAllowedOrigin(origin: string | undefined): boolean {
 async function main() {
   const app = express()
 
+  // ── T56: helmet — standard security headers ────────────────────────────
+  // CSP is set to allow the Walrus-hosted frontend, the backend itself for
+  // API/WS, and inline pixel styles (the SNES UI relies on them).
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],  // pixel inline styles
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        connectSrc: ["'self'", 'wss:', 'ws:'],    // Socket.io
+        fontSrc: ["'self'", 'data:'],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+    // HSTS is handled by Render's edge; avoid double headers
+    hsts: env.NODE_ENV === 'production',
+    crossOriginEmbedderPolicy: false,  // breaks cross-origin font/image loads
+  }))
+
   app.use(cors({
     origin: (origin, cb) => {
       if (isAllowedOrigin(origin)) return cb(null, true)
@@ -55,7 +86,27 @@ async function main() {
     },
     credentials: false,
   }))
-  app.use(express.json())
+
+  // T56: reject no-Origin mutating requests when an allowlist is configured.
+  // Browsers always send Origin on POST/etc. No-Origin mutations come from
+  // curl/scripts — legitimate in dev, suspect in prod.
+  app.use((req, res, next) => {
+    if (
+      env.CORS_ORIGINS.length > 0 &&
+      MUTATING_METHODS.has(req.method) &&
+      !req.headers.origin
+    ) {
+      return res.status(403).json({
+        error: { code: 'ORIGIN_REQUIRED', message: 'Origin header required for mutating requests.' },
+      })
+    }
+    next()
+  })
+
+  // T56: body-size limits — payloads are tiny (predictions, roasts, auth).
+  // Oversized bodies → 413 (Express default behaviour with limit set).
+  app.use(express.json({ limit: '64kb' }))
+  app.use(express.urlencoded({ extended: false, limit: '64kb' }))
 
   // Auth routes (no JWT required)
   registerAuthRoutes(app)
@@ -101,11 +152,21 @@ async function main() {
   registerAgentEventRoutes(app, publicEvents)
   registerAdminRoutes(app)
 
-  // ── T40a: Express error middleware (4 args — must come after all routes) ─
+  // ── T40a+T56: Express error middleware (4 args — must come after all routes)
+  // Returns a consistent { error: { code, message } } envelope.
+  // Never leaks stack traces to the client.
   app.use((err: any, _req: any, res: any, _next: any) => {
     console.error('[express.error]', err)
     if (!res.headersSent) {
-      res.status(500).json({ ok: false, error: 'INTERNAL' })
+      const status = typeof err.status === 'number' ? err.status : 500
+      res.status(status).json({
+        error: {
+          code: err.code ?? 'INTERNAL',
+          message: env.NODE_ENV === 'production'
+            ? 'An internal error occurred.'
+            : (err.message ?? 'Internal error'),
+        },
+      })
     }
   })
 
@@ -124,8 +185,8 @@ async function main() {
     pingInterval: 15000,
     pingTimeout: 20000,
 
-    // Optional safety guard (uncomment if you want a hard cap)
-    // maxHttpBufferSize: 128 * 1024, // 128KB
+    // T56: hard cap on Socket.io message size (128KB — sprites/thoughts are tiny)
+    maxHttpBufferSize: 128 * 1024,
   })
 
   const world = new InMemoryWorldStateStore('main')

@@ -1,58 +1,15 @@
 /**
- * authRoutes | v0.1.0 | 2026-06-09
+ * authRoutes | v0.2.0 | 2026-06-17
  * Purpose: Production-style Sui sign-in (nonce + canonical message + signature verify + JWT).
+ * T56: refactored inline NonceStore to use shared nonceStore.ts with TTL sweep;
+ *      removed console.log of admin allowlist/login (information disclosure).
  */
 
 import type { Express } from 'express'
-import crypto from 'node:crypto'
 import jwt from 'jsonwebtoken'
 import { verifyPersonalMessageSignature } from '@mysten/sui/verify'
 import { env } from '../config/env'
-
-type NonceRec = {
-  suiAddress: string
-  nonce: string
-  issuedAt: string
-  expiresAt: string
-  message: string
-  used: boolean
-}
-
-class NonceStore {
-  private byNonce = new Map<string, NonceRec>()
-
-  constructor(private ttlMs: number) { }
-
-  issue(suiAddress: string, message: string) {
-    const nonce = crypto.randomUUID()
-    const issuedAt = new Date().toISOString()
-    const expiresAt = new Date(Date.now() + this.ttlMs).toISOString()
-
-    const rec: NonceRec = {
-      suiAddress: suiAddress.toLowerCase(),
-      nonce,
-      issuedAt,
-      expiresAt,
-      message,
-      used: false,
-    }
-
-    this.byNonce.set(nonce, rec)
-    return rec
-  }
-
-  consumeOrThrow(input: { suiAddress: string; nonce: string; message: string }): NonceRec {
-    const rec = this.byNonce.get(input.nonce)
-    if (!rec) throw new Error('INVALID_NONCE')
-    if (rec.used) throw new Error('NONCE_REPLAY')
-    if (Date.now() > Date.parse(rec.expiresAt)) throw new Error('NONCE_EXPIRED')
-    if (rec.suiAddress !== input.suiAddress.toLowerCase()) throw new Error('NONCE_ADDRESS_MISMATCH')
-    // production-style strict canonical message match:
-    if (rec.message !== input.message) throw new Error('MESSAGE_MISMATCH')
-    rec.used = true
-    return rec
-  }
-}
+import { NonceStore } from './nonceStore'
 
 function normAddr(a: string) {
   return a.trim().toLowerCase()
@@ -86,11 +43,11 @@ export function registerAuthRoutes(app: Express) {
   app.post('/api/auth/nonce', (req, res) => {
     const suiAddress = normAddr(String(req.body?.suiAddress ?? ''))
     if (!suiAddress.startsWith('0x') || suiAddress.length < 10) {
-      return res.status(400).json({ ok: false, error: 'BAD_SUI_ADDRESS' })
+      return res.status(400).json({ error: { code: 'BAD_SUI_ADDRESS', message: 'Invalid Sui address.' } })
     }
 
-    // issue with placeholder, then build message using issued values
-    const placeholder = store.issue(suiAddress, '__placeholder__')
+    // Issue with placeholder, then build message using issued values
+    const placeholder = store.issue({ suiAddress, message: '__placeholder__' })
     const message = buildCanonicalMessage({
       domain: env.AUTH_DOMAIN,
       address: suiAddress,
@@ -99,6 +56,8 @@ export function registerAuthRoutes(app: Express) {
       issuedAt: placeholder.issuedAt,
       expiresAt: placeholder.expiresAt,
     })
+    // Mutate the stored record's message in-place (issue() returns the
+    // actual stored NonceRecord reference, so consumeOrThrow sees it).
     placeholder.message = message
 
     return res.json({
@@ -117,7 +76,7 @@ export function registerAuthRoutes(app: Express) {
     const signature = String(req.body?.signature ?? '')
 
     if (!suiAddress || !nonce || !message || !signature) {
-      return res.status(400).json({ ok: false, error: 'MISSING_FIELDS' })
+      return res.status(400).json({ error: { code: 'MISSING_FIELDS', message: 'All fields are required.' } })
     }
 
     try {
@@ -125,10 +84,6 @@ export function registerAuthRoutes(app: Express) {
 
       const messageBytes = new TextEncoder().encode(message)
       await verifyPersonalMessageSignature(messageBytes, signature, { address: suiAddress })
-
-      console.log('ADMIN_ALLOWLIST=', [...env.ADMIN_ALLOWLIST])
-      console.log('LOGIN_ADDRESS=', suiAddress)
-      console.log('IS_ADMIN=', env.ADMIN_ALLOWLIST.has(suiAddress))
 
       const role: 'user' | 'admin' = env.ADMIN_ALLOWLIST.has(suiAddress) ? 'admin' : 'user'
       const token = jwt.sign({ sub: suiAddress, role }, env.JWT_SECRET, { expiresIn: '1h' })
@@ -140,7 +95,7 @@ export function registerAuthRoutes(app: Express) {
         viewer: { suiAddress, role, exp: decoded?.exp },
       })
     } catch (e: any) {
-      return res.status(401).json({ ok: false, error: e?.message ?? 'AUTH_FAILED' })
+      return res.status(401).json({ error: { code: 'AUTH_FAILED', message: e?.message ?? 'Authentication failed.' } })
     }
   })
 }

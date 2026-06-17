@@ -1,3 +1,11 @@
+/**
+ * env | v0.2.0 | 2026-06-17
+ * Purpose: Validated environment config with fail-fast for production secrets.
+ * T56: production fail-fast — boot throws if JWT_SECRET is missing or insecure.
+ */
+
+const DEV_FALLBACK_SECRET = 'dev-insecure-secret-change-me'
+
 function parseOrigins(value: string | undefined): string[] {
   if (!value) return []
   return value.split(',').map(s => s.trim()).filter(Boolean)
@@ -10,12 +18,31 @@ function parseAllowlist(value: string | undefined): Set<string> {
   )
 }
 
+/**
+ * T56: In production, JWT_SECRET MUST be set to a real value.
+ * The dev fallback is only allowed when NODE_ENV !== 'production'.
+ */
+function resolveJwtSecret(): string {
+  const raw = process.env.JWT_SECRET
+  const isProd = process.env.NODE_ENV === 'production'
+
+  if (isProd && (!raw || raw === DEV_FALLBACK_SECRET)) {
+    throw new Error(
+      '[FATAL] JWT_SECRET is missing or set to the dev fallback in production. ' +
+      'Set a strong secret in your environment before starting the server.',
+    )
+  }
+
+  return raw ?? DEV_FALLBACK_SECRET
+}
+
 export const env = {
   PORT: Number(process.env.PORT ?? 3001),
+  NODE_ENV: process.env.NODE_ENV ?? 'development',
   CORS_ORIGINS: parseOrigins(process.env.CORS_ORIGINS),
 
-  // Auth/JWT
-  JWT_SECRET: process.env.JWT_SECRET ?? 'dev-insecure-secret-change-me',
+  // Auth/JWT — T56: fail-fast in production
+  JWT_SECRET: resolveJwtSecret(),
   AUTH_NONCE_TTL_MS: Number(process.env.AUTH_NONCE_TTL_MS ?? 5 * 60_000),
   AUTH_DOMAIN: process.env.AUTH_DOMAIN ?? 'localhost',
   AUTH_URI: process.env.AUTH_URI ?? 'http://localhost:3000',
