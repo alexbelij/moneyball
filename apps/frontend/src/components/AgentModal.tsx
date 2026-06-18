@@ -1,8 +1,10 @@
 /**
- * AgentModal | v1.1.0 | 2026-06-14
+ * AgentModal | v1.2.0 | 2026-06-18
  * Purpose: Agent dossier — Overview (actions) + Method / Predictions /
  * Evolution / Before/After / Memory tabs. WAI-ARIA dialog + tabs, focus trap.
- * T49: typography scale — body ≥16px, header ≥10px; responsive content.
+ * T58: Performance pass — extracted static styles to module-level constants,
+ *   React.memo on list-item sub-components, useMemo for derived data.
+ * T49: typography scale — body >=16px, header >=10px; responsive content.
  * T48: Redesigned from right-side drawer to centered modal (min(80vw,980px),
  *   max-height 86vh), backdrop blur (CSS module), Phaser scene pause/resume
  *   via GameEventBus, SNES-bevel frame from tokens.
@@ -14,7 +16,7 @@
  * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
  */
 
-import React, { useEffect, useState } from 'react'
+import React, { memo, useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import {
   roast, disagree, adminDayPlusOne,
@@ -36,6 +38,183 @@ import css from './agentModal.module.css'
 type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'before-after' | 'memory'
 const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'before-after', 'memory'] as const
 const MODAL_TITLE_ID = 'agent-modal-title'
+
+/* ── Static style constants (T58: avoid re-creation on each render) ───── */
+
+const CARD: React.CSSProperties = {
+  background: palette.surface,
+  border: borders.standard,
+  borderRadius: 0,
+  padding: 10,
+  marginBottom: 8,
+  boxShadow: shadows.hardSmall,
+}
+
+const S_DIALOG: React.CSSProperties = {
+  width: 'min(80vw, 980px)',
+  maxHeight: '86vh',
+  background: palette.wood900,
+  border: borders.standard,
+  boxShadow: `${shadows.hard}, ${shadows.bevelInset}`,
+  padding: 20,
+  color: palette.paper,
+  fontFamily: fonts.body,
+  display: 'flex',
+  flexDirection: 'column',
+  overflowY: 'auto',
+}
+
+const S_HEADER_ROW: React.CSSProperties = {
+  display: 'flex', justifyContent: 'space-between', alignItems: 'start',
+}
+
+const S_TITLE: React.CSSProperties = {
+  ...typo.hdr, fontWeight: 700, fontFamily: fonts.header,
+  color: accents.gold, letterSpacing: '-0.5px',
+}
+
+const S_ROLE: React.CSSProperties = { ...typo.body, color: text.muted, marginTop: 2 }
+const S_STATUS: React.CSSProperties = { marginTop: 8, ...typo.body, color: text.dim }
+
+const S_TABLIST: React.CSSProperties = {
+  marginTop: 14, display: 'flex', gap: 4, flexWrap: 'wrap',
+}
+
+const S_PANEL: React.CSSProperties = {
+  marginTop: 12, flex: 1, overflowY: 'auto', minHeight: 0,
+}
+
+const S_ACTIONS_ROW: React.CSSProperties = {
+  display: 'flex', gap: 8, flexWrap: 'wrap',
+}
+
+const S_ERROR: React.CSSProperties = { marginTop: 10, color: accents.red, ...typo.body }
+const S_THOUGHT_LABEL: React.CSSProperties = { marginTop: 16, ...typo.body, color: text.muted }
+const S_THOUGHT_TEXT: React.CSSProperties = { marginTop: 6, ...typo.body }
+
+const S_FOOTER: React.CSSProperties = {
+  marginTop: 12, ...typo.caption, color: text.muted,
+  borderTop: borders.standard, paddingTop: 8,
+}
+
+const S_SECTION_LABEL: React.CSSProperties = {
+  ...typo.hdrSm, fontFamily: fonts.header, color: text.muted,
+  letterSpacing: '-0.5px', textTransform: 'uppercase',
+}
+
+const S_BODY_MT4: React.CSSProperties = { ...typo.body, marginTop: 4 }
+const S_CAPTION_MUTED_MT8: React.CSSProperties = { marginTop: 8, ...typo.caption, color: text.muted }
+const S_CAPTION_MUTED_MT4: React.CSSProperties = { marginTop: 4, ...typo.caption, color: text.muted }
+const S_BODY_DIM_ITALIC: React.CSSProperties = { ...typo.body, marginTop: 4, color: text.dim, fontStyle: 'italic' }
+const S_DATASM_MUTED: React.CSSProperties = { ...typo.dataSm, color: text.muted }
+const S_DATASM_MUTED_MB8: React.CSSProperties = { ...typo.dataSm, color: text.muted, marginBottom: 8 }
+const S_BODY_MT6: React.CSSProperties = { marginTop: 6, ...typo.body }
+
+const S_FORMULA_PRE: React.CSSProperties = {
+  margin: '6px 0 0', padding: 8,
+  background: palette.surface, border: borders.rule, borderRadius: 0,
+  ...typo.caption, color: accents.green, fontFamily: 'monospace',
+  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+}
+
+const S_RULE_NAME: React.CSSProperties = { ...typo.dataSm, color: accents.gold, fontWeight: 700 }
+const S_RULE_LOGIC: React.CSSProperties = { ...typo.caption, color: text.dim, marginTop: 2 }
+const S_RULE_EFFECT: React.CSSProperties = { ...typo.caption, color: accents.green, marginTop: 2, fontFamily: 'monospace' }
+
+const S_PARAM_KEY: React.CSSProperties = { color: text.muted }
+const S_PARAM_VAL: React.CSSProperties = { color: palette.paper }
+const S_PARAM_ROW: React.CSSProperties = {
+  display: 'flex', justifyContent: 'space-between',
+  ...typo.caption, fontFamily: 'monospace', marginTop: 2,
+}
+
+const S_DATASM_DIM_MT4: React.CSSProperties = { ...typo.dataSm, marginTop: 4, color: text.dim }
+
+const S_DATA_INPUT_HEADER: React.CSSProperties = {
+  ...typo.caption, color: accents.gold, marginTop: 4, display: 'flex',
+  alignItems: 'center', gap: 6,
+}
+
+const S_DATA_INPUT_ITEM: React.CSSProperties = {
+  marginTop: 8, paddingTop: 8, borderTop: borders.rule,
+}
+
+const S_DATA_INPUT_LABEL_ROW: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6 }
+const S_DATA_INPUT_LABEL: React.CSSProperties = { ...typo.dataSm, color: palette.paper }
+
+const S_NO_CHART: React.CSSProperties = {
+  ...typo.caption, color: text.muted, border: borders.standard,
+  background: palette.surface, padding: 10, marginBottom: 8, textAlign: 'center',
+}
+
+const S_PRED_HEADER: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', ...typo.dataSm }
+const S_PRED_MATCH: React.CSSProperties = { color: text.dim }
+const S_PRED_BODY: React.CSSProperties = { marginTop: 4, ...typo.body }
+const S_PRED_REASONING: React.CSSProperties = { marginTop: 4, ...typo.dataSm, color: text.muted }
+
+const S_EVO_HEADLINE: React.CSSProperties = { ...typo.dataSm, color: accents.gold, fontWeight: 700 }
+const S_EVO_DIFF_BLOCK: React.CSSProperties = { marginTop: 6, ...typo.caption, fontFamily: 'monospace' }
+
+const S_BRIER_ROW: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 12,
+  marginTop: 8, fontSize: 15, fontFamily: 'monospace',
+}
+
+const S_BRIER_LABEL: React.CSSProperties = { ...typo.hdrSm, color: text.muted }
+const S_BRIER_VALUE: React.CSSProperties = { ...typo.bodyLg, color: text.dim }
+const S_BRIER_ARROW: React.CSSProperties = { ...typo.bodyLg, color: text.muted }
+
+const S_DIFF_GRID_HEADER: React.CSSProperties = {
+  display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px',
+  ...typo.hdrSm, color: text.muted, fontFamily: 'monospace',
+  paddingBottom: 4, borderBottom: borders.rule,
+}
+
+const S_DIFF_GRID_ROW: React.CSSProperties = {
+  display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px',
+  ...typo.caption, fontFamily: 'monospace',
+  padding: '4px 0', borderBottom: borders.rule,
+}
+
+const S_DIFF_LABEL: React.CSSProperties = {
+  color: text.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+}
+
+const S_RIGHT_MUTED: React.CSSProperties = { textAlign: 'right', color: text.muted }
+const S_RIGHT_PAPER: React.CSSProperties = { textAlign: 'right', color: palette.paper }
+
+const S_EVO_COUNT: React.CSSProperties = {
+  ...typo.caption, color: text.muted, marginTop: 4, textAlign: 'center',
+}
+
+const S_PARAM_BAR_ROW: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 6, marginTop: 6,
+  ...typo.caption, fontFamily: 'monospace',
+}
+
+const S_PARAM_BAR_LABEL: React.CSSProperties = {
+  width: 120, color: text.muted, overflow: 'hidden', textOverflow: 'ellipsis',
+}
+
+const S_PARAM_BAR_TRACK: React.CSSProperties = {
+  flex: 1, height: 6, background: palette.surface,
+  border: borders.rule, borderRadius: 0, position: 'relative',
+}
+
+const S_PARAM_BAR_CENTER: React.CSSProperties = {
+  position: 'absolute', left: '50%', top: -1, width: 1,
+  height: 'calc(100% + 2px)', background: palette.wood700,
+}
+
+const S_PARAM_BAR_VALUE: React.CSSProperties = {
+  width: 52, textAlign: 'right', color: text.dim,
+}
+
+const S_TOPIC_LABEL: React.CSSProperties = { marginTop: 10, ...typo.caption, color: text.muted }
+
+const CARD_GOLD: React.CSSProperties = { ...CARD, borderColor: accents.gold, borderWidth: 2 }
+
+/* ── Main component ───────────────────────────────────────────────────── */
 
 export function AgentModal() {
   const selected = useGameStore((s) => s.ui.selectedAgentId)
@@ -104,10 +283,7 @@ export function AgentModal() {
     <div
       className={css.scrim}
       onClick={close}
-      style={{
-        background: overlay,
-        zIndex: zIndex.modal,
-      }}
+      style={{ background: overlay, zIndex: zIndex.modal }}
     >
       <div
         ref={trapRef}
@@ -115,33 +291,14 @@ export function AgentModal() {
         aria-modal="true"
         aria-labelledby={MODAL_TITLE_ID}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          width: 'min(80vw, 980px)',
-          maxHeight: '86vh',
-          background: palette.wood900,
-          border: borders.standard,
-          boxShadow: `${shadows.hard}, ${shadows.bevelInset}`,
-          padding: 20,
-          color: palette.paper,
-          fontFamily: fonts.body,
-          display: 'flex',
-          flexDirection: 'column',
-          overflowY: 'auto',
-        }}
+        style={S_DIALOG}
       >
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+        <div style={S_HEADER_ROW}>
           <div>
-            <div
-              id={MODAL_TITLE_ID}
-              style={{ ...typo.hdr, fontWeight: 700, fontFamily: fonts.header, color: accents.gold, letterSpacing: '-0.5px' }}
-            >
-              {agent.name}
-            </div>
-            <div style={{ ...typo.body, color: text.muted, marginTop: 2 }}>{agent.role}</div>
-            <div style={{ marginTop: 8, ...typo.body, color: text.dim }}>
-              Status: <b>{agent.status}</b>
-            </div>
+            <div id={MODAL_TITLE_ID} style={S_TITLE}>{agent.name}</div>
+            <div style={S_ROLE}>{agent.role}</div>
+            <div style={S_STATUS}>Status: <b>{agent.status}</b></div>
           </div>
           <PixelButton variant="ghost" size="small" onClick={close} aria-label="Close agent modal">
             ✕
@@ -149,7 +306,7 @@ export function AgentModal() {
         </div>
 
         {/* Tabs */}
-        <div style={{ marginTop: 14, display: 'flex', gap: 4, flexWrap: 'wrap' }} {...getTabListProps()}>
+        <div style={S_TABLIST} {...getTabListProps()}>
           {TABS.map((t) => (
             <PixelButton
               key={t}
@@ -165,10 +322,10 @@ export function AgentModal() {
         </div>
 
         {/* Tab panel */}
-        <div style={{ marginTop: 12, flex: 1, overflowY: 'auto', minHeight: 0 }} {...getTabPanelProps(tab)}>
+        <div style={S_PANEL} {...getTabPanelProps(tab)}>
           {tab === 'overview' && (
             <>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={S_ACTIONS_ROW}>
                 <PixelButton disabled={busy} onClick={onRoast}>Roast me</PixelButton>
                 <PixelButton disabled={busy} onClick={onDisagree} variant="danger">
                   Disagree
@@ -179,9 +336,9 @@ export function AgentModal() {
                   </PixelButton>
                 )}
               </div>
-              {err && <div role="alert" style={{ marginTop: 10, color: accents.red, ...typo.body }}>{err}</div>}
-              <div style={{ marginTop: 16, ...typo.body, color: text.muted }}>Last thought:</div>
-              <div style={{ marginTop: 6, ...typo.body }}>{agent.lastThought ?? '—'}</div>
+              {err && <div role="alert" style={S_ERROR}>{err}</div>}
+              <div style={S_THOUGHT_LABEL}>Last thought:</div>
+              <div style={S_THOUGHT_TEXT}>{agent.lastThought ?? '—'}</div>
             </>
           )}
           {tab === 'method' && <MethodTab agentId={agentId} />}
@@ -191,7 +348,7 @@ export function AgentModal() {
           {tab === 'memory' && <MemoryTab agentId={agentId} />}
         </div>
 
-        <div style={{ marginTop: 12, ...typo.caption, color: text.muted, borderTop: borders.standard, paddingTop: 8 }}>
+        <div style={S_FOOTER}>
           Identity: {viewer ? `Sui (${viewer.role})` : 'Guest'}
         </div>
       </div>
@@ -199,7 +356,7 @@ export function AgentModal() {
   )
 }
 
-// ── Tabs ────────────────────────────────────────────────────────────────────
+// ── Data fetching hook ──────────────────────────────────────────────────────
 
 function useFetch<T>(load: () => Promise<T>, deps: unknown[]) {
   const [state, setState] = useState<{ data: T | null; err: string | null; loading: boolean }>({ data: null, err: null, loading: true })
@@ -216,6 +373,8 @@ function useFetch<T>(load: () => Promise<T>, deps: unknown[]) {
   return state
 }
 
+// ── Tab panels ──────────────────────────────────────────────────────────────
+
 export function MethodTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentProfile(agentId), [agentId])
   if (loading) return <Hint>Loading methodology…</Hint>
@@ -229,60 +388,47 @@ export function MethodTab({ agentId }: { agentId: string }) {
   return (
     <div>
       {/* Personality */}
-      <div style={card()}>
+      <div style={CARD}>
         <SectionLabel>Approach</SectionLabel>
-        <div style={{ ...typo.body, marginTop: 4 }}>{profile.personality}</div>
-        <div style={{ marginTop: 8, ...typo.caption, color: text.muted }}>
-          model: <b style={{ color: accents.gold }}>{m.type}</b>
+        <div style={S_BODY_MT4}>{profile.personality}</div>
+        <div style={S_CAPTION_MUTED_MT8}>
+          model: <b style={S_PARAM_VAL}>{m.type}</b>
         </div>
       </div>
 
       {/* Catchphrases */}
       {profile.catchphrases.length > 0 && (
-        <div style={card()}>
+        <div style={CARD}>
           <SectionLabel>Catchphrases</SectionLabel>
           {profile.catchphrases.map((c, i) => (
-            <div key={i} style={{ ...typo.body, marginTop: 4, color: text.dim, fontStyle: 'italic' }}>
-              "{c}"
-            </div>
+            <div key={i} style={S_BODY_DIM_ITALIC}>"{c}"</div>
           ))}
         </div>
       )}
 
       {/* Formula (weighted/EV/contrarian agents) */}
       {m.formula && (
-        <div style={card()}>
+        <div style={CARD}>
           <SectionLabel>Scoring formula</SectionLabel>
-          <pre
-            style={{
-              margin: '6px 0 0', padding: 8,
-              background: palette.surface, border: borders.rule, borderRadius: 0,
-              ...typo.caption, color: accents.green, fontFamily: 'monospace',
-              whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-            }}
-          >
-            {m.formula}
-          </pre>
+          <pre style={S_FORMULA_PRE}>{m.formula}</pre>
         </div>
       )}
 
       {/* Rule list (Madame Pythia / deterministic mysticism) */}
       {m.rules.length > 0 && (
-        <div style={card()}>
+        <div style={CARD}>
           <SectionLabel>Rules</SectionLabel>
           {m.description && (
-            <div style={{ ...typo.caption, color: text.muted, marginTop: 4 }}>{m.description}</div>
+            <div style={S_CAPTION_MUTED_MT4}>{m.description}</div>
           )}
           {m.rules.map((r, i) => (
             <div
               key={i}
               style={{ marginTop: 8, paddingTop: 8, borderTop: i === 0 ? 'none' : borders.rule }}
             >
-              <div style={{ ...typo.dataSm, color: accents.gold, fontWeight: 700 }}>{r.name}</div>
-              <div style={{ ...typo.caption, color: text.dim, marginTop: 2 }}>{r.logic}</div>
-              <div style={{ ...typo.caption, color: accents.green, marginTop: 2, fontFamily: 'monospace' }}>
-                → {r.effect}
-              </div>
+              <div style={S_RULE_NAME}>{r.name}</div>
+              <div style={S_RULE_LOGIC}>{r.logic}</div>
+              <div style={S_RULE_EFFECT}>→ {r.effect}</div>
             </div>
           ))}
         </div>
@@ -290,16 +436,13 @@ export function MethodTab({ agentId }: { agentId: string }) {
 
       {/* Parameters */}
       {params.length > 0 && (
-        <div style={card()}>
+        <div style={CARD}>
           <SectionLabel>Parameters</SectionLabel>
           <div style={{ marginTop: 4 }}>
             {params.map(([k, v]) => (
-              <div
-                key={k}
-                style={{ display: 'flex', justifyContent: 'space-between', ...typo.caption, fontFamily: 'monospace', marginTop: 2 }}
-              >
-                <span style={{ color: text.muted }}>{k}</span>
-                <span style={{ color: palette.paper }}>{v}</span>
+              <div key={k} style={S_PARAM_ROW}>
+                <span style={S_PARAM_KEY}>{k}</span>
+                <span style={S_PARAM_VAL}>{v}</span>
               </div>
             ))}
           </div>
@@ -308,9 +451,9 @@ export function MethodTab({ agentId }: { agentId: string }) {
 
       {/* Evolution trigger */}
       {m.evolutionTrigger && (
-        <div style={card()}>
+        <div style={CARD}>
           <SectionLabel>How it evolves</SectionLabel>
-          <div style={{ ...typo.dataSm, marginTop: 4, color: text.dim }}>{m.evolutionTrigger}</div>
+          <div style={S_DATASM_DIM_MT4}>{m.evolutionTrigger}</div>
         </div>
       )}
 
@@ -322,33 +465,27 @@ export function MethodTab({ agentId }: { agentId: string }) {
 
 /**
  * T30: honest disclosure of what the prediction engine actually runs on. The
- * agents narrate "xG model: …" but the numbers are synthetic placeholders — we
- * say so plainly here so users/judges are never misled.
+ * agents narrate "xG model: ..." but the numbers are synthetic placeholders —
+ * we say so plainly here so users/judges are never misled.
  */
 export function DataInputsCard() {
   const { data, err, loading } = useFetch(() => getDataSource(), [])
   if (loading || err || !data) return null
   return (
-    <div style={card()}>
+    <div style={CARD}>
       <SectionLabel>Data inputs</SectionLabel>
-      <div style={{
-        ...typo.caption, color: accents.gold, marginTop: 4, display: 'flex',
-        alignItems: 'center', gap: 6,
-      }}>
+      <div style={S_DATA_INPUT_HEADER}>
         <SourceBadge source="synthetic" />
         <span>{data.headline}</span>
       </div>
       <div style={{ marginTop: 8 }}>
         {data.inputs.map((inp) => (
-          <div key={inp.key} style={{
-            marginTop: 8, paddingTop: 8,
-            borderTop: borders.rule,
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div key={inp.key} style={S_DATA_INPUT_ITEM}>
+            <div style={S_DATA_INPUT_LABEL_ROW}>
               <SourceBadge source={inp.source} />
-              <span style={{ ...typo.dataSm, color: palette.paper }}>{inp.label}</span>
+              <span style={S_DATA_INPUT_LABEL}>{inp.label}</span>
             </div>
-            <div style={{ ...typo.caption, color: text.muted, marginTop: 2 }}>{inp.detail}</div>
+            <div style={S_CAPTION_MUTED_MT4}>{inp.detail}</div>
           </div>
         ))}
       </div>
@@ -356,7 +493,8 @@ export function DataInputsCard() {
   )
 }
 
-function SourceBadge({ source }: { source: 'synthetic' | 'manual' | 'live' }) {
+/* T58: memo avoids re-render when parent state changes but source stays same */
+const SourceBadge = memo(function SourceBadge({ source }: { source: 'synthetic' | 'manual' | 'live' }) {
   const color = source === 'live' ? accents.green : source === 'manual' ? text.dim : accents.red
   return (
     <span style={{
@@ -368,77 +506,77 @@ function SourceBadge({ source }: { source: 'synthetic' | 'manual' | 'live' }) {
       {source}
     </span>
   )
-}
+})
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        ...typo.hdrSm, fontFamily: fonts.header, color: text.muted,
-        letterSpacing: '-0.5px', textTransform: 'uppercase',
-      }}
-    >
-      {children}
-    </div>
-  )
-}
+const SectionLabel = memo(function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <div style={S_SECTION_LABEL}>{children}</div>
+})
 
 function PredictionsTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentPredictions(agentId), [agentId])
+
+  /* T58: memoize reversed list + derived stats */
+  const { items, correct, resolved, perf } = useMemo(() => {
+    const raw = data?.items ?? []
+    const reversed = raw.slice().reverse()
+    const res = reversed.filter((p) => p.outcome)
+    const cor = res.filter((p) => p.outcome!.correct).length
+    const pf = buildAgentPerfSeries(agentId, raw)
+    return { items: reversed, correct: cor, resolved: res, perf: pf }
+  }, [data, agentId])
+
   if (loading) return <Hint>Loading predictions…</Hint>
   if (err) return <Hint color={accents.red}>{err}</Hint>
-  const raw = data?.items ?? []
-  const items = raw.slice().reverse()
   if (!items.length) return <Hint>No predictions yet — waiting for the next fixture window.</Hint>
 
-  const resolved = items.filter((p) => p.outcome)
-  const correct = resolved.filter((p) => p.outcome!.correct).length
-  // T27: per-agent performance chart from this agent's resolved predictions.
-  const perf = buildAgentPerfSeries(agentId, raw)
   return (
     <div>
       {perf.resolvedCount >= 2 ? (
         <AgentPerfChart series={perf} />
       ) : (
-        <div style={{
-          ...typo.caption, color: text.muted, border: borders.standard,
-          background: palette.surface, padding: 10, marginBottom: 8, textAlign: 'center',
-        }}>
+        <div style={S_NO_CHART}>
           Need ≥2 resolved matches to chart this scout's accuracy.
         </div>
       )}
-      <div style={{ ...typo.dataSm, color: text.muted, marginBottom: 8 }}>
-        Record: <b style={{ color: palette.paper }}>{correct}/{resolved.length}</b> resolved · {items.length} total
+      <div style={S_DATASM_MUTED_MB8}>
+        Record: <b style={S_PARAM_VAL}>{correct}/{resolved.length}</b> resolved · {items.length} total
       </div>
       {items.map((p) => <PredictionRow key={p.predictionId ?? `${p.matchId}:${p.createdAt}`} p={p} />)}
     </div>
   )
 }
 
-function PredictionRow({ p }: { p: PredictionItem }) {
+/* T58: memo prevents re-render of every row when sibling state changes */
+const PredictionRow = memo(function PredictionRow({ p }: { p: PredictionItem }) {
   const badge = p.outcome ? (p.outcome.correct ? '✓' : '✗') : '…'
   const badgeColor = p.outcome ? (p.outcome.correct ? accents.green : accents.red) : text.muted
   return (
-    <div style={card()}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', ...typo.dataSm }}>
-        <span style={{ color: text.dim }}>{p.matchId}</span>
+    <div style={CARD}>
+      <div style={S_PRED_HEADER}>
+        <span style={S_PRED_MATCH}>{p.matchId}</span>
         <span style={{ color: badgeColor, fontWeight: 700 }} aria-label={p.outcome ? (p.outcome.correct ? 'Correct' : 'Incorrect') : 'Pending'}>{badge}</span>
       </div>
-      <div style={{ marginTop: 4, ...typo.body }}>
+      <div style={S_PRED_BODY}>
         Pick <b>{p.pick}</b> · confidence <b>{Math.round(p.confidence * 100)}%</b>
-        {typeof p.paramsVersion === 'number' && <span style={{ color: text.muted }}> · params v{p.paramsVersion}</span>}
+        {typeof p.paramsVersion === 'number' && <span style={S_PARAM_KEY}> · params v{p.paramsVersion}</span>}
       </div>
-      <div style={{ marginTop: 4, ...typo.dataSm, color: text.muted }}>{p.reasoning}</div>
-      <div style={{ marginTop: 4, ...typo.caption, color: text.muted }}>{new Date(p.createdAt).toLocaleString()}</div>
+      <div style={S_PRED_REASONING}>{p.reasoning}</div>
+      <div style={S_CAPTION_MUTED_MT4}>{new Date(p.createdAt).toLocaleString()}</div>
     </div>
   )
-}
+})
 
 function EvolutionTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentEvolution(agentId), [agentId])
+
+  /* T58: memoize reversed list */
+  const items = useMemo(
+    () => (data?.items ?? []).slice().reverse(),
+    [data],
+  )
+
   if (loading) return <Hint>Loading evolution history…</Hint>
   if (err) return <Hint color={accents.red}>{err}</Hint>
-  const items = (data?.items ?? []).slice().reverse()
   if (!items.length) return <Hint>No evolutions yet — the agent evolves after sleeping on resolved matches.</Hint>
   return (
     <div>
@@ -447,21 +585,20 @@ function EvolutionTab({ agentId }: { agentId: string }) {
   )
 }
 
-function EvolutionRow({ ev }: { ev: EvolutionItem }) {
-  // T28: deterministic, human-readable story derived from the event deltas.
-  const story = buildEvolutionStory(ev)
-  const diff = Object.entries(ev.parameterDiff ?? {})
+/* T58: memo + internal useMemo for expensive story computation */
+const EvolutionRow = memo(function EvolutionRow({ ev }: { ev: EvolutionItem }) {
+  const story = useMemo(() => buildEvolutionStory(ev), [ev])
+  const diff = useMemo(() => Object.entries(ev.parameterDiff ?? {}), [ev])
+
   return (
-    <div style={card()}>
-      <div style={{ ...typo.dataSm, color: accents.gold, fontWeight: 700 }}>{story.headline}</div>
-      {/* Human-readable narrative */}
-      <div style={{ marginTop: 4, ...typo.body }}>{story.narrative}</div>
-      {/* Original engine summary, if it differs from the narrative */}
+    <div style={CARD}>
+      <div style={S_EVO_HEADLINE}>{story.headline}</div>
+      <div style={S_BODY_MT4}>{story.narrative}</div>
       {ev.summary && ev.summary !== story.narrative && (
-        <div style={{ marginTop: 4, ...typo.caption, color: text.muted }}>{ev.summary}</div>
+        <div style={S_CAPTION_MUTED_MT4}>{ev.summary}</div>
       )}
       {diff.length > 0 && (
-        <div style={{ marginTop: 6, ...typo.caption, fontFamily: 'monospace' }}>
+        <div style={S_EVO_DIFF_BLOCK}>
           {diff.map(([k, v]) => (
             <div key={k} style={{ color: v >= 0 ? accents.green : accents.red }}>
               {k}: {v >= 0 ? '+' : ''}{v.toFixed(3)}
@@ -469,10 +606,10 @@ function EvolutionRow({ ev }: { ev: EvolutionItem }) {
           ))}
         </div>
       )}
-      <div style={{ marginTop: 4, ...typo.caption, color: text.muted }}>{new Date(ev.createdAt).toLocaleString()}</div>
+      <div style={S_CAPTION_MUTED_MT4}>{new Date(ev.createdAt).toLocaleString()}</div>
     </div>
   )
-}
+})
 
 /**
  * T36: "Day 1 vs Day N" — the demo money-shot panel.
@@ -503,84 +640,62 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
     return <Hint>{diff.summary}</Hint>
   }
 
+  const brierDeltaColor = diff.brierDelta !== null
+    ? (diff.brierDelta < -0.005 ? accents.green : diff.brierDelta > 0.005 ? accents.red : text.muted)
+    : text.muted
+
   return (
     <div>
       {/* Summary card */}
-      <div style={{
-        ...card(),
-        borderColor: accents.gold,
-        borderWidth: 2,
-      }}>
+      <div style={CARD_GOLD}>
         <SectionLabel>Day 1 → Day {diff.paramsVersion > 0 ? diff.paramsVersion : 'N'}</SectionLabel>
-        <div style={{ ...typo.body, marginTop: 6 }}>
-          {diff.summary}
-        </div>
+        <div style={S_BODY_MT6}>{diff.summary}</div>
       </div>
 
       {/* Brier delta card */}
       {diff.brierDelta !== null && (
-        <div style={card()}>
+        <div style={CARD}>
           <SectionLabel>Accuracy change (Brier score)</SectionLabel>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 12,
-            marginTop: 8, fontSize: 15, fontFamily: 'monospace',
-          }}>
+          <div style={S_BRIER_ROW}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ ...typo.hdrSm, color: text.muted }}>Early</div>
-              <div style={{ ...typo.bodyLg, color: text.dim }}>{diff.brierEarly!.toFixed(3)}</div>
+              <div style={S_BRIER_LABEL}>Early</div>
+              <div style={S_BRIER_VALUE}>{diff.brierEarly!.toFixed(3)}</div>
             </div>
-            <div style={{ ...typo.bodyLg, color: text.muted }}>→</div>
+            <div style={S_BRIER_ARROW}>→</div>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ ...typo.hdrSm, color: text.muted }}>Late</div>
-              <div style={{ ...typo.bodyLg, color: text.dim }}>{diff.brierLate!.toFixed(3)}</div>
+              <div style={S_BRIER_LABEL}>Late</div>
+              <div style={S_BRIER_VALUE}>{diff.brierLate!.toFixed(3)}</div>
             </div>
             <div style={{
-              marginLeft: 'auto',
-              ...typo.body,
-              fontWeight: 700,
-              color: diff.brierDelta < -0.005 ? accents.green : diff.brierDelta > 0.005 ? accents.red : text.muted,
+              marginLeft: 'auto', ...typo.body, fontWeight: 700,
+              color: brierDeltaColor,
             }}>
               {diff.brierDelta < 0 ? '' : '+'}{diff.brierDelta.toFixed(3)}
               {diff.brierDelta < -0.005 && ' ▼'}
               {diff.brierDelta > 0.005 && ' ▲'}
             </div>
           </div>
-          <div style={{ ...typo.caption, color: text.muted, marginTop: 4 }}>
+          <div style={S_CAPTION_MUTED_MT4}>
             Lower Brier = better calibration. Negative delta = improvement.
           </div>
         </div>
       )}
 
       {/* Parameter diff table */}
-      <div style={card()}>
+      <div style={CARD}>
         <SectionLabel>Parameter changes</SectionLabel>
         <div style={{ marginTop: 8 }}>
-          {/* Table header */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px',
-            ...typo.hdrSm, color: text.muted, fontFamily: 'monospace',
-            paddingBottom: 4, borderBottom: borders.rule,
-          }}>
+          <div style={S_DIFF_GRID_HEADER}>
             <span>Param</span>
-            <span style={{ textAlign: 'right' }}>Day 1</span>
-            <span style={{ textAlign: 'right' }}>Now</span>
-            <span style={{ textAlign: 'right' }}>Delta</span>
+            <span style={S_RIGHT_MUTED}>Day 1</span>
+            <span style={S_RIGHT_MUTED}>Now</span>
+            <span style={S_RIGHT_MUTED}>Delta</span>
           </div>
           {diff.diffs.map((d: ParamDiffEntry) => (
-            <div
-              key={d.key}
-              style={{
-                display: 'grid', gridTemplateColumns: '1fr 60px 60px 70px',
-                ...typo.caption, fontFamily: 'monospace',
-                padding: '4px 0',
-                borderBottom: borders.rule,
-              }}
-            >
-              <span style={{ color: text.dim, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {d.label}
-              </span>
-              <span style={{ textAlign: 'right', color: text.muted }}>{d.day1.toFixed(2)}</span>
-              <span style={{ textAlign: 'right', color: palette.paper }}>{d.dayN.toFixed(2)}</span>
+            <div key={d.key} style={S_DIFF_GRID_ROW}>
+              <span style={S_DIFF_LABEL}>{d.label}</span>
+              <span style={S_RIGHT_MUTED}>{d.day1.toFixed(2)}</span>
+              <span style={S_RIGHT_PAPER}>{d.dayN.toFixed(2)}</span>
               <span style={{
                 textAlign: 'right', fontWeight: 700,
                 color: d.direction === 'up' ? accents.green : d.direction === 'down' ? accents.red : text.muted,
@@ -593,9 +708,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
       </div>
 
       {/* Evolution count */}
-      <div style={{
-        ...typo.caption, color: text.muted, marginTop: 4, textAlign: 'center',
-      }}>
+      <div style={S_EVO_COUNT}>
         {diff.evolutionCount} evolution event{diff.evolutionCount === 1 ? '' : 's'} · params v{diff.paramsVersion}
       </div>
     </div>
@@ -611,21 +724,19 @@ function MemoryTab({ agentId }: { agentId: string }) {
   const topics = Object.entries(params.topicCalibration ?? {})
   return (
     <div>
-      <div style={card()}>
-        <div style={{ ...typo.dataSm, color: text.muted }}>Current parameters (persisted on Walrus Memory)</div>
-        <div style={{ marginTop: 6, ...typo.body }}>
-          Version <b>v{params.version}</b>
-        </div>
+      <div style={CARD}>
+        <div style={S_DATASM_MUTED}>Current parameters (persisted on Walrus Memory)</div>
+        <div style={S_BODY_MT6}>Version <b>v{params.version}</b></div>
         <ParamBar label="confidence bias" value={params.confidenceBias} range={0.3} />
         <ParamBar label="hedging level" value={params.hedgingLevel} range={1} />
         {topics.length > 0 && (
           <>
-            <div style={{ marginTop: 10, ...typo.caption, color: text.muted }}>Topic calibration</div>
+            <div style={S_TOPIC_LABEL}>Topic calibration</div>
             {topics.map(([k, v]) => <ParamBar key={k} label={k} value={v} range={0.3} />)}
           </>
         )}
         {params.updatedAt && (
-          <div style={{ marginTop: 8, ...typo.caption, color: text.muted }}>updated {new Date(params.updatedAt).toLocaleString()}</div>
+          <div style={S_CAPTION_MUTED_MT8}>updated {new Date(params.updatedAt).toLocaleString()}</div>
         )}
       </div>
       <Hint>
@@ -636,18 +747,15 @@ function MemoryTab({ agentId }: { agentId: string }) {
   )
 }
 
-function ParamBar({ label, value, range }: { label: string; value: number; range: number }) {
+/* T58: memo — label/value/range are primitives, skips re-renders when parent list doesn't change */
+const ParamBar = memo(function ParamBar({ label, value, range }: { label: string; value: number; range: number }) {
   const pct = Math.max(-1, Math.min(1, value / range))
   const half = Math.abs(pct) * 50
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, ...typo.caption, fontFamily: 'monospace' }}>
-      <span style={{ width: 120, color: text.muted, overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+    <div style={S_PARAM_BAR_ROW}>
+      <span style={S_PARAM_BAR_LABEL}>{label}</span>
       <div
-        style={{
-          flex: 1, height: 6, background: palette.surface,
-          border: borders.rule, borderRadius: 0,
-          position: 'relative',
-        }}
+        style={S_PARAM_BAR_TRACK}
         role="meter"
         aria-label={label}
         aria-valuenow={value}
@@ -659,26 +767,15 @@ function ParamBar({ label, value, range }: { label: string; value: number; range
           left: pct >= 0 ? '50%' : `${50 - half}%`, width: `${half}%`,
           background: pct >= 0 ? accents.gold : accents.red,
         }} />
-        <div style={{ position: 'absolute', left: '50%', top: -1, width: 1, height: 'calc(100% + 2px)', background: palette.wood700 }} />
+        <div style={S_PARAM_BAR_CENTER} />
       </div>
-      <span style={{ width: 52, textAlign: 'right', color: text.dim }}>{value >= 0 ? '+' : ''}{value.toFixed(3)}</span>
+      <span style={S_PARAM_BAR_VALUE}>{value >= 0 ? '+' : ''}{value.toFixed(3)}</span>
     </div>
   )
-}
+})
 
 // ── UI helpers ──────────────────────────────────────────────────────────────
 
-function Hint({ children, color = text.muted }: { children: React.ReactNode; color?: string }) {
+const Hint = memo(function Hint({ children, color = text.muted }: { children: React.ReactNode; color?: string }) {
   return <div style={{ ...typo.dataSm, color, marginTop: 8 }}>{children}</div>
-}
-
-function card() {
-  return {
-    background: palette.surface,
-    border: borders.standard,
-    borderRadius: 0,
-    padding: 10,
-    marginBottom: 8,
-    boxShadow: shadows.hardSmall,
-  } as const
-}
+})
