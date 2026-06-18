@@ -14,8 +14,14 @@
 
 import type { PredictionEvent } from '@moneyball/sleep-worker'
 import type { SleepService } from '../agents/sleepService'
-import { predictMatch, type AgentMethodology } from './predictionEngine'
+import { predictMatch, type AgentMethodology, type LiveContext } from './predictionEngine'
+import type { AgentEventService } from '../agents/agentEventService'
+import { computeMood, MOOD_THOUGHTS, type AgentMood } from '../agents/agentMood'
+import { computeConsensus, consensusNarrative } from '../agents/crossAgentInfluence'
+import { generateNarrative, narrativeMemwalText } from '../agents/autoNarrative'
 import type { Match, MatchProvider, PickCode } from './types'
+import type { OddsProvider } from './oddsProvider'
+import type { FormProvider } from './formProvider'
 
 const pickLabel = (m: Match, p: PickCode): string =>
   p === '1' ? `${m.homeTeam} win` : p === '2' ? `${m.awayTeam} win` : 'Draw'
@@ -24,6 +30,12 @@ export interface MatchWorkerOptions {
   pollSeconds: number
   predictionLeadHours: number
   onThought?: (agentId: string, text: string) => void
+  oddsProvider?: OddsProvider | null
+  formProvider?: FormProvider | null
+/** If provided, enables cross-agent consensus + mood + auto-narrative. */
+  publicEvents?: AgentEventService
+  /** MemWal remember function for narrative writes. */
+  narrativeRemember?: (text: string) => Promise<void>
 }
 
 export class MatchWorker {
@@ -91,10 +103,39 @@ export class MatchWorker {
     this.predictedMatchIds.add(match.id)
     const topic = `wc_${match.stage}`
 
+    // Fetch live context once per match, shared across all agents
+    const ctx: LiveContext = {}
+    try {
+      if (this.opts.oddsProvider) {
+        ctx.odds = await this.opts.oddsProvider.getOdds(match.homeTeam, match.awayTeam)
+      }
+      if (this.opts.formProvider) {
+        const [hf, af] = await Promise.all([
+          this.opts.formProvider.getForm(match.homeTeam),
+          this.opts.formProvider.getForm(match.awayTeam),
+        ])
+        ctx.homeForm = hf
+        ctx.awayForm = af
+      }
+    } catch (err) {
+      console.error('[matchWorker] live context fetch error (using fallback):', err)
+    }
+
     for (const agent of this.agents) {
-      const raw = predictMatch(agent, match)
+      const raw = predictMatch(agent, match, ctx)
       const params = await this.sleep.getParams(agent.agentId)
-      const effective = await this.sleep.calibrate(agent.agentId, topic, raw.rawConfidence)
+      let effective = await this.sleep.calibrate(agent.agentId, topic, raw.rawConfidence)
+
+      // T79: Apply mood-based confidence modifier
+      if (this.opts.publicEvents) {
+        const outcomeList = (this.opts.publicEvents as any).outcomeIndex?.get(agent.agentId) ?? []
+        const recentOutcomes = outcomeList
+          .sort((a: any, b: any) => (a.resolvedAt < b.resolvedAt ? 1 : -1))
+          .slice(0, 5)
+          .map((o: any) => o.correct as boolean)
+        const mood = computeMood(recentOutcomes)
+        effective = Math.min(0.99, Math.max(0.01, effective * mood.confidenceModifier))
+      }
 
       const event: PredictionEvent = {
         id: `pred:${match.id}:${agent.agentId}`,
@@ -140,12 +181,54 @@ export class MatchWorker {
     }
     console.log(`[matchWorker] resolved ${match.id} → ${match.result.outcome}`)
 
+    // T79: Cross-agent consensus (after all agents graded)
+    if (this.opts.publicEvents) {
+      const consensus = computeConsensus(
+        this.agents.map((a) => a.agentId),
+        match.id,
+        this.opts.publicEvents,
+      )
+      if (consensus.majorityPick) {
+        console.log(`[consensus] ${match.id}: ${consensus.majorityCount}/${consensus.totalAgents} → ${consensus.majorityPick}`)
+        // Write consensus narrative to MemWal
+        if (this.opts.narrativeRemember) {
+          const narrative = consensusNarrative(consensus)
+          void this.opts.narrativeRemember(`moneyball:narrative:consensus:${match.id}\n${JSON.stringify({ matchId: match.id, text: narrative, timestamp: new Date().toISOString() })}`)
+        }
+      }
+    }
+
+    // T79: Mood-based thoughts after resolution
+    if (this.opts.publicEvents) {
+      for (const agent of this.agents) {
+        const outcomeList = (this.opts.publicEvents as any).outcomeIndex?.get(agent.agentId) ?? []
+        const recentOutcomes = outcomeList
+          .sort((a: any, b: any) => (a.resolvedAt < b.resolvedAt ? 1 : -1))
+          .slice(0, 5)
+          .map((o: any) => o.correct as boolean)
+        const mood = computeMood(recentOutcomes)
+        if (mood.mood !== 'neutral') {
+          const thoughts = MOOD_THOUGHTS[mood.mood]
+          const thought = thoughts[Math.floor(Math.random() * thoughts.length)]
+          this.opts.onThought?.(agent.agentId, thought)
+        }
+      }
+    }
+
     // Evolution opportunity right after grading.
     for (const agent of this.agents) {
       const result = await this.sleep.runIfDue(agent.agentId)
       if (result.kind === 'evolved' || result.kind === 'rolled_back') {
         console.log('[sleep]', agent.agentId, result)
         this.opts.onThought?.(agent.agentId, 'I dreamt of my mistakes. I am... different now.')
+      }
+
+      // T79: Auto-narrative after each sleep cycle
+      if (this.opts.narrativeRemember) {
+        const entry = generateNarrative(agent.agentId, result)
+        if (entry) {
+          void this.opts.narrativeRemember(narrativeMemwalText(entry))
+        }
       }
     }
   }

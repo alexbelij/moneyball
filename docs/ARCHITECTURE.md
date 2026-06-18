@@ -3,7 +3,7 @@
 # Moneyball — Architecture Guide
 
 > SNES-style pixel-art arcade cabinet where five AI agents predict FIFA World Cup 2026 matches.
-> Memory persists on [MemWal](https://github.com/mysten-incubation/memwal) / Walrus mainnet.
+> Memory persists on [MemWal](https://github.com/MystenLabs/MemWal) / Walrus mainnet.
 > Hackathon entry for **Walrus Memory World Cup**.
 
 ---
@@ -18,7 +18,10 @@
 6. [Data Flow — Sleep / Evolution Pipeline](#6-data-flow--sleep--evolution-pipeline)
 7. [Module Map](#7-module-map)
 8. [Key Decisions](#8-key-decisions)
-9. [Non-Goals & Constraints](#9-non-goals--constraints)
+9. [Agent Memory — Day 1 vs Day 4+](#9-agent-memory--day-1-vs-day-4-judging-criterion-1)
+10. [Walrus Memory Layer](#10-walrus-memory-layer)
+11. [Key Module Deep-Dives](#11-key-module-deep-dives)
+12. [Non-Goals & Constraints](#12-non-goals--constraints)
 
 ---
 
@@ -561,7 +564,56 @@ append-only nature of Walrus means nothing is ever deleted, only accumulated.
 
 ---
 
-## 10. Key Module Deep-Dives
+## 10. Walrus Memory Layer
+
+All persistent state flows through MemWal SDK v0.0.7 to Walrus mainnet. The
+architecture treats MemWal as a write-ahead log with semantic recall:
+
+```mermaid
+graph TD
+    AES["AgentEventService"] --> WQ["MemWalWriteQueue"]
+    USS["UserSummaryStore"] --> WQ
+    KV["KvMemWalClient<br/>(sleep-worker)"] --> WQ
+    WQ -->|"remember(text)"| Relayer["MemWal Relayer"]
+    Relayer -->|"Walrus blob"| Mainnet["Walrus Mainnet"]
+
+    Boot["Cold Boot"] -->|"restore() + recall()"| Relayer
+    Boot -->|"hydrate"| RM["In-Memory Read-Model"]
+    AES -->|"write-through"| RM
+    RM -->|"GET /api/..."| API["Public API"]
+```
+
+### Write path
+
+1. All writes go through `MemWalWriteQueue` (key-based coalescing, 1200ms
+   min interval, exponential backoff on 429).
+2. Text payloads use structured prefixes (`moneyball:prediction`,
+   `moneyball:evolution`, `moneyball:sys_kv`, etc.) for type-based filtering.
+
+### Read path
+
+1. `AgentEventService` maintains an in-memory materialized index. All
+   `list*()` methods read from this index — never from `recall()`.
+2. The index is persisted to `.data/agent-index.json` (debounced).
+3. On cold boot, the index is rebuilt from MemWal via `restore()` + targeted
+   `recall()` queries.
+
+### Rate limits (discovered, not documented)
+
+| Parameter | Value |
+|-----------|-------|
+| Safe write interval | ≥ 1200ms |
+| `rememberBulk()` max | 20 items |
+| 429 response body | `{ retry_after_seconds: N }` |
+| SEAL SessionKey TTL | 5 minutes (auto-cached by SDK) |
+
+📖 **[docs/walrus-memory-integration.md](walrus-memory-integration.md)** — full
+integration reference with namespace strategy, KV overlay, boot hydration,
+and lessons learned.
+
+---
+
+## 11. Key Module Deep-Dives
 
 ### AgentEventService
 **File:** `apps/backend/src/agents/agentEventService.ts`
@@ -651,7 +703,7 @@ remaining agents in that batch — TBD(question for Anna): add per-agent try/cat
 
 ---
 
-## 11. Non-Goals & Constraints
+## 12. Non-Goals & Constraints
 
 - **No new runtime dependencies** without explicit PR justification.
 - **No LLM calls, no embeddings** — all agent reasoning is formula-based.

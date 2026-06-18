@@ -22,6 +22,7 @@ import { registerAuthRoutes } from './http/authRoutes'
 import { optionalJwt } from './http/jwtMiddleware'
 import { registerAgentEventRoutes } from './http/agentEventRoutes'
 import { registerMatchRoutes } from './http/matchRoutes'
+import { registerVerifiabilityRoutes } from './http/verifiabilityRoutes'
 import { AgentEventService } from './agents/agentEventService'
 import { AgentRegistry } from './agents/agentRegistry'
 import { hasSeedBaseline, seedReadModel } from './agents/seedReadModel'
@@ -29,10 +30,15 @@ import { SleepService } from './agents/sleepService'
 import { FootballDataProvider } from './matches/footballDataProvider'
 import { ManualMatchProvider } from './matches/manualProvider'
 import { MatchWorker } from './matches/matchWorker'
+import { OddsProvider } from './matches/oddsProvider'
+import { FormProvider } from './matches/formProvider'
 import type { AgentMethodology, MethodologyType } from './matches/predictionEngine'
 import agentConfig from './agents/agent-config.v1.json'
 import { AgentPersonaService } from './agents/agentPersonaService'
+import { registerMemoryMomentRoute } from './http/memoryMomentRoute'
 import type { ThoughtState } from './agents/agentPersonaService'
+import { pickAmbientChatter, shouldChatter, AGENT_NAMES } from './agents/cabinetChatter'
+import { registerHiveRoutes } from './http/hiveRoutes'
 
 // ── T40a: global crash guards ──────────────────────────────────────────
 process.on('unhandledRejection', (reason) => {
@@ -115,8 +121,6 @@ async function main() {
   // Optional JWT for other /api routes
   app.use('/api', optionalJwt)
 
-  registerApiRoutes(app)
-
   const SEED_AGENTS = ['dr_morgan', 'scout_alvarez', 'viktor_kane', 'sofia_mendes', 'madame_pythia']
   const publicEvents = new AgentEventService()
 
@@ -151,6 +155,7 @@ async function main() {
   app.get('/', (_req, res) => res.type('text').send('Moneyball backend: ok'))
 
   // T52: Agent routes registered after world state init (below)
+  registerVerifiabilityRoutes(app, publicEvents)
   registerAdminRoutes(app)
 
   // ── T40a+T56: Express error middleware (4 args — must come after all routes)
@@ -202,8 +207,9 @@ async function main() {
   const socketApi = registerSocket(io, world)
 
   // T52: Agent Registry — all agents in one call, wired after world is ready
-  const agentRegistry = new AgentRegistry(publicEvents, world)
+  const agentRegistry = new AgentRegistry()
   registerAgentEventRoutes(app, publicEvents, undefined, agentRegistry)
+  registerHiveRoutes(app, agentRegistry, publicEvents)
 
   // ── Match pipeline: real WC2026 → predictions → outcomes → evolution ────
   const agents: AgentMethodology[] = (agentConfig as any).agents.map((a: any) => ({
@@ -214,18 +220,47 @@ async function main() {
 
   const sleepService = new SleepService(publicEvents)
 
+  // T55: API routes need sleepService + publicEvents for memory-aware chat.
+  registerApiRoutes(app, {
+    personas: new AgentPersonaService(),
+    publicEvents,
+    sleepService,
+  })
+
   const manual = new ManualMatchProvider()
   const provider =
     env.MATCH_SOURCE === 'football-data' && env.FOOTBALL_DATA_TOKEN
       ? new FootballDataProvider(env.FOOTBALL_DATA_TOKEN)
       : manual
 
+  // ── Live data providers (optional — activate via env vars) ────────────────
+  const hasAnyOddsKey = !!(env.API_FOOTBALL_KEY || env.RAPIDAPI_KEY)
+  const oddsProvider = hasAnyOddsKey
+    ? new OddsProvider({ apiFootballKey: env.API_FOOTBALL_KEY, rapidApiKey: env.RAPIDAPI_KEY })
+    : null
+  const formProvider = hasAnyOddsKey
+    ? new FormProvider({ apiFootballKey: env.API_FOOTBALL_KEY, rapidApiKey: env.RAPIDAPI_KEY })
+    : null
+  if (oddsProvider) console.log(`[boot] OddsProvider active (${env.API_FOOTBALL_KEY ? 'direct' : 'RapidAPI'})`)
+  if (formProvider) console.log(`[boot] FormProvider active (${env.API_FOOTBALL_KEY ? 'direct' : 'RapidAPI'})`)
+// T79: Narrative MemWal writer (shared namespace for tournament diary)
+  const narrativeRemember = publicEvents.enabled
+    ? async (text: string) => { try { await publicEvents.rememberRaw('narrative', text) } catch (e) { console.error('[narrative]', e) } }
+    : undefined
+
   const matchWorker = new MatchWorker(provider, agents, sleepService, {
     pollSeconds: env.MATCH_POLL_SECONDS,
     predictionLeadHours: env.PREDICTION_LEAD_HOURS,
     onThought: (agentId, text) => socketApi.broadcastThought(agentId, text),
+    oddsProvider,
+    formProvider,
+publicEvents,
+    narrativeRemember,
   })
   matchWorker.start()
+
+  // T79: Memory Moment endpoint for hackathon judges
+  registerMemoryMomentRoute(app, publicEvents, sleepService, agents.map((a) => a.agentId))
 
   registerMatchRoutes(app, {
     worker: matchWorker,
@@ -235,14 +270,28 @@ async function main() {
   })
 
   // -- T45: ambient thought loop -- persona-sourced, 7-12s jitter ------
+  // -- T53: every ~3rd cycle fires cross-agent chatter instead ----------
   const personaService = new AgentPersonaService()
   const AMBIENT_STATES: ThoughtState[] = ['analyzing', 'watching', 'coffee', 'arguing', 'busy']
+  let ambientTick = 0
 
   function scheduleNextThought() {
     const jitterMs = 7000 + Math.floor(Math.random() * 5000) // 7-12s
     setTimeout(() => {
       const agentList = world.getState().agents
       if (agentList.length === 0) { scheduleNextThought(); return }
+
+      const currentTick = ambientTick++
+
+      // T53: cross-agent chatter every 3rd cycle
+      if (shouldChatter(currentTick)) {
+        const chatter = pickAmbientChatter()
+        const speakerName = AGENT_NAMES[chatter.speaker]
+        socketApi.broadcastThought(chatter.speaker, `[to ${AGENT_NAMES[chatter.target]}] ${chatter.formatted}`)
+        scheduleNextThought()
+        return
+      }
+
       const pick = agentList[Math.floor(Math.random() * agentList.length)]
       const persona = personaService.get(pick.agentId)
       if (!persona) { scheduleNextThought(); return }

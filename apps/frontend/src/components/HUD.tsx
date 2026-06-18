@@ -1,17 +1,19 @@
 /**
- * HUD | v0.9.0 | 2026-06-14
+ * HUD | v1.0.0 | 2026-06-17
  * Purpose: Connection indicator + wallet controls + sign-in/out.
+ * T67: useAsyncAction for sign-in, busy PixelButton, errors via toast.
  * T49: typography scale — body ≥16px; right cluster wraps on narrow screens.
  * T33: migrated to shared tokens.
  */
 
-import React, { useState } from 'react'
+import React, { useCallback } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { useCurrentAccount } from '@mysten/dapp-kit'
 import { useSuiAuth } from '@/hooks/useSuiAuth'
 import { useAuthStore } from '@/store/authStore'
 import { WalletControls } from '@/components/WalletControls'
 import { PixelButton } from '@/components/ui'
+import { useAsyncAction } from '@/hooks/useAsyncAction'
 import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 export function HUD() {
@@ -23,8 +25,13 @@ export function HUD() {
   const { signIn, signOut } = useSuiAuth()
   const viewer = useAuthStore((s) => s.viewer)
 
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState<string | null>(null)
+  const signInAction = useAsyncAction(
+    useCallback(async () => {
+      setWalletFlowActive(true)
+      try { await signIn() } finally { setWalletFlowActive(false) }
+    }, [signIn, setWalletFlowActive]),
+    { onError: 'toast' },
+  )
 
   return (
     <>
@@ -54,15 +61,10 @@ export function HUD() {
         {account && !viewer && (
           <PixelButton
             variant="primary"
-            disabled={busy}
-            onClick={async () => {
-              setErr(null); setBusy(true)
-              setWalletFlowActive(true)
-              try { await signIn() } catch (e: any) { setErr(e.message ?? String(e)) }
-              finally { setBusy(false); setWalletFlowActive(false) }
-            }}
+            busy={signInAction.pending}
+            onClick={signInAction.run}
           >
-            {busy ? 'Signing…' : 'Admin / Creator Sign In'}
+            {signInAction.pending ? 'Signing…' : 'Admin / Creator Sign In'}
           </PixelButton>
         )}
 
@@ -72,22 +74,6 @@ export function HUD() {
           </PixelButton>
         )}
       </div>
-
-      {err && (
-        <div style={{
-          position: 'absolute', top: 52, right: 12, zIndex: zIndex.hudError,
-          background: palette.wood900,
-          border: `2px solid ${accents.red}`,
-          borderRadius: 0,
-          color: accents.red,
-          padding: '6px 10px',
-          ...typo.body, fontFamily: fonts.body,
-          pointerEvents: 'none',
-          boxShadow: shadows.hardSmall,
-        }}>
-          {err}
-        </div>
-      )}
     </>
   )
 }

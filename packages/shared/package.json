@@ -5,7 +5,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./events": "./src/events/index.ts",
-    "./digitalClock": "./src/digitalClock.ts"
+    "./digitalClock": "./src/digitalClock.ts",
+    "./hive": "./src/hive.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit",

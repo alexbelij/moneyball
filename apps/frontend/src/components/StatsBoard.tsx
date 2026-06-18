@@ -13,7 +13,7 @@ import React, { useEffect, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { getAgentPredictions, type PredictionItem } from '@/lib/api'
 import { StatsReport } from '@/components/StatsReport'
-import { PixelButton, RankMedal } from '@/components/ui'
+import { PixelButton, RankMedal, SkeletonRows } from '@/components/ui'
 import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 interface Row {
@@ -90,7 +90,7 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
       </div>
 
       {err && <div style={{ marginTop: 10, color: accents.red, ...typo.body, fontFamily: fonts.body }}>{err}</div>}
-      {!rows && !err && <div style={{ marginTop: 10, color: text.muted, ...typo.body, fontFamily: fonts.body }}>Crunching the numbers…</div>}
+      {!rows && !err && <div style={{ marginTop: 10 }}><SkeletonRows count={5} /></div>}
 
       {rows && (
         /* Paper leaderboard panel */

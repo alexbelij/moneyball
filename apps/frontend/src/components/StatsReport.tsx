@@ -11,6 +11,7 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { getAgentPredictions, type PredictionItem } from '@/lib/api'
 import { buildAllBrierSeries, type AgentBrierSeries, type BrierPoint } from '@/lib/brierSeries'
+import { SkeletonRows } from '@/components/ui/Skeleton'
 import { palette, accents, text, fonts, borders, shadows, agentColors, chartGrid, type as typo } from '@/styles/tokens'
 
 /* ── Agent IDs ──────────────────────────────────────────────────────── */
@@ -118,7 +119,7 @@ export function StatsReport() {
     return <div style={{ color: accents.red, fontFamily: fonts.body, padding: 12 }}>{err}</div>
   }
   if (!allItems) {
-    return <div style={{ color: text.muted, fontFamily: fonts.body, padding: 12 }}>Loading scouting data…</div>
+    return <div style={{ padding: 12 }}><SkeletonRows count={5} /></div>
   }
 
   return (

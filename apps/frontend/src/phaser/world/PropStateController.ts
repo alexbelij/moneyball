@@ -99,7 +99,11 @@ export class PropStateController {
       case 'coffee_machine':
         return this.brewCoffee()
       // tv_set handled internally by TvSet class
-      // boards/door: no state machine yet (V2)
+      // board_main: TacticsBoard modal (T74)
+      // board_left: MemoryLab modal (T75)
+      // board_scout: WalrusProof modal (T75)
+      // door: AboutDoor modal (T75)
+      // All board/door modals self-register via GameEventBus prop:click listeners.
     }
   }
 

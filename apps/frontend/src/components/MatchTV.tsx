@@ -10,6 +10,7 @@ import React, { useEffect, useState } from 'react'
 import { getMatches, type MatchInfo } from '@/lib/api'
 import { GameEventBus } from '@/events/GameEventBus'
 import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
+import { formatKickoff } from '@/lib/formatDate'
 
 const POLL_MS = 30_000
 
@@ -91,9 +92,5 @@ function Section({ title, items, empty }: { title: string; items: MatchInfo[]; e
 }
 
 function kickoff(m: MatchInfo) {
-  const d = new Date(m.kickoffUtc)
-  const today = new Date().toDateString() === d.toDateString()
-  return today
-    ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return formatKickoff(m.kickoffUtc)
 }

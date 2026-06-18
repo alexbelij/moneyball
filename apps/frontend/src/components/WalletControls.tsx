@@ -1,10 +1,11 @@
 /**
- * WalletControls | v0.4.0 | 2026-06-14
+ * WalletControls | v0.5.0 | 2026-06-17
  * Purpose: Deterministic wallet UX (connect/disconnect/switch account) + pause integration.
+ * T67: useAsyncAction for all wallet operations, busy PixelButton, errors via toast.
  * T33: migrated to shared tokens.
  */
 
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   useAccounts,
   useConnectWallet,
@@ -16,6 +17,7 @@ import {
 } from '@mysten/dapp-kit'
 import { useGameStore } from '@/store/gameStore'
 import { PixelButton } from '@/components/ui'
+import { useAsyncAction } from '@/hooks/useAsyncAction'
 import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
 
 export function WalletControls() {
@@ -30,8 +32,6 @@ export function WalletControls() {
   const { mutateAsync: disconnectWallet } = useDisconnectWallet() as any
   const { mutateAsync: switchAccount } = useSwitchAccount() as any
 
-  const [err, setErr] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
   const [open, setOpen] = useState(false)
   const [openAccounts, setOpenAccounts] = useState(false)
 
@@ -40,58 +40,53 @@ export function WalletControls() {
     [wallets],
   )
 
-  async function onConnect(walletName?: string) {
-    setErr(null)
-    setBusy(true)
-    setWalletFlowActive(true)
-    try {
-      const wallet = walletName
-        ? wallets.find((w) => w.name === walletName)
-        : slush ?? wallets[0]
+  const connectAction = useAsyncAction(
+    useCallback(async (walletName?: string) => {
+      setWalletFlowActive(true)
+      try {
+        const wallet = walletName
+          ? wallets.find((w) => w.name === walletName)
+          : slush ?? wallets[0]
+        if (!wallet) throw new Error('No wallets detected')
+        await connectWallet({ wallet })
+        setOpen(false)
+      } finally {
+        setWalletFlowActive(false)
+      }
+    }, [wallets, slush, connectWallet, setWalletFlowActive]),
+    { onError: 'toast' },
+  )
 
-      if (!wallet) throw new Error('No wallets detected')
-      await connectWallet({ wallet })
-      setOpen(false)
-    } catch (e: any) {
-      setErr(e?.message ?? String(e))
-    } finally {
-      setBusy(false)
-      setWalletFlowActive(false)
-    }
-  }
+  const disconnectAction = useAsyncAction(
+    useCallback(async () => {
+      setWalletFlowActive(true)
+      try {
+        await disconnectWallet()
+        setOpen(false)
+        setOpenAccounts(false)
+      } finally {
+        setWalletFlowActive(false)
+      }
+    }, [disconnectWallet, setWalletFlowActive]),
+    { onError: 'toast' },
+  )
 
-  async function onDisconnect() {
-    setErr(null)
-    setBusy(true)
-    setWalletFlowActive(true)
-    try {
-      await disconnectWallet()
-      setOpen(false)
-      setOpenAccounts(false)
-    } catch (e: any) {
-      setErr(e?.message ?? String(e))
-    } finally {
-      setBusy(false)
-      setWalletFlowActive(false)
-    }
-  }
+  const switchAction = useAsyncAction(
+    useCallback(async (addr: string) => {
+      setWalletFlowActive(true)
+      try {
+        const account = accounts.find((a) => a.address === addr)
+        if (!account) throw new Error('Account not found in exposed accounts list')
+        await switchAccount({ account })
+        setOpenAccounts(false)
+      } finally {
+        setWalletFlowActive(false)
+      }
+    }, [accounts, switchAccount, setWalletFlowActive]),
+    { onError: 'toast' },
+  )
 
-  async function onSwitch(addr: string) {
-    setErr(null)
-    setBusy(true)
-    setWalletFlowActive(true)
-    try {
-      const account = accounts.find((a) => a.address === addr)
-      if (!account) throw new Error('Account not found in exposed accounts list')
-      await switchAccount({ account })
-      setOpenAccounts(false)
-    } catch (e: any) {
-      setErr(e?.message ?? String(e))
-    } finally {
-      setBusy(false)
-      setWalletFlowActive(false)
-    }
-  }
+  const busy = connectAction.pending || disconnectAction.pending || switchAction.pending
 
   const connected = !!currentAccount?.address
   const short = connected ? `${currentAccount!.address.slice(0, 6)}…${currentAccount!.address.slice(-4)}` : 'Connect'
@@ -100,7 +95,7 @@ export function WalletControls() {
     <div style={{ position: 'relative', display: 'inline-flex', gap: 8, alignItems: 'center' }}>
       {!connected ? (
         <>
-          <PixelButton onClick={() => setOpen((v) => !v)} disabled={busy}>
+          <PixelButton busy={connectAction.pending} onClick={() => setOpen((v) => !v)} disabled={busy}>
             {busy ? 'Connecting…' : 'Connect wallet'}
           </PixelButton>
 
@@ -108,7 +103,7 @@ export function WalletControls() {
             <div style={menu()}>
               <div style={menuTitle()}>Select wallet</div>
               {wallets.map((w) => (
-                <button key={w.name} onClick={() => onConnect(w.name)} style={menuItem()}>
+                <button key={w.name} onClick={() => connectAction.run(w.name)} style={menuItem()} disabled={busy}>
                   {w.name}
                 </button>
               ))}
@@ -131,23 +126,22 @@ export function WalletControls() {
               {accounts.map((a) => (
                 <button
                   key={a.address}
-                  onClick={() => onSwitch(a.address)}
+                  onClick={() => switchAction.run(a.address)}
                   style={menuItem(a.address === currentAccount?.address)}
+                  disabled={busy}
                 >
                   {a.address.slice(0, 10)}…{a.address.slice(-6)}
                 </button>
               ))}
 
               <div style={{ height: 8 }} />
-              <button onClick={onDisconnect} style={menuItem(false, true)}>
+              <button onClick={disconnectAction.run} style={menuItem(false, true)} disabled={busy}>
                 Disconnect
               </button>
             </div>
           )}
         </>
       )}
-
-      {err && <div style={{ color: accents.red, ...typo.caption, maxWidth: 260, fontFamily: fonts.body }}>{err}</div>}
     </div>
   )
 }

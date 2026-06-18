@@ -107,7 +107,7 @@ export class AgentEventService {
   private clients = new Map<string, ReturnType<typeof MemWal.create>>()
   private writeQueues = new Map<string, MemWalWriteQueue>()
   /** Dev fallback (no MEMWAL_KEY): skip MemWal writes. Index still works. */
-  private readonly enabled = Boolean(env.MEMWAL_KEY)
+  readonly enabled = Boolean(env.MEMWAL_KEY)
 
   // Disk persistence target (instance-level so tests can isolate / disable it).
   private readonly persistEnabled: boolean
@@ -513,5 +513,36 @@ export class AgentEventService {
       totals: { predictions, outcomes, evolutions, substantiveEvolutions },
       agents,
     }
+  }
+
+  /**
+   * T79: Write raw text to a MemWal namespace (for narratives, consensus).
+   * Fire-and-forget; does not update in-memory indexes.
+   */
+  async rememberRaw(namespace: string, text: string): Promise<void> {
+    if (!this.enabled) return
+    try {
+      const ns = `moneyball:${namespace}`
+      const client = this.clientFor(ns)
+      const job: any = await client.remember(text)
+      if (job?.job_id) await client.waitForRememberJob(job.job_id)
+    } catch (err) {
+      console.error(`[rememberRaw:${namespace}]`, err)
+    }
+  }
+
+  /** Get or create a MemWal client for a namespace. */
+  private clientFor(namespace: string) {
+    let client = this.clients.get(namespace)
+    if (!client) {
+      client = MemWal.create({
+        key: env.MEMWAL_KEY,
+        accountId: env.MEMWAL_ACCOUNT_ID,
+        serverUrl: env.MEMWAL_RELAYER,
+        namespace,
+      })
+      this.clients.set(namespace, client)
+    }
+    return client
   }
 }

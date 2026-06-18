@@ -1,30 +1,155 @@
 /**
- * api | v0.5.0 | 2026-06-12
+ * api | v0.6.0 | 2026-06-17
  * Purpose: Central HTTP client for backend API (adds guestId + optional JWT).
+ * T68: enhanced with timeout, structured error parsing, network/offline
+ *      detection, friendly English error messages, and optional toast routing.
+ *      Non-form callers get automatic toast errors; form callers can catch
+ *      and display inline.
  */
 
 import { getGuestId } from '@/lib/guest'
 import { config } from '@/lib/config'
 import { useAuthStore } from '@/store/authStore'
+import { toast } from '@/components/toast/toastBus'
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+// ── T68: Error types ──────────────────────────────────────────────────────
+
+/** Structured API error — always has code + human message. */
+export class ApiError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+/** Network / timeout error — distinct from API errors. */
+export class NetworkError extends Error {
+  constructor(message: string, public readonly isTimeout: boolean = false) {
+    super(message)
+    this.name = 'NetworkError'
+  }
+}
+
+// ── T68: Friendly error messages ──────────────────────────────────────────
+
+const FRIENDLY_MESSAGES: Record<number, string> = {
+  400: 'Invalid request — please check your input.',
+  401: 'Session expired — please sign in again.',
+  403: 'You don\'t have permission for this action.',
+  404: 'The requested resource was not found.',
+  413: 'Request too large.',
+  429: 'Too many requests — please wait a moment.',
+  500: 'Something went wrong on our end. Try again shortly.',
+  502: 'The server is waking up — retrying shortly.',
+  503: 'Service temporarily unavailable.',
+}
+
+function friendlyMessage(status: number, serverMessage?: string): string {
+  // Prefer server message if it's not a generic/internal one
+  if (serverMessage && serverMessage !== 'INTERNAL' && serverMessage !== 'An internal error occurred.') {
+    return serverMessage
+  }
+  return FRIENDLY_MESSAGES[status] ?? `Unexpected error (${status}).`
+}
+
+// ── T68: Core fetch wrapper ───────────────────────────────────────────────
+
+/** Default request timeout in milliseconds (15s — generous for Render cold starts). */
+const DEFAULT_TIMEOUT_MS = 15_000
+
+export interface ApiFetchOptions extends Omit<RequestInit, 'headers'> {
+  headers?: Record<string, string>
+  /** Request timeout in ms. Default: 15000. */
+  timeoutMs?: number
+  /**
+   * If true, errors are NOT automatically sent to the toast bus.
+   * Use this for form submissions where errors should display inline.
+   */
+  suppressToast?: boolean
+}
+
+/**
+ * Enhanced API fetch with timeout, error envelope parsing, and toast routing.
+ * Throws `ApiError` for HTTP errors, `NetworkError` for connectivity issues.
+ */
+async function apiFetch<T>(path: string, init?: ApiFetchOptions): Promise<T> {
   const guestId = getGuestId()
   const url = new URL(path, config.backendUrl).toString()
   const token = useAuthStore.getState().token
+  const timeoutMs = init?.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  const suppressToast = init?.suppressToast ?? false
 
-  const res = await fetch(url, {
-    ...init,
-    headers: {
-      'content-type': 'application/json',
-      'x-guest-id': guestId,
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers ?? {}),
-    },
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
 
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`)
-  return (await res.json()) as T
+  try {
+    const res = await fetch(url, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        'content-type': 'application/json',
+        'x-guest-id': guestId,
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...(init?.headers ?? {}),
+      },
+    })
+
+    clearTimeout(timeout)
+
+    if (!res.ok) {
+      // T68: parse the backend's { error: { code, message } } envelope
+      let code = 'UNKNOWN'
+      let message: string | undefined
+      try {
+        const body = await res.json()
+        if (body?.error?.code) {
+          code = body.error.code
+          message = body.error.message
+        } else if (body?.error && typeof body.error === 'string') {
+          code = body.error
+        }
+      } catch {
+        // Non-JSON error body — use status-based message
+      }
+
+      const err = new ApiError(code, friendlyMessage(res.status, message), res.status)
+
+      if (!suppressToast) {
+        toast.error(err.message)
+      }
+
+      throw err
+    }
+
+    return (await res.json()) as T
+  } catch (e) {
+    clearTimeout(timeout)
+
+    // Already handled ApiError — re-throw
+    if (e instanceof ApiError) throw e
+
+    // Network / abort errors
+    const isAbort = e instanceof DOMException && e.name === 'AbortError'
+    const netErr = new NetworkError(
+      isAbort
+        ? 'Request timed out — the server may be waking up.'
+        : 'Network error — please check your connection.',
+      isAbort,
+    )
+
+    if (!suppressToast) {
+      toast.error(netErr.message)
+    }
+
+    throw netErr
+  }
 }
+
+// ── Public API functions (unchanged signatures) ───────────────────────────
 
 // User interactions
 export async function roast(agentId: string) {
@@ -176,6 +301,66 @@ export async function getMatches() {
   })
 }
 
+// T64: Verifiability surface
+export interface AgentVerifiability {
+  agentId: string
+  memwalNamespace: string
+  counts: {
+    predictions: number
+    outcomes: number
+    evolutions: number
+    substantiveEvolutions: number
+  }
+}
+
+export interface VerifiabilityData {
+  walrusSiteObject: string
+  frontendUrl: string
+  memwalRelayer: string
+  memwalAccountId: string
+  memwalNamespacePattern: string
+  agents: AgentVerifiability[]
+  explorers: {
+    walrus: Array<{ name: string; baseUrl: string }>
+    sui: Array<{ name: string; baseUrl: string }>
+  }
+  howToVerify: string[]
+}
+
+export async function getVerifiability() {
+  return apiFetch<{ ok: true } & VerifiabilityData>('/api/public/verifiability', { method: 'GET' })
+}
+
+/** T55: Memory-aware LLM agent chat. */
+export interface ChatTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatResponse {
+  ok: true
+  text: string
+  meta: {
+    provider: 'groq' | 'gemini' | 'deterministic'
+    identity: 'sui' | 'guest'
+    source: 'llm' | 'deterministic'
+    deflected?: boolean
+    capped?: boolean
+    usage?: { inputTokens?: number; outputTokens?: number }
+  }
+}
+
+export async function chatWithAgent(
+  agentId: string,
+  message: string,
+  history: ChatTurn[] = [],
+) {
+  return apiFetch<ChatResponse>(`/api/agents/${agentId}/chat`, {
+    method: 'POST',
+    body: JSON.stringify({ message, history }),
+  })
+}
+
 // Admin agent events (JWT-admin required)
 export async function adminAgentPredict(agentId: string, input: {
   matchId: string
@@ -232,4 +417,84 @@ export async function getAgentRegistry() {
   return apiFetch<{ ok: true; agents: AgentRegistryEntry[] }>('/api/public/agents', {
     cache: 'no-store',
   })
+}
+
+// ── T54: Hive / connected agents ──────────────────────────────────────
+
+export type AgentSource = 'core' | 'connected'
+
+export interface AgentConfigItem {
+  agentId: string
+  name: string
+  role: string
+  persona: string
+  methodology: string
+  seed: number
+  owner?: string
+  source: AgentSource
+  createdAt: string
+}
+
+export async function listAgents() {
+  return apiFetch<{ ok: true; agents: AgentConfigItem[] }>('/api/public/agents', {
+    method: 'GET',
+  })
+}
+
+export async function registerHiveAgent(body: {
+  name: string
+  role: string
+  persona: string
+  methodology: string
+  seed?: number
+  owner?: string
+}) {
+  return apiFetch<{ ok: true; agent: AgentConfigItem }>('/api/hive/agents', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+export async function hiveAgentPredict(agentId: string, body: {
+  matchId: string
+  pick: string
+  confidence: number
+  reasoning?: string
+}) {
+  return apiFetch<{ ok: true; prediction: any }>(`/api/hive/agents/${agentId}/predictions`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
+// ── T79: Memory Moment ───────────────────────────────────────────────────────
+
+export type AgentMood = 'confident' | 'validated' | 'neutral' | 'anxious' | 'humbled'
+
+export interface MemoryMomentAgent {
+  agentId: string
+  currentVersion: number
+  accuracy: { predictions: number; outcomes: number; correct: number; pct: number | null }
+  evolutions: number
+  substantiveEvolutions: number
+  sleepCycles: number
+  lastEvolution: string | null
+  mood: { mood: AgentMood; streak: number; recentCorrect: number; recentTotal: number; confidenceModifier: number }
+  walrusWrites: number
+}
+
+export interface MemoryMomentResponse {
+  ok: true
+  generatedAt: string
+  tournamentDay: number
+  agents: MemoryMomentAgent[]
+  summary: string
+}
+
+/**
+ * Fetch the Memory Moment summary — before/after per agent.
+ * Designed for hackathon judges: one URL → proof that memory changes behavior.
+ */
+export async function getMemoryMoment() {
+  return apiFetch<MemoryMomentResponse>('/api/public/memory-moment', { cache: 'no-store' })
 }

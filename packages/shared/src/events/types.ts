@@ -22,6 +22,8 @@ export interface WorldJoinAck {
   viewer?: { suiAddress?: string; role?: 'user' | 'admin' | 'guest' }
 }
 
+export type AgentMood = 'confident' | 'validated' | 'neutral' | 'anxious' | 'humbled'
+
 export interface WorldAgentState {
   agentId: AgentId
   name: string
@@ -30,6 +32,8 @@ export interface WorldAgentState {
   position: Vec2
   lastThought?: string
   lastActionAt?: IsoDateTime
+  /** T79: Current mood derived from recent prediction outcomes. */
+  mood?: AgentMood
 }
 
 export interface WorldStatePayload {

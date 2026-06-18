@@ -14,6 +14,7 @@ import { getAgentPredictions, getMatches, getAgentParams } from '@/lib/api'
 import { StatsReport } from '@/components/StatsReport'
 import { RankMedal } from '@/components/ui'
 import { palette, accents, text, fonts, borders, shadows, type as typo } from '@/styles/tokens'
+import { formatKickoff } from '@/lib/formatDate'
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
 
@@ -118,12 +119,7 @@ function AgentCard({
 }
 
 function MatchCard({ match }: { match: MatchInfo }) {
-  const time = new Date(match.kickoffUtc).toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  const time = formatKickoff(match.kickoffUtc)
 
   return (
     <div style={styles.matchCard}>

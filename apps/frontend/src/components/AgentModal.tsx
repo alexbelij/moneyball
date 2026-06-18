@@ -2,6 +2,7 @@
  * AgentModal | v1.2.0 | 2026-06-18
  * Purpose: Agent dossier — Overview (actions) + Method / Predictions /
  * Evolution / Before/After / Memory tabs. WAI-ARIA dialog + tabs, focus trap.
+ * T67: useAsyncAction for Roast/Disagree/Day+1, busy PixelButton, skeleton loaders.
  * T58: Performance pass — extracted static styles to module-level constants,
  *   React.memo on list-item sub-components, useMemo for derived data.
  * T49: typography scale — body >=16px, header >=10px; responsive content.
@@ -16,7 +17,7 @@
  * T27: Predictions tab now shows a per-agent rolling-Brier performance chart.
  */
 
-import React, { memo, useEffect, useMemo, useState } from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import {
   roast, disagree, adminDayPlusOne,
@@ -29,14 +30,21 @@ import { useAuthStore } from '@/store/authStore'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
 import { useRovingTabs } from '@/lib/a11y/useRovingTabs'
 import { PixelButton } from '@/components/ui/PixelButton'
+import { AgentChat } from '@/components/AgentChat'
+import { Skeleton, SkeletonRows } from '@/components/ui/Skeleton'
+import { useAsyncAction } from '@/hooks/useAsyncAction'
 import { AgentPerfChart } from '@/components/AgentPerfChart'
 import { buildAgentPerfSeries } from '@/lib/agentPerf'
 import { buildEvolutionStory } from '@/lib/evolutionStory'
 import { palette, accents, text, fonts, borders, shadows, zIndex, overlay, type as typo } from '@/styles/tokens'
+import { formatTimestamp } from '@/lib/formatDate'
+import { AgentJournal } from '@/components/AgentJournal'
+import { TimelineScrubber } from '@/components/TimelineScrubber'
+import { MemoryPulse } from '@/components/MemoryPulse'
 import css from './agentModal.module.css'
 
-type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'before-after' | 'memory'
-const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'before-after', 'memory'] as const
+type Tab = 'overview' | 'method' | 'predictions' | 'evolution' | 'before-after' | 'memory' | 'journal' | 'chat'
+const TABS: readonly Tab[] = ['overview', 'method', 'predictions', 'evolution', 'before-after', 'memory', 'journal', 'chat'] as const
 const MODAL_TITLE_ID = 'agent-modal-title'
 
 /* ── Static style constants (T58: avoid re-creation on each render) ───── */
@@ -85,7 +93,7 @@ const S_PANEL: React.CSSProperties = {
 }
 
 const S_ACTIONS_ROW: React.CSSProperties = {
-  display: 'flex', gap: 8, flexWrap: 'wrap',
+  display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
 }
 
 const S_ERROR: React.CSSProperties = { marginTop: 10, color: accents.red, ...typo.body }
@@ -225,8 +233,6 @@ export function AgentModal() {
   const isAdmin = viewer?.role === 'admin'
 
   const [tab, setTab] = useState<Tab>('overview')
-  const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState<string | null>(null)
 
   const trapRef = useFocusTrap<HTMLDivElement>({ onClose: close, active: !!agent })
   const { getTabProps, getTabPanelProps, getTabListProps } = useRovingTabs({
@@ -235,7 +241,7 @@ export function AgentModal() {
     onSelect: setTab,
   })
 
-  useEffect(() => { setTab('overview'); setErr(null) }, [selected])
+  useEffect(() => { setTab('overview') }, [selected])
 
   /* T48: pause Phaser scene while modal is open */
   useEffect(() => {
@@ -247,37 +253,34 @@ export function AgentModal() {
   if (!agent) return null
   const agentId = agent.agentId
 
-  async function onRoast() {
-    setErr(null); setBusy(true)
-    try {
+  /* T67: useAsyncAction guards all three buttons */
+  const roastAction = useAsyncAction(
+    useCallback(async () => {
       const r = await roast(agentId)
       GameEventBus.emit('thought:show', { agentId, text: r.text, duration: 3500 })
-    } catch (e: any) {
-      setErr(e.message ?? String(e))
-    } finally { setBusy(false) }
-  }
+    }, [agentId]),
+    { onError: 'toast' },
+  )
 
-  async function onDisagree() {
-    setErr(null); setBusy(true)
-    try {
+  const disagreeAction = useAsyncAction(
+    useCallback(async () => {
       await disagree(agentId)
       const r = await roast(agentId)
       GameEventBus.emit('thought:show', { agentId, text: r.text, duration: 3500 })
-    } catch (e: any) {
-      setErr(e.message ?? String(e))
-    } finally { setBusy(false) }
-  }
+    }, [agentId]),
+    { onError: 'toast' },
+  )
 
-  async function onSimulateDayPlusOne() {
-    setErr(null); setBusy(true)
-    try {
+  const dayPlusOneAction = useAsyncAction(
+    useCallback(async () => {
       await adminDayPlusOne(agentId)
       const r = await roast(agentId)
       GameEventBus.emit('thought:show', { agentId, text: `[Day+1] ${r.text}`, duration: 4000 })
-    } catch (e: any) {
-      setErr('Admin action failed (requires admin role).')
-    } finally { setBusy(false) }
-  }
+    }, [agentId]),
+    { onError: 'toast' },
+  )
+
+  const busy = roastAction.pending || disagreeAction.pending || dayPlusOneAction.pending
 
   return (
     <div
@@ -316,7 +319,7 @@ export function AgentModal() {
               {...getTabProps(t)}
               style={{ textTransform: t === 'before-after' ? 'none' : 'capitalize', fontSize: typo.hdr.fontSize }}
             >
-              {t === 'before-after' ? 'Day1 vs Now' : t}
+              {t === 'before-after' ? 'Day1 vs Now' : t === 'journal' ? 'Journal' : t}
             </PixelButton>
           ))}
         </div>
@@ -326,17 +329,18 @@ export function AgentModal() {
           {tab === 'overview' && (
             <>
               <div style={S_ACTIONS_ROW}>
-                <PixelButton disabled={busy} onClick={onRoast}>Roast me</PixelButton>
-                <PixelButton disabled={busy} onClick={onDisagree} variant="danger">
-                  Disagree
+                <PixelButton busy={roastAction.pending} disabled={busy || !viewer} onClick={roastAction.run}>
+                  Roast me{!viewer ? ' (connect wallet)' : ''}
+                </PixelButton>
+                <PixelButton busy={disagreeAction.pending} disabled={busy || !viewer} onClick={disagreeAction.run} variant="danger">
+                  Disagree{!viewer ? ' (connect wallet)' : ''}
                 </PixelButton>
                 {isAdmin && (
-                  <PixelButton disabled={busy} onClick={onSimulateDayPlusOne} variant="primary">
+                  <PixelButton busy={dayPlusOneAction.pending} disabled={busy} onClick={dayPlusOneAction.run} variant="primary">
                     Simulate Day +1
                   </PixelButton>
                 )}
               </div>
-              {err && <div role="alert" style={S_ERROR}>{err}</div>}
               <div style={S_THOUGHT_LABEL}>Last thought:</div>
               <div style={S_THOUGHT_TEXT}>{agent.lastThought ?? '—'}</div>
             </>
@@ -346,6 +350,8 @@ export function AgentModal() {
           {tab === 'evolution' && <EvolutionTab agentId={agentId} />}
           {tab === 'before-after' && <BeforeAfterTab agentId={agentId} />}
           {tab === 'memory' && <MemoryTab agentId={agentId} />}
+          {tab === 'journal' && <AgentJournal agentId={agentId} />}
+          {tab === 'chat' && <AgentChat agentId={agentId} agentName={agent?.name ?? agentId} />}
         </div>
 
         <div style={S_FOOTER}>
@@ -377,7 +383,7 @@ function useFetch<T>(load: () => Promise<T>, deps: unknown[]) {
 
 export function MethodTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentProfile(agentId), [agentId])
-  if (loading) return <Hint>Loading methodology…</Hint>
+  if (loading) return <Skeleton variant="text" lines={4} />
   if (err) return <Hint color={accents.red}>{err}</Hint>
   const profile = data?.profile as AgentProfile | undefined
   if (!profile) return <Hint>No profile available.</Hint>
@@ -525,7 +531,7 @@ function PredictionsTab({ agentId }: { agentId: string }) {
     return { items: reversed, correct: cor, resolved: res, perf: pf }
   }, [data, agentId])
 
-  if (loading) return <Hint>Loading predictions…</Hint>
+  if (loading) return <SkeletonRows count={5} />
   if (err) return <Hint color={accents.red}>{err}</Hint>
   if (!items.length) return <Hint>No predictions yet — waiting for the next fixture window.</Hint>
 
@@ -561,7 +567,7 @@ const PredictionRow = memo(function PredictionRow({ p }: { p: PredictionItem }) 
         {typeof p.paramsVersion === 'number' && <span style={S_PARAM_KEY}> · params v{p.paramsVersion}</span>}
       </div>
       <div style={S_PRED_REASONING}>{p.reasoning}</div>
-      <div style={S_CAPTION_MUTED_MT4}>{new Date(p.createdAt).toLocaleString()}</div>
+      <div style={S_CAPTION_MUTED_MT4}>{formatTimestamp(p.createdAt)}</div>
     </div>
   )
 })
@@ -575,7 +581,7 @@ function EvolutionTab({ agentId }: { agentId: string }) {
     [data],
   )
 
-  if (loading) return <Hint>Loading evolution history…</Hint>
+  if (loading) return <SkeletonRows count={4} />
   if (err) return <Hint color={accents.red}>{err}</Hint>
   if (!items.length) return <Hint>No evolutions yet — the agent evolves after sleeping on resolved matches.</Hint>
   return (
@@ -606,7 +612,7 @@ const EvolutionRow = memo(function EvolutionRow({ ev }: { ev: EvolutionItem }) {
           ))}
         </div>
       )}
-      <div style={S_CAPTION_MUTED_MT4}>{new Date(ev.createdAt).toLocaleString()}</div>
+      <div style={S_CAPTION_MUTED_MT4}>{formatTimestamp(ev.createdAt)}</div>
     </div>
   )
 })
@@ -631,7 +637,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
     )
   }, [agentId])
 
-  if (loading) return <Hint>Computing before/after diff…</Hint>
+  if (loading) return <Skeleton variant="block" height={120} />
   if (err) return <Hint color={accents.red}>{err}</Hint>
   if (!data) return <Hint>No data available.</Hint>
   const diff = data as BeforeAfterDiff
@@ -717,7 +723,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
 
 function MemoryTab({ agentId }: { agentId: string }) {
   const { data, err, loading } = useFetch(() => getAgentParams(agentId), [agentId])
-  if (loading) return <Hint>Reading long-term memory…</Hint>
+  if (loading) return <Skeleton variant="text" lines={3} />
   if (err) return <Hint color={accents.red}>{err}</Hint>
   const params = data?.params
   if (!params) return <Hint>No persisted memory yet — first sleep cycle pending.</Hint>
@@ -736,7 +742,7 @@ function MemoryTab({ agentId }: { agentId: string }) {
           </>
         )}
         {params.updatedAt && (
-          <div style={S_CAPTION_MUTED_MT8}>updated {new Date(params.updatedAt).toLocaleString()}</div>
+          <div style={S_CAPTION_MUTED_MT8}>updated {formatTimestamp(params.updatedAt)}</div>
         )}
       </div>
       <Hint>

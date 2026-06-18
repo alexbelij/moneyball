@@ -1,15 +1,19 @@
 /**
- * PixelButton | v1.0.0 | 2026-06-13
+ * PixelButton | v1.1.0 | 2026-06-17
  * Purpose: SNES-styled button with pressed/hover/disabled/focus states.
  * T14: 2px pixel borders, bevel shadow, design-spec palette.
+ * T67: `busy` prop — disables button, shows inline Spinner, preserves width.
  */
 
 import React from 'react'
 import styles from './pixel.module.css'
+import { Spinner } from './Spinner'
 
 export interface PixelButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'primary' | 'danger' | 'ghost'
   size?: 'default' | 'small'
+  /** When true: disabled + shows a Spinner before the label. */
+  busy?: boolean
 }
 
 const variantClass: Record<string, string> = {
@@ -21,8 +25,10 @@ const variantClass: Record<string, string> = {
 export function PixelButton({
   variant = 'default',
   size = 'default',
+  busy = false,
   className,
   children,
+  disabled,
   ...rest
 }: PixelButtonProps) {
   const classes = [
@@ -34,8 +40,16 @@ export function PixelButton({
     .filter(Boolean)
     .join(' ')
 
+  const isDisabled = disabled || busy
+
   return (
-    <button className={classes} {...rest}>
+    <button
+      className={classes}
+      disabled={isDisabled}
+      aria-busy={busy || undefined}
+      {...rest}
+    >
+      {busy && <Spinner size={size === 'small' ? 10 : 14} />}
       {children}
     </button>
   )

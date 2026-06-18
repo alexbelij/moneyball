@@ -1,4 +1,4 @@
-<!-- README.md | v1.0.0 | 2026-06-12 -->
+<!-- README.md | v2.0.0 | 2026-06-17 -->
 
 <div align="center">
 
@@ -12,9 +12,17 @@
 ![Hero](docs/assets/hero.png)
 -->
 
+[Live Demo](https://taken.wal.app) · [Architecture](docs/ARCHITECTURE.md) · [API Reference](docs/api.md) · [Memory Design](docs/memory-design.md)
+
 *Hackathon entry for [Walrus Memory World Cup](https://walrus.xyz) · Deadline: June 24, 2026*
 
 </div>
+
+---
+
+## How Walrus Memory Is Used
+
+Moneyball uses [Walrus Memory (MemWal)](https://github.com/MystenLabs/MemWal) as its **only persistent storage layer** — no PostgreSQL, no Redis, no S3. Every agent prediction, every parameter evolution, every user interaction is written to Walrus mainnet through the MemWal SDK relayer. Five AI agents run continuous sleep/evolve cycles: after matches resolve, a deterministic reflection engine computes calibration errors (Brier scores, per-topic accuracy, user disagreement pressure) and adjusts agent parameters — then persists the new version to MemWal. The result is a verifiable, append-only memory trail where Day 1 agents are measurably different from Day 4+ agents, and every parameter change traces back to specific prediction outcomes stored on-chain.
 
 ---
 
@@ -22,13 +30,16 @@
 
 > **Memory Depth & Authenticity** is the #1 judging criterion. Here's how Moneyball delivers it.
 
-- **Agents remember every prediction** — match picks, confidence levels, reasoning and outcomes are persisted to [MemWal](https://github.com/mysten-incubation/memwal) on Walrus mainnet. Nothing is ephemeral.
-- **Agents sleep and evolve** — after enough outcomes resolve, a deterministic sleep cycle computes calibration metrics (Brier score, per-topic accuracy, user disagree pressure) and adjusts agent parameters. Day 1 agents are measurably different from day 4+ agents.
-- **Evolution is auditable** — every parameter change traces to specific prediction events with computed metrics. Judges can verify the full chain via `GET /api/public/agents/:agentId/evolution`.
-- **Users are remembered too** — each visitor's disagree history and interaction milestones are persisted on MemWal. Agents roast returning users based on their stored profile.
-- **MemWal is the ONLY storage** — no database, no Redis. All durable state lives on Walrus mainnet through the MemWal relayer. Local filesystem is a dev-only fallback.
+| Capability | How It Works |
+|-----------|-------------|
+| **Persistent predictions** | Match picks, confidence levels, reasoning, and outcomes → MemWal on Walrus mainnet. Nothing is ephemeral. |
+| **Sleep & evolve cycle** | Deterministic reflection engine (Brier score, per-topic accuracy, disagree pressure) → parameter calibration. Day 1 ≠ Day 4. |
+| **Auditable evolution** | Every parameter change traces to specific prediction events with computed metrics. Verify: `GET /api/public/agents/:agentId/evolution`. |
+| **User memory** | Disagree history, interaction milestones persisted per Sui wallet. Agents roast returning users by memory. |
+| **Zero-database architecture** | MemWal is the sole durable store. `MemWalWriteQueue` handles rate limits and retry. In-memory read-model rebuilds from MemWal on cold boot. |
 
-📖 Full technical deep-dive: **[docs/memory-design.md](docs/memory-design.md)**
+📖 **[docs/memory-design.md](docs/memory-design.md)** — full memory architecture
+📖 **[docs/walrus-memory-integration.md](docs/walrus-memory-integration.md)** — MemWal SDK integration reference (write queue, read-model, KV overlay, boot hydration, rate limiting, lessons learned)
 
 ---
 
@@ -66,6 +77,69 @@ graph LR
 
 ---
 
+## Walrus Memory Integration
+
+Moneyball's memory layer consists of three reusable modules:
+
+### MemWalWriteQueue
+
+**File:** [`apps/backend/src/memory/memwalWriteQueue.ts`](apps/backend/src/memory/memwalWriteQueue.ts)
+
+A production-grade write queue for the MemWal SDK that handles rate limiting, key-based coalescing, and exponential backoff:
+
+```typescript
+import { MemWalWriteQueue } from './memory/memwalWriteQueue';
+
+const queue = new MemWalWriteQueue(
+  (text) => memwal.remember(text),
+  { debounceMs: 1500, minIntervalMs: 1200 }
+);
+
+// Non-blocking — coalesces rapid writes to the same key
+queue.enqueue('params:dr_morgan', JSON.stringify(params));
+```
+
+**Key features:**
+- Key-based coalescing (last-writer-wins within debounce window)
+- Parses `retry_after_seconds` from 429 responses
+- Exponential backoff capped at 60s
+- Non-blocking enqueue — background processing loop
+
+### MemWalUserSummaryStore
+
+**File:** [`apps/backend/src/memory/memwalUserSummaryStore.ts`](apps/backend/src/memory/memwalUserSummaryStore.ts)
+
+Persistent user profile storage on MemWal with local caching and write coalescing:
+
+```typescript
+import { MemWalUserSummaryStore } from './memory/memwalUserSummaryStore';
+
+const store = new MemWalUserSummaryStore();
+const summary = await store.get(walletAddress);  // cached for 30s
+await store.put(walletAddress, updatedSummary);   // coalesced write
+```
+
+**Key features:**
+- 30-second local cache TTL
+- Write coalescing via `MemWalWriteQueue`
+- Graceful fallback to `FileUserSummaryStore` for local development
+
+### StoreFactory
+
+**File:** [`apps/backend/src/memory/storeFactory.ts`](apps/backend/src/memory/storeFactory.ts)
+
+Selects the storage backend based on environment configuration:
+
+```typescript
+import { getUserSummaryStore } from './memory/storeFactory';
+
+const store = getUserSummaryStore(); // MemWal in production, file in dev
+```
+
+📖 **[docs/walrus-memory-integration.md](docs/walrus-memory-integration.md)** — complete integration reference with namespace strategy, boot hydration, sleep-worker adapters, and lessons learned.
+
+---
+
 ## Quickstart
 
 ### Prerequisites
@@ -92,8 +166,10 @@ Edit `apps/backend/.env` — at minimum set:
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `JWT_SECRET` | Yes | ≥ 32 chars, used to sign/verify JWTs |
-| `MEMWAL_KEY` | For MemWal | API key from [memory.walrus.xyz](https://memory.walrus.xyz) |
-| `MEMWAL_ACCOUNT_ID` | For MemWal | Account ID |
+| `MEMWAL_KEY` | For MemWal | Ed25519 delegate key from [memory.walrus.xyz](https://memory.walrus.xyz) |
+| `MEMWAL_ACCOUNT_ID` | For MemWal | Account ID on the MemWal relayer |
+| `MEMWAL_RELAYER` | For MemWal | `https://relayer.memwal.ai` |
+| `MEMWAL_NAMESPACE` | For MemWal | Namespace for all writes (e.g. `moneyball:prod`) |
 | `STORAGE_BACKEND` | No | `memwal` (default) or `file` for local dev |
 | `FOOTBALL_DATA_TOKEN` | For live matches | [football-data.org](https://www.football-data.org/) v4 API key |
 | `API_FOOTBALL_KEY` | For odds/form | [api-football.com](https://www.api-football.com/) key |
@@ -122,14 +198,11 @@ pnpm typecheck          # all packages
 ### Tests
 
 ```bash
-# Frontend (vitest)
+# Frontend (vitest) — 226+ tests
 pnpm -C apps/frontend test
 
-# Backend (vitest)
+# Backend (vitest) — 132+ tests
 pnpm -C apps/backend test
-
-# Backend under bun (optional — same suite via bun-test-runner shim)
-pnpm -C apps/backend test:bun
 
 # Sleep-worker (regressions + simulation)
 pnpm -C sleep-worker exec tsx test/regressions.ts
@@ -152,9 +225,12 @@ evolve cycle:
 
 ## Deployment
 
-Production deployment guide (Render backend + Walrus Sites frontend):
+| Component | Platform | URL |
+|-----------|----------|-----|
+| Frontend | Walrus Sites (mainnet) | [taken.wal.app](https://taken.wal.app) |
+| Backend | Render (free tier) | `moneyball-backend-axzr.onrender.com` |
 
-📖 **[docs/deploy.md](docs/deploy.md)**
+📖 **[docs/deploy.md](docs/deploy.md)** — production deployment guide
 
 ---
 
@@ -162,9 +238,9 @@ Production deployment guide (Render backend + Walrus Sites frontend):
 
 | Criterion | Weight | Where to Look |
 |-----------|--------|---------------|
-| **Memory Depth & Authenticity** | #1 | [`docs/memory-design.md`](docs/memory-design.md) — full memory architecture. Live: `GET /api/public/agents/:agentId/evolution` shows real parameter changes over time. `GET /api/public/agents/:agentId/params` shows current calibrated state. |
-| **Creativity & Flair** | #2 | SNES pixel-art cabinet with 5 AI agent personas. Thought bubbles, disagree/roast loop, interactive objects. See `docs/reference/` for pixel art assets. |
-| **Technical Execution (Walrus Mainnet)** | #3 | MemWal relayer config in `.env.example`. `MEMWAL_RELAYER=https://relayer.memory.walrus.xyz`. All writes go through `MemWalWriteQueue` → relayer → Walrus mainnet blobs. Zero other databases. |
+| **Memory Depth & Authenticity** | #1 | [`docs/memory-design.md`](docs/memory-design.md) — full memory architecture. [`docs/walrus-memory-integration.md`](docs/walrus-memory-integration.md) — SDK integration patterns. Live: `GET /api/public/agents/:agentId/evolution` shows real parameter changes over time. |
+| **Creativity & Flair** | #2 | SNES pixel-art cabinet with 5 AI agent personas. Thought bubbles, disagree/roast loop, Memory Moment UI (journal, timeline scrubber, before/after overlay). PWA installable. |
+| **Technical Execution (Walrus Mainnet)** | #3 | All writes → `MemWalWriteQueue` → MemWal relayer → Walrus mainnet blobs. Zero external databases. 358+ tests (226 FE + 132 BE). Deterministic evolution engine — no LLM in the prediction pipeline. |
 
 ---
 
@@ -173,21 +249,35 @@ Production deployment guide (Render backend + Walrus Sites frontend):
 ```
 moneyball/
 ├── apps/
-│   ├── frontend/          # React + Phaser SPA
-│   └── backend/           # Express + Socket.io server
+│   ├── frontend/                      # React + Phaser SPA
+│   │   ├── src/components/            # AgentModal (7 tabs), HUD, StatsBoard
+│   │   ├── src/phaser/                # Pixel-art cabinet scene, sprites
+│   │   ├── src/styles/tokens.ts       # Single source of truth — colors, fonts
+│   │   └── src/lib/                   # formatDate, beforeAfterDiff
+│   └── backend/                       # Express + Socket.io server
+│       ├── src/agents/                # AgentEventService, sleepService
+│       ├── src/memory/                # MemWalWriteQueue, UserSummaryStore
+│       └── src/http/                  # API routes
 ├── packages/
 │   ├── shared/            # Typed socket contract + schemas
 │   └── memwal-utils/      # Write queue, KV overlay, key builder (publishable)
 ├── sleep-worker/          # Deterministic evolution engine
+│   └── shared/                        # Typed socket contract + schemas
+├── sleep-worker/                      # Deterministic evolution engine
+│   ├── src/reflection/                # Brier score metrics → ParamDelta[]
+│   ├── src/evolution/                 # CAS parameter versioning
+│   └── src/sleep/                     # SleepWorker orchestrator
 ├── docs/
-│   ├── ARCHITECTURE.md    # C4 diagrams
-│   ├── api.md             # REST + Socket.io reference
-│   ├── memory-design.md   # Memory architecture (this project's core)
-│   ├── deploy.md          # Production deployment
-│   ├── demo-script.md     # Step-by-step demo
-│   └── reference/         # Pixel art assets
-├── .github/workflows/     # CI (typecheck + vitest + sleep-worker tests)
-└── render.yaml            # Render deploy blueprint
+│   ├── ARCHITECTURE.md                # C4 diagrams
+│   ├── walrus-memory-integration.md   # MemWal SDK integration reference
+│   ├── memory-design.md               # Memory architecture deep-dive
+│   ├── api.md                         # REST + Socket.io reference
+│   ├── deploy.md                      # Production deployment
+│   └── demo-script.md                 # Step-by-step demo
+├── scripts/
+│   └── seed-demo.ts                   # Idempotent seeder (8 matches, 5 agents)
+├── .github/workflows/                 # CI pipeline
+└── render.yaml                        # Render deploy blueprint
 ```
 
 ---
@@ -227,6 +317,16 @@ Moneyball is **honest about what is real and what is synthetic.** Every model in
 ### Published SDK
 
 The MemWal utility layer is published as [`@moneyball-ai/memwal-utils`](https://www.npmjs.com/package/@moneyball-ai/memwal-utils) — write queue, KV overlay, and key builder for MemWal SDK integration.
+## MemWal SDK Feedback
+We filed 13 issues on [MystenLabs/MemWal](https://github.com/MystenLabs/MemWal/issues) based on building Moneyball — covering missing features, SDK bugs, and documentation gaps. See [docs/walrus-memory-integration.md § Lessons Learned](docs/walrus-memory-integration.md#11-lessons-learned--sdk-feedback) for the full list.
+---
+## Contributing
+1. Branch from `main` as `task/T<NN>-<slug>`
+2. Run `pnpm typecheck && pnpm -C apps/frontend test && pnpm -C apps/backend test`
+3. Ensure no raw hex colors in components (use `tokens.ts`) — `designDrift.test.ts` enforces this
+4. Ensure WCAG AA contrast compliance — `contrastGuard.test.ts` enforces this
+5. No Cyrillic in UI strings — judges are English-speaking
+6. PR to `main`
 
 ---
 

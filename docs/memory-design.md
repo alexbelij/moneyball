@@ -20,7 +20,7 @@
 ## 1. Memory Model
 
 Moneyball persists three categories of data. Every write targets
-[MemWal](https://github.com/mysten-incubation/memwal) (Walrus Memory relayer)
+[MemWal](https://github.com/MystenLabs/MemWal) (Walrus Memory relayer)
 as the single durable store; the backend process holds authoritative in-process
 state and mirrors every mutation to MemWal for judge-visible, append-only
 permanence.

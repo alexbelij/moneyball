@@ -68,7 +68,7 @@ describe('MethodTab (T26)', () => {
   it('shows loading then renders a formula-based agent dossier', async () => {
     getAgentProfile.mockResolvedValue({ ok: true, profile: morgan })
     render(<MethodTab agentId="dr_morgan" />)
-    expect(screen.getByText(/loading methodology/i)).toBeInTheDocument()
+    expect(screen.getByRole('status', { name: /loading/i })).toBeInTheDocument()
 
     await waitFor(() => expect(screen.getByText(/scoring formula/i)).toBeInTheDocument())
     expect(screen.getByText(/Home_xG/)).toBeInTheDocument()
