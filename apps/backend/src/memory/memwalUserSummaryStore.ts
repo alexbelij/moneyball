@@ -34,7 +34,10 @@ export class MemWalUserSummaryStore implements UserSummaryStore {
   private writeQueue = new MemWalWriteQueue(
     async (text) => {
       const job: any = await this.memwal.remember(text)
-      if (job?.job_id) await this.memwal.waitForRememberJob(job.job_id)
+      if (job?.job_id) {
+        const result: any = await this.memwal.waitForRememberJob(job.job_id)
+        return result?.blob_id as string | undefined
+      }
     },
     { debounceMs: 1500, minIntervalMs: 1200 },
   )

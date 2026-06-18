@@ -1,6 +1,7 @@
 /**
- * MemWalWriteQueue | v0.1.0 | 2026-06-08
+ * MemWalWriteQueue | v0.2.0 | 2026-06-18
  * Purpose: Coalesce and throttle MemWal remember() calls to mitigate 429 rate limits.
+ * T76: remember callback may return blob_id; optional onComplete callback for post-write.
  */
 
 type Pending = {
@@ -26,14 +27,21 @@ function parseRetryAfterSeconds(err: any): number | null {
   }
 }
 
+export interface MemWalWriteQueueOpts {
+  debounceMs: number
+  minIntervalMs: number
+  /** Called after a successful write with the queue key and optional blob_id. */
+  onComplete?: (key: string, blobId?: string) => void
+}
+
 export class MemWalWriteQueue {
   private pendingByKey = new Map<string, Pending>()
   private running = false
   private lastWriteAtMs = 0
 
   constructor(
-    private remember: (text: string) => Promise<void>,
-    private opts: { debounceMs: number; minIntervalMs: number } = { debounceMs: 1500, minIntervalMs: 1200 },
+    private remember: (text: string) => Promise<string | void>,
+    private opts: MemWalWriteQueueOpts = { debounceMs: 1500, minIntervalMs: 1200 },
   ) {}
 
   enqueue(key: string, text: string) {
@@ -79,9 +87,10 @@ export class MemWalWriteQueue {
         if (!current) continue
 
         try {
-          await this.remember(current.text)
+          const blobId = await this.remember(current.text)
           this.lastWriteAtMs = Date.now()
           this.pendingByKey.delete(current.key)
+          this.opts.onComplete?.(current.key, typeof blobId === 'string' ? blobId : undefined)
         } catch (e: any) {
           const retryAfter = parseRetryAfterSeconds(e)
           const backoffMs =

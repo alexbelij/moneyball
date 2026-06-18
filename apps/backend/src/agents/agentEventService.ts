@@ -1,5 +1,5 @@
 /**
- * agentEventService | v0.4.0 | 2026-06-14
+ * agentEventService | v0.5.0 | 2026-06-18
  * Purpose: Store and retrieve public agent events (predictions, outcomes,
  * evolution) via MemWal. v0.2: prediction events carry id/topic/rawConfidence/
  * paramsVersion (sleep-worker migration step 1); outcomes are separate
@@ -11,6 +11,8 @@
  * from recall(). MemWal remains the durable/provenance store. Index is
  * persisted to disk (debounced) and reloaded on boot; best-effort hydrate
  * from MemWal at startup merges without duplicates.
+ * v0.5 (T76): capture blob_id from MemWal write + recall responses. Exposes
+ * Walrus blob provenance on prediction/evolution items via the public API.
  */
 
 import { MemWal } from '@mysten-incubation/memwal'
@@ -36,6 +38,8 @@ export type AgentPredictionEvent = {
   topic?: string
   rawConfidence?: number
   paramsVersion?: number
+  /** T76: Walrus blob_id captured from MemWal write/recall. */
+  blobId?: string
   /** Merged from outcome events on read; never stored on the prediction. */
   outcome?: { correct: boolean; resolvedAt: string }
 }
@@ -62,11 +66,13 @@ export type AgentEvolutionEvent = {
   fromVersion?: number
   toVersion?: number
   evolutionType?: string
+  /** T76: Walrus blob_id captured from MemWal write/recall. */
+  blobId?: string
 }
 
 export type AgentEvent = AgentPredictionEvent | AgentOutcomeEvent | AgentEvolutionEvent
 
-type RecallResult = { text?: string; content?: string }
+type RecallResult = { text?: string; content?: string; blob_id?: string }
 
 /** Wide recall window for boot hydration — MemWal recall is semantic top-K. */
 const HYDRATE_RECALL_TOPK = 500
@@ -257,6 +263,8 @@ export class AgentEventService {
             const ev = extractJson(r.text ?? r.content ?? '')
             if (!ev || ev.agentId !== agentId || ev.type !== type) continue
             ev.schemaVersion = ev.schemaVersion ?? '1.0'
+            // T76: capture blob_id from recall result if available
+            if (r.blob_id && !ev.blobId) ev.blobId = r.blob_id
             if (type === 'prediction' && this.indexPrediction(ev)) merged++
             if (type === 'evolution' && this.indexEvolution(ev)) merged++
             if (type === 'outcome' && this.indexOutcome(ev)) merged++
@@ -297,12 +305,59 @@ export class AgentEventService {
     const queue = new MemWalWriteQueue(
       async (text) => {
         const job: any = await client.remember(text)
-        if (job?.job_id) await client.waitForRememberJob(job.job_id)
+        if (job?.job_id) {
+          const result: any = await client.waitForRememberJob(job.job_id)
+          // T76: return blob_id so MemWalWriteQueue can pass it to onComplete
+          return result?.blob_id as string | undefined
+        }
       },
-      { debounceMs: 1200, minIntervalMs: 1200 },
+      {
+        debounceMs: 1200,
+        minIntervalMs: 1200,
+        // T76: when a write completes with a blob_id, update the in-memory index
+        onComplete: (key, blobId) => {
+          if (!blobId) return
+          this.attachBlobId(agentId, key, blobId)
+        },
+      },
     )
     this.writeQueues.set(agentId, queue)
     return queue
+  }
+
+  /**
+   * T76: Attach a blob_id to the most recent matching event in the index.
+   * Queue keys are formatted as `prediction:<matchId>`, `evolution:<createdAt>`, etc.
+   */
+  private attachBlobId(agentId: string, queueKey: string, blobId: string) {
+    if (queueKey.startsWith('prediction:')) {
+      const preds = this.predictionIndex.get(agentId)
+      if (preds) {
+        // Find the last prediction for this agent (most recently added)
+        for (let i = preds.length - 1; i >= 0; i--) {
+          const p = preds[i]
+          const matchKey = `prediction:${p.predictionId ?? p.matchId}`
+          if (matchKey === queueKey && !p.blobId) {
+            p.blobId = blobId
+            this.schedulePersist()
+            console.log(`[agentEvents.blobId] attached ${blobId} to prediction ${queueKey}`)
+            return
+          }
+        }
+      }
+    } else if (queueKey.startsWith('evolution:')) {
+      const evos = this.evolutionIndex.get(agentId)
+      if (evos) {
+        for (let i = evos.length - 1; i >= 0; i--) {
+          if (!evos[i].blobId) {
+            evos[i].blobId = blobId
+            this.schedulePersist()
+            console.log(`[agentEvents.blobId] attached ${blobId} to evolution ${queueKey}`)
+            return
+          }
+        }
+      }
+    }
   }
 
   private anchor(agentId: string, type: AgentEventType) {
