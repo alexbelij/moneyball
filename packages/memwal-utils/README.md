@@ -1,4 +1,4 @@
-# @moneyball/memwal-utils
+# @moneyball-ai/memwal-utils
 
 > Rate-limited write queue, KV overlay, and key-builder helpers for [MemWal SDK](https://github.com/MystenLabs/MemWal) — born from production use in the [Moneyball](https://taken.wal.app) World Cup project.
 
@@ -25,10 +25,10 @@ This package extracts our solutions into reusable utilities.
 
 ```bash
 # Inside a pnpm monorepo (as workspace dependency):
-pnpm add @moneyball/memwal-utils --filter your-app
+pnpm add @moneyball-ai/memwal-utils --filter your-app
 
 # Or standalone:
-npm install @moneyball/memwal-utils
+npm install @moneyball-ai/memwal-utils
 ```
 
 **Peer dependency:** `@mysten-incubation/memwal >= 0.0.7` (optional — you can provide your own `remember`/`recall` functions).
@@ -39,7 +39,7 @@ npm install @moneyball/memwal-utils
 
 ```ts
 import { MemWal } from '@mysten-incubation/memwal';
-import { MemWalWriteQueue, KvOverlay, createKeyBuilder } from '@moneyball/memwal-utils';
+import { MemWalWriteQueue, KvOverlay, createKeyBuilder } from '@moneyball-ai/memwal-utils';
 
 // 1. Create MemWal client
 const memwal = MemWal.create({
@@ -220,7 +220,7 @@ User disagrees     ──┘         throttling)
 ```bash
 cd packages/memwal-utils
 pnpm build                    # compile to dist/
-npm publish --access public   # → @moneyball/memwal-utils on npm
+npm publish --access public   # → @moneyball-ai/memwal-utils on npm
 ```
 
 ### As a MemWal ecosystem contribution

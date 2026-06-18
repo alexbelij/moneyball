@@ -1,5 +1,5 @@
 /**
- * # @moneyball/memwal-utils
+ * # @moneyball-ai/memwal-utils
  *
  * Production-tested utilities for building applications on MemWal SDK:
  *
