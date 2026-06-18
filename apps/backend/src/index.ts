@@ -20,6 +20,7 @@ import { optionalJwt } from './http/jwtMiddleware'
 import { registerAgentEventRoutes } from './http/agentEventRoutes'
 import { registerMatchRoutes } from './http/matchRoutes'
 import { AgentEventService } from './agents/agentEventService'
+import { AgentRegistry } from './agents/agentRegistry'
 import { hasSeedBaseline, seedReadModel } from './agents/seedReadModel'
 import { SleepService } from './agents/sleepService'
 import { FootballDataProvider } from './matches/footballDataProvider'
@@ -98,7 +99,7 @@ async function main() {
   )
   app.get('/', (_req, res) => res.type('text').send('Moneyball backend: ok'))
 
-  registerAgentEventRoutes(app, publicEvents)
+  // T52: Agent routes registered after world state init (below)
   registerAdminRoutes(app)
 
   // ── T40a: Express error middleware (4 args — must come after all routes) ─
@@ -138,6 +139,10 @@ async function main() {
   ])
 
   const socketApi = registerSocket(io, world)
+
+  // T52: Agent Registry — all agents in one call, wired after world is ready
+  const agentRegistry = new AgentRegistry(publicEvents, world)
+  registerAgentEventRoutes(app, publicEvents, undefined, agentRegistry)
 
   // ── Match pipeline: real WC2026 → predictions → outcomes → evolution ────
   const agents: AgentMethodology[] = (agentConfig as any).agents.map((a: any) => ({
