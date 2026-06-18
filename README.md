@@ -95,6 +95,9 @@ Edit `apps/backend/.env` — at minimum set:
 | `MEMWAL_KEY` | For MemWal | API key from [memory.walrus.xyz](https://memory.walrus.xyz) |
 | `MEMWAL_ACCOUNT_ID` | For MemWal | Account ID |
 | `STORAGE_BACKEND` | No | `memwal` (default) or `file` for local dev |
+| `FOOTBALL_DATA_TOKEN` | For live matches | [football-data.org](https://www.football-data.org/) v4 API key |
+| `API_FOOTBALL_KEY` | For odds/form | [api-football.com](https://www.api-football.com/) key |
+| `RAPIDAPI_KEY` | Fallback | RapidAPI key (fallback for api-football) |
 
 See [`apps/backend/.env.example`](apps/backend/.env.example) for all options.
 
@@ -194,6 +197,36 @@ moneyball/
 📖 **[docs/api.md](docs/api.md)** — complete REST + Socket.io reference.
 
 Five agents: `dr_morgan` · `scout_alvarez` · `viktor_kane` · `sofia_mendes` · `madame_pythia`
+
+---
+
+## Data Sources & Model Transparency
+
+Moneyball is **honest about what is real and what is synthetic.** Every model input declares its provenance via `GET /api/public/data-source`, surfaced in the UI so users and judges are never misled.
+
+| Input | Source | Detail |
+|-------|--------|--------|
+| **Team strength** | 🟢 Live | FIFA World Ranking (June 2025) mapped to [0.30, 0.70]. 48 WC2026 teams. |
+| **Match schedule & results** | 🟢 Live | [football-data.org](https://www.football-data.org/) v4 API, competition WC. Polled every 120s. |
+| **Home advantage** | 🟡 Manual | Fixed +0.04 term. A hand-set constant, not measured. |
+| **Narrative sentiment** | 🔴 Synthetic | Matchday-salted hash. Not sourced from news or social feeds. |
+| **Bookmaker odds** | 🔴 Synthetic | Derived from team strength + noise. No live odds feed connected. |
+
+> `MODEL_INPUTS_VERSION` in `dataSource.ts` is bumped whenever a synthetic input goes live.
+
+### The Agents
+
+| Agent | Methodology | Key input |
+|-------|-------------|-----------|
+| **Dr. Morgan** | Weighted metrics | teamStrength + homeAdvantage → margin → pick |
+| **Scout Alvarez** | Narrative sentiment | "Gut feeling" — matchday-salted signal |
+| **Viktor Kane** | Contrarian inversion | Fades Dr. Morgan's consensus when confidence is high |
+| **Sofia Mendes** | Expected value | Compares true probability vs. market odds → value bet |
+| **Madame Pythia** | Deterministic mysticism | Numerology + classical astrology (no external data) |
+
+### Published SDK
+
+The MemWal utility layer is published as [`@moneyball-ai/memwal-utils`](https://www.npmjs.com/package/@moneyball-ai/memwal-utils) — write queue, KV overlay, and key builder for MemWal SDK integration.
 
 ---
 
