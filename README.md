@@ -34,7 +34,7 @@
 
 ## Architecture
 
-A pnpm monorepo with four packages:
+A pnpm monorepo with five packages:
 
 ```mermaid
 graph LR
@@ -48,8 +48,10 @@ graph LR
     Server -- "in-process import" --> Sleep
     Server -- "remember / recall" --> MemWal
     Server --> Shared
+    Server --> Utils
     Browser --> Shared
     Sleep --> Shared
+    Utils["packages/memwal-utils<br/>(write queue + KV overlay)"]
 ```
 
 | Package | Stack | Purpose |
@@ -58,6 +60,7 @@ graph LR
 | `apps/backend` | Express, Socket.io, MemWal SDK | REST API, WebSocket world, match pipeline, auth, memory |
 | `sleep-worker` | Pure TypeScript | Reflection engine, evolution engine, param versioning |
 | `packages/shared` | TypeScript | Typed socket events, shared schemas |
+| `packages/memwal-utils` | TypeScript | Rate-limited write queue, KV overlay, key builder for MemWal SDK ([README](packages/memwal-utils/README.md)) |
 
 📖 Full C4 diagrams: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
@@ -170,7 +173,8 @@ moneyball/
 │   ├── frontend/          # React + Phaser SPA
 │   └── backend/           # Express + Socket.io server
 ├── packages/
-│   └── shared/            # Typed socket contract + schemas
+│   ├── shared/            # Typed socket contract + schemas
+│   └── memwal-utils/      # Write queue, KV overlay, key builder (publishable)
 ├── sleep-worker/          # Deterministic evolution engine
 ├── docs/
 │   ├── ARCHITECTURE.md    # C4 diagrams
