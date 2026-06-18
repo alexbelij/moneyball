@@ -12,3 +12,8 @@ img/*
 tools/*
 docs/migration.md
 .data
+
+# Test/CI artifacts (T65)
+test-results/
+playwright-report/
+var/

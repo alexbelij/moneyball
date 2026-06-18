@@ -1,6 +1,6 @@
-# ci | v0.3.0 | 2026-06-12
-# Typecheck + full test suite on every push/PR. Node 20 + pnpm (vitest needs
-# node to fork workers; local bun users can run `pnpm -C apps/backend test:bun`).
+# ci | v1.0.0 | 2026-06-17
+# T65: quality gate — typecheck, test, designDrift, contrast guard, Cyrillic
+# scan, artifact guard, post-deploy smoke. Node 20 + pnpm.
 name: CI
 
 on:
@@ -20,6 +20,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile=false
 
+      # ── Typecheck ──────────────────────────────────────────────
       - name: Typecheck frontend
         run: pnpm -C apps/frontend exec tsc -p tsconfig.json --noEmit
 
@@ -29,6 +30,7 @@ jobs:
       - name: Typecheck sleep-worker
         run: pnpm -C sleep-worker exec tsc -p tsconfig.json --noEmit
 
+      # ── Tests (includes designDrift + contrast guard) ──────────
       - name: Frontend tests (vitest)
         run: pnpm -C apps/frontend exec vitest run
 
@@ -40,3 +42,57 @@ jobs:
 
       - name: Sleep-worker e2e simulation
         run: pnpm -C sleep-worker exec tsx test/simulation.ts
+
+      # ── Cyrillic scan ─────────────────────────────────────────
+      - name: Cyrillic scan (apps/*/src)
+        run: |
+          echo "Scanning for Cyrillic characters in source files..."
+          HITS=$(grep -rn '[а-яА-ЯёЁ]' apps/frontend/src/ apps/backend/src/ --include='*.ts' --include='*.tsx' --include='*.css' || true)
+          if [ -n "$HITS" ]; then
+            echo "::error::Cyrillic characters found in source files:"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "No Cyrillic found."
+
+      # ── Artifact guard ─────────────────────────────────────────
+      - name: Artifact directory guard
+        run: |
+          FAIL=0
+          for DIR in test-results playwright-report; do
+            if [ -d "$DIR" ]; then
+              echo "::error::Directory '$DIR' is committed. Add it to .gitignore."
+              FAIL=1
+            fi
+          done
+          # Also check inside apps/
+          find apps/ -type d \( -name test-results -o -name playwright-report \) 2>/dev/null | while read d; do
+            echo "::error::Directory '$d' is committed. Add it to .gitignore."
+            FAIL=1
+          done
+          if [ "$FAIL" = "1" ]; then exit 1; fi
+          echo "No artifact directories committed."
+
+  # ── Smoke test (post-deploy, only on main push) ──────────────
+  smoke:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check
+        run: |
+          echo "Checking production health endpoint..."
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://moneyball-backend-axzr.onrender.com/health || echo "000")
+          echo "Health status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Health endpoint returned $STATUS (Render free tier may be sleeping)"
+          fi
+
+      - name: Public API smoke
+        run: |
+          echo "Checking public read endpoint..."
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://moneyball-backend-axzr.onrender.com/api/agents || echo "000")
+          echo "Agents API status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "::warning::Agents endpoint returned $STATUS (Render free tier may be sleeping)"
+          fi
