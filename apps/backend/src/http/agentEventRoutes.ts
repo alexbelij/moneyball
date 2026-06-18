@@ -12,12 +12,21 @@ import { requireAdmin } from './jwtMiddleware'
 import { asyncHandler } from './asyncHandler'
 import { AgentEventService } from '../agents/agentEventService'
 import { AgentProfileService } from '../agents/agentProfileService'
+import type { AgentRegistry } from '../agents/agentRegistry'
 
 export function registerAgentEventRoutes(
   app: Express,
   svc: AgentEventService = new AgentEventService(),
   profiles: AgentProfileService = new AgentProfileService(),
+  registry?: AgentRegistry | null,
 ) {
+
+  // T52: Agent Registry — all agents in one call
+  if (registry) {
+    app.get('/api/public/agents', (_req, res) => {
+      res.json({ ok: true, agents: registry.list() })
+    })
+  }
 
   // Public read
   app.get('/api/public/agents/:agentId/profile', (req, res) => {

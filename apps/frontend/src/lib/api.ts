@@ -205,3 +205,31 @@ export async function adminDayPlusOne(agentId: string) {
     body: JSON.stringify({ agentId }),
   })
 }
+
+// ── T52: Agent Registry ──────────────────────────────────────────────────────
+
+export interface AgentStats {
+  predictions: number
+  outcomes: number
+  correctOutcomes: number
+  accuracy: number | null
+  evolutions: number
+  substantiveEvolutions: number
+  sleptCycles: number
+}
+
+export interface AgentRegistryEntry {
+  profile: AgentProfile
+  stats: AgentStats
+  status: string
+}
+
+/**
+ * Fetch all agents with profile, stats, and status in a single call.
+ * Replaces N+1 per-agent requests for list views.
+ */
+export async function getAgentRegistry() {
+  return apiFetch<{ ok: true; agents: AgentRegistryEntry[] }>('/api/public/agents', {
+    cache: 'no-store',
+  })
+}
