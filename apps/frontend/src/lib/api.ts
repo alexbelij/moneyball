@@ -55,6 +55,8 @@ export interface PredictionItem {
   reasoning: string
   predictionId?: string
   paramsVersion?: number
+  /** T76: Walrus blob_id for on-chain verification. */
+  blobId?: string
   outcome?: { correct: boolean; resolvedAt: string }
 }
 
@@ -66,6 +68,8 @@ export interface EvolutionItem {
   fromVersion?: number
   toVersion?: number
   evolutionType?: string
+  /** T76: Walrus blob_id for on-chain verification. */
+  blobId?: string
 }
 
 export interface MatchInfo {

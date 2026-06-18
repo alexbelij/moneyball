@@ -57,7 +57,10 @@ export class KvMemWalClient implements MemWalClient {
       this.queue = new MemWalWriteQueue(
         async (text) => {
           const job: any = await client.remember(text)
-          if (job?.job_id) await client.waitForRememberJob(job.job_id)
+          if (job?.job_id) {
+            const result: any = await client.waitForRememberJob(job.job_id)
+            return result?.blob_id as string | undefined
+          }
         },
         { debounceMs: 1500, minIntervalMs: 1500 },
       )
