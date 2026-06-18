@@ -25,15 +25,15 @@ export interface ModelInputField {
 }
 
 /** Bump when the provenance of any input changes (e.g. real feed connected). */
-export const MODEL_INPUTS_VERSION = 1
+export const MODEL_INPUTS_VERSION = 2
 
 export const MODEL_INPUTS: readonly ModelInputField[] = [
   {
     key: 'teamStrength',
     label: 'Team strength',
-    source: 'synthetic',
+    source: 'live',
     detail:
-      'Deterministic FNV-1a hash of the team name mapped into [0.30, 0.70]. A placeholder for real xG — identical on every run, with no live data behind it.',
+      'Based on FIFA World Ranking mapped to [0.30, 0.70]. Top-ranked team ≈ 0.70, lowest ≈ 0.30. Fallback to deterministic hash for unranked teams.',
   },
   {
     key: 'homeAdvantage',
@@ -66,7 +66,7 @@ export function getDataSourceSummary(): DataSourceSummary {
   return {
     version: MODEL_INPUTS_VERSION,
     headline:
-      'Model inputs are synthetic (v1): predictions run on deterministic placeholders, not live data feeds.',
+      'Model inputs v2: team strength is based on FIFA World Ranking; other inputs remain synthetic placeholders.',
     inputs: MODEL_INPUTS,
   }
 }

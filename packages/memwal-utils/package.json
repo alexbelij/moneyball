@@ -1,0 +1,46 @@
+{
+  "name": "@moneyball-ai/memwal-utils",
+  "version": "0.1.0",
+  "description": "Rate-limited write queue, KV overlay, and key-builder helpers for MemWal SDK — born from production use in the Moneyball World Cup project.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "CONTRIBUTING.md"
+  ],
+  "keywords": [
+    "memwal",
+    "walrus",
+    "write-queue",
+    "rate-limit",
+    "kv-overlay",
+    "web3",
+    "sui"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anna-stolbovskaja/moneyball",
+    "directory": "packages/memwal-utils"
+  },
+  "peerDependencies": {
+    "@mysten-incubation/memwal": ">=0.0.7"
+  },
+  "peerDependenciesMeta": {
+    "@mysten-incubation/memwal": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  }
+}

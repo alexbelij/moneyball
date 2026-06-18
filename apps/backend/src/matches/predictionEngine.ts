@@ -18,6 +18,7 @@
 
 import type { Match, PickCode } from './types'
 import { divine } from './mysticism/mysticismEngine'
+import { FIFA_RANKINGS, rankingToStrength } from './fifaRankings'
 
 export interface AgentPick {
   pick: PickCode
@@ -47,8 +48,13 @@ export function hash01(input: string): number {
 const clamp01 = (v: number, min: number, max: number): number =>
   Math.min(max, Math.max(min, v))
 
-/** Pseudo team strength in [0.3, 0.7] — placeholder for real xG (V2). */
+/**
+ * Team strength in [0.30, 0.70] based on FIFA World Ranking.
+ * Falls back to deterministic hash for teams not in the ranking table.
+ */
 function teamStrength(team: string): number {
+  const rank = FIFA_RANKINGS.get(team)
+  if (rank !== undefined) return rankingToStrength(rank)
   return 0.3 + hash01(`strength:${team}`) * 0.4
 }
 

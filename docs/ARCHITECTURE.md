@@ -389,6 +389,17 @@ sequenceDiagram
 | `memory/storeFactory.ts` | Factory: MemWal or file-based user summary store |
 | `util/rateLimit.ts` | Simple per-key rate limiter (thought broadcast) |
 
+### MemWal Utilities (`packages/memwal-utils/src/`)
+
+| Module | Purpose |
+|---|---|
+| `writeQueue.ts` | `MemWalWriteQueue` — rate-limited, coalescing write queue with 429 backoff |
+| `kvOverlay.ts` | `KvOverlay` — key-value semantics (get/put/CAS) over append-only MemWal |
+| `keyBuilder.ts` | `createKeyBuilder` — typed key construction with namespace prefixes |
+| `types.ts` | Shared types: `RememberFn`, `RecallFn`, `WriteQueueOptions`, `WritePriority` |
+
+📖 Full API docs: **[packages/memwal-utils/README.md](../packages/memwal-utils/README.md)**
+
 ### Shared (`packages/shared/src/`)
 
 | Module | Purpose |
