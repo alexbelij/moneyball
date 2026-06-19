@@ -25,7 +25,7 @@ export interface LlmRequest {
 /** Result returned from an LlmClient. */
 export interface LlmResult {
   text: string
-  provider: 'groq' | 'gemini' | 'deterministic'
+  provider: 'groq' | 'gemini' | 'cerebras' | 'deterministic'
   usage?: { inputTokens?: number; outputTokens?: number }
 }
 

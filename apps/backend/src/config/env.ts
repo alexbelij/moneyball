@@ -71,12 +71,14 @@ export const env = {
   SLEEP_MIN_MINUTES: Number(process.env.SLEEP_MIN_MINUTES ?? 30),
 
   // LLM chat (T55) — keys wired to Render by lead, NEVER in repo
-  LLM_PRIMARY: process.env.LLM_PRIMARY ?? '',             // 'groq' | 'gemini' | ''
-  LLM_FALLBACK: process.env.LLM_FALLBACK ?? '',           // 'groq' | 'gemini' | ''
+  LLM_PRIMARY: process.env.LLM_PRIMARY ?? '',             // 'groq' | 'gemini' | 'cerebras' | ''
+  LLM_FALLBACK: process.env.LLM_FALLBACK ?? '',           // 'groq' | 'gemini' | 'cerebras' | ''
   GROQ_API_KEY: process.env.GROQ_API_KEY ?? '',
   GROQ_MODEL: process.env.GROQ_MODEL ?? 'llama-3.3-70b-versatile',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY ?? '',
   GEMINI_MODEL: process.env.GEMINI_MODEL ?? 'gemini-flash-latest',
+  CEREBRAS_API_KEY: process.env.CEREBRAS_API_KEY ?? '',
+  CEREBRAS_MODEL: process.env.CEREBRAS_MODEL ?? 'llama-3.3-70b',
   LLM_MAX_OUTPUT_TOKENS: Number(process.env.LLM_MAX_OUTPUT_TOKENS ?? 320),
   LLM_TIMEOUT_MS: Number(process.env.LLM_TIMEOUT_MS ?? 8000),
   LLM_USER_MIN_INTERVAL_MS: Number(process.env.LLM_USER_MIN_INTERVAL_MS ?? 4000),

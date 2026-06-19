@@ -9,6 +9,7 @@
 import type { LlmClient } from './types'
 import { GroqClient } from './groqClient'
 import { GeminiClient } from './geminiClient'
+import { CerebrasClient } from './cerebrasClient'
 import { DeterministicClient } from './deterministicClient'
 import { ChainedLlmClient } from './chainedClient'
 
@@ -19,6 +20,8 @@ export interface LlmEnv {
   GROQ_MODEL?: string
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
+  CEREBRAS_API_KEY?: string
+  CEREBRAS_MODEL?: string
   LLM_TIMEOUT_MS?: number
   LLM_MAX_OUTPUT_TOKENS?: number
 }
@@ -49,6 +52,14 @@ export function buildLlmClient(llmEnv: LlmEnv): LlmClient {
         timeoutMs,
       }),
     )
+  } else if (primary === 'cerebras' && llmEnv.CEREBRAS_API_KEY) {
+    chain.push(
+      new CerebrasClient({
+        apiKey: llmEnv.CEREBRAS_API_KEY,
+        model: llmEnv.CEREBRAS_MODEL ?? 'llama-3.3-70b',
+        timeoutMs,
+      }),
+    )
   }
 
   // Fallback provider (only if different from primary and key present).
@@ -67,6 +78,14 @@ export function buildLlmClient(llmEnv: LlmEnv): LlmClient {
         new GeminiClient({
           apiKey: llmEnv.GEMINI_API_KEY,
           model: llmEnv.GEMINI_MODEL ?? 'gemini-flash-latest',
+          timeoutMs,
+        }),
+      )
+    } else if (fallback === 'cerebras' && llmEnv.CEREBRAS_API_KEY) {
+      chain.push(
+        new CerebrasClient({
+          apiKey: llmEnv.CEREBRAS_API_KEY,
+          model: llmEnv.CEREBRAS_MODEL ?? 'llama-3.3-70b',
           timeoutMs,
         }),
       )
