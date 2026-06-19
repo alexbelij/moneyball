@@ -93,8 +93,40 @@
 
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { background: #0c0c0c; overflow: hidden; font-family: 'VT323', 'Press Start 2P', monospace; }
+      body { background: #0c0c0c; overflow: hidden; font-family: 'VT323', 'Press Start 2P', monospace; color: #f4ede2; }
       #root { width: 100vw; height: 100vh; }
+
+      /* P0: Custom scrollbar — pixel-art styled */
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: #0c0c0c; }
+      ::-webkit-scrollbar-thumb { background: #341d0e; border: 1px solid #4e2912; }
+      ::-webkit-scrollbar-thumb:hover { background: #4e2912; }
+      ::-webkit-scrollbar-corner { background: #0c0c0c; }
+      * { scrollbar-width: thin; scrollbar-color: #341d0e #0c0c0c; }
+
+      /* P0: Selection color */
+      ::selection { background: #e8a44a; color: #181009; }
+
+      /* P0: Image rendering for pixel art */
+      img, canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+      /* P0: CRT scanline + vignette overlay (classes used by CrtOverlay.tsx) */
+      .crt-scanlines {
+        position: absolute; inset: 0; pointer-events: none; z-index: 1;
+        background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+        opacity: 0.04; animation: crt-flicker 4s steps(2) infinite;
+        mix-blend-mode: multiply;
+      }
+      .crt-vignette {
+        position: absolute; inset: 0; pointer-events: none; z-index: 1;
+        background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.4) 100%);
+        opacity: 0.5;
+      }
+      @keyframes crt-flicker { 0% { opacity: 0.03; } 50% { opacity: 0.05; } 100% { opacity: 0.03; } }
+      @media (prefers-reduced-motion: reduce) {
+        .crt-scanlines { animation: none !important; opacity: 0.03 !important; }
+      }
+
       .noscript {
         position: fixed; inset: 0;
         display: flex; align-items: center; justify-content: center;

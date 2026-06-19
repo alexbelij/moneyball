@@ -1,10 +1,8 @@
 /**
- * LiteDashboard.tsx | v1.3.0 | 2026-06-14
- * Purpose: No-canvas dashboard showing live agent data, leaderboard,
- * and match info. Reads from existing zustand stores — no new sockets.
- * Mobile-first, no animations.
- * T15: embeds StatsReport (predictions table + Brier chart).
- * T33: migrated to shared tokens (all hex → token imports).
+ * LiteDashboard.tsx | v2.0.0 | 2026-06-19
+ * P0 UI polish: agent pixel icons, better visual hierarchy, SNES-styled cards,
+ * responsive grid, hackathon branding bar, section headers with accent borders.
+ * Mobile-first, no animations. Reads from zustand stores + public API.
  */
 
 import React, { useEffect, useState, useMemo } from 'react'
@@ -13,7 +11,8 @@ import type { WorldAgentState } from '@moneyball/shared/events'
 import { getAgentPredictions, getMatches, getAgentParams } from '@/lib/api'
 import { StatsReport } from '@/components/StatsReport'
 import { RankMedal } from '@/components/ui'
-import { palette, accents, text, fonts, borders, shadows, type as typo } from '@/styles/tokens'
+import { PixelIcon } from '@/components/icons/PixelIcon'
+import { palette, accents, text, fonts, borders, shadows, type as typo, agentColors, spacing } from '@/styles/tokens'
 import { formatKickoff } from '@/lib/formatDate'
 
 /* ── Types ──────────────────────────────────────────────────────────────── */
@@ -56,6 +55,7 @@ function AgentCard({
     predictions.total > 0
       ? Math.round((predictions.correct / predictions.total) * 100)
       : null
+  const color = agentColors[agent.agentId] ?? accents.gold
 
   return (
     <button
@@ -63,8 +63,14 @@ function AgentCard({
       style={styles.card}
       aria-label={`View details for ${agent.name}`}
     >
+      {/* Top accent bar in agent color */}
+      <div style={{ height: 3, background: color, marginBottom: spacing.sm }} />
+
       <div style={styles.cardHeader}>
-        <span style={styles.agentName}>{agent.name}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <PixelIcon name={agent.agentId} size={16} color={color} />
+          <span style={{ ...styles.agentName, color }}>{agent.name}</span>
+        </div>
         <span
           style={{
             ...styles.statusBadge,
@@ -84,34 +90,38 @@ function AgentCard({
         </span>
       </div>
       <div style={styles.cardRole}>{agent.role}</div>
-      {predictions.latest ? (
-        <div style={styles.cardPrediction}>
-          <span style={styles.label}>Latest:</span>{' '}
-          <span style={styles.pick}>{predictions.latest.pick}</span>{' '}
-          <span style={styles.confidence}>
-            ({Math.round(predictions.latest.confidence * 100)}%)
-          </span>
+
+      {/* Stats row */}
+      <div style={styles.statsRow}>
+        <div style={styles.statBlock}>
+          <span style={styles.statValue}>{predictions.total}</span>
+          <span style={styles.statLabel}>calls</span>
         </div>
-      ) : (
-        <div style={styles.cardPrediction}>
-          <span style={styles.label}>No predictions yet</span>
-        </div>
-      )}
-      <div style={styles.cardStats}>
-        <span>
-          {predictions.total} prediction{predictions.total !== 1 ? 's' : ''}
-        </span>
-        {accuracy !== null && (
-          <span style={styles.accuracy}>
-            {accuracy}% accuracy
+        <div style={styles.statBlock}>
+          <span style={{ ...styles.statValue, color: accuracy != null && accuracy > 50 ? accents.green : text.primary }}>
+            {accuracy != null ? `${accuracy}%` : '—'}
           </span>
+          <span style={styles.statLabel}>accuracy</span>
+        </div>
+        <div style={styles.statBlock}>
+          <span style={styles.statValue}>
+            {predictions.latest ? `${Math.round(predictions.latest.confidence * 100)}%` : '—'}
+          </span>
+          <span style={styles.statLabel}>conf.</span>
+        </div>
+        {params && (
+          <div style={styles.statBlock}>
+            <span style={styles.statValue}>v{params.version}</span>
+            <span style={styles.statLabel}>ver.</span>
+          </div>
         )}
       </div>
-      {params && (
-        <div style={styles.cardMeta}>
-          v{params.version} · bias {params.confidenceBias >= 0 ? '+' : ''}
-          {params.confidenceBias.toFixed(3)} · hedge{' '}
-          {params.hedgingLevel.toFixed(2)}
+
+      {/* Latest prediction */}
+      {predictions.latest && (
+        <div style={styles.cardPrediction}>
+          <span style={styles.label}>Latest call:</span>{' '}
+          <span style={{ ...styles.pick, color }}>{predictions.latest.pick}</span>
         </div>
       )}
     </button>
@@ -120,11 +130,12 @@ function AgentCard({
 
 function MatchCard({ match }: { match: MatchInfo }) {
   const time = formatKickoff(match.kickoffUtc)
+  const isLive = match.status === 'live'
 
   return (
-    <div style={styles.matchCard}>
+    <div style={{ ...styles.matchCard, borderLeftColor: isLive ? accents.red : palette.wood700 }}>
       <div style={styles.matchTeams}>
-        <span>{match.homeTeam}</span>
+        <span style={styles.matchTeamName}>{match.homeTeam}</span>
         {match.result ? (
           <span style={styles.matchScore}>
             {match.result.homeScore} – {match.result.awayScore}
@@ -132,17 +143,28 @@ function MatchCard({ match }: { match: MatchInfo }) {
         ) : (
           <span style={styles.matchVs}>vs</span>
         )}
-        <span>{match.awayTeam}</span>
+        <span style={styles.matchTeamName}>{match.awayTeam}</span>
       </div>
       <div style={styles.matchTime}>
-        {match.status === 'live' ? (
+        {isLive ? (
           <span style={styles.liveTag}>
-            <span style={styles.liveDot} aria-hidden="true" />LIVE
+            <PixelIcon name="live_dot" size={8} color={accents.red} />
+            LIVE
           </span>
         ) : (
           time
         )}
       </div>
+    </div>
+  )
+}
+
+function SectionHeader({ title, icon }: { title: string; icon?: string }) {
+  return (
+    <div style={styles.sectionHeader}>
+      {icon && <PixelIcon name={icon} size={12} color={accents.gold} />}
+      <h2 style={styles.sectionTitle}>{title}</h2>
+      <div style={styles.sectionRule} />
     </div>
   )
 }
@@ -166,24 +188,28 @@ function Leaderboard({
 
   return (
     <div style={styles.section}>
-      <h2 style={styles.sectionTitle}>LEADERBOARD</h2>
+      <SectionHeader title="LEADERBOARD" icon="sort_up" />
       <div style={styles.leaderboard}>
-        {sorted.map((a, i) => (
-          <div
-            key={a.agentId}
-            style={{
-              ...styles.leaderRow,
-              background: i % 2 === 0 ? palette.paperBright : palette.paper,
-              borderTop: i === 0 ? 'none' : borders.rule,
-            }}
-          >
-            <RankMedal rank={i + 1} />
-            <span style={styles.leaderName}>{a.name}</span>
-            <span style={styles.leaderScore}>
-              {a.correct}/{a.total}
-            </span>
-          </div>
-        ))}
+        {sorted.map((a, i) => {
+          const color = agentColors[a.agentId] ?? accents.gold
+          return (
+            <div
+              key={a.agentId}
+              style={{
+                ...styles.leaderRow,
+                background: i % 2 === 0 ? palette.paperBright : palette.paper,
+                borderTop: i === 0 ? 'none' : borders.rule,
+              }}
+            >
+              <RankMedal rank={i + 1} />
+              <PixelIcon name={a.agentId} size={12} color={color} />
+              <span style={styles.leaderName}>{a.name}</span>
+              <span style={styles.leaderScore}>
+                {a.correct}/{a.total}
+              </span>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -211,7 +237,6 @@ export function LiteDashboard() {
     recent: MatchInfo[]
   }>({ live: [], upcoming: [], recent: [] })
 
-  // Fetch predictions and params for each agent
   useEffect(() => {
     let cancelled = false
 
@@ -284,7 +309,6 @@ export function LiteDashboard() {
     }
   }, [])
 
-  // Fetch matches
   useEffect(() => {
     let cancelled = false
 
@@ -318,22 +342,28 @@ export function LiteDashboard() {
 
   return (
     <div style={styles.root}>
-      {/* Connection status */}
+      {/* Branding header */}
       <div style={styles.header}>
-        <h1 style={styles.title}>MONEYBALL CABINET</h1>
-        <span
-          style={{
-            ...styles.connectionDot,
-            background: isConnected ? accents.green : accents.red,
-          }}
-          aria-label={isConnected ? 'Connected' : 'Disconnected'}
-        />
+        <div style={styles.titleRow}>
+          <PixelIcon name="hackathon" size={16} color={accents.gold} />
+          <h1 style={styles.title}>MONEYBALL CABINET</h1>
+          <span
+            style={{
+              ...styles.connectionDot,
+              background: isConnected ? accents.green : accents.red,
+            }}
+            aria-label={isConnected ? 'Connected' : 'Disconnected'}
+          />
+        </div>
+        <p style={styles.subtitle}>
+          5 AI Agents × FIFA World Cup 2026 × Walrus Memory
+        </p>
       </div>
 
       {/* Matches */}
       {displayMatches.length > 0 && (
         <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>MATCHES</h2>
+          <SectionHeader title="MATCHES" icon="play" />
           {displayMatches.map((m) => (
             <MatchCard key={m.id} match={m} />
           ))}
@@ -342,7 +372,7 @@ export function LiteDashboard() {
 
       {/* Agents */}
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>AGENTS</h2>
+        <SectionHeader title="AGENTS" icon="predict" />
         <div style={styles.agentsGrid}>
           {agents.map((agent) => (
             <AgentCard
@@ -367,21 +397,27 @@ export function LiteDashboard() {
         <Leaderboard agents={agents} predictions={predictions} />
       )}
 
-      {/* T15: Detailed predictions + Brier chart */}
+      {/* Detailed predictions + Brier chart */}
       <div style={styles.section}>
-        <h2 style={styles.sectionTitle}>SCOUTING REPORT</h2>
+        <SectionHeader title="SCOUTING REPORT" icon="radar" />
         <StatsReport />
       </div>
 
       {/* Recent results */}
       {matches.recent.length > 0 && (
         <div style={styles.section}>
-          <h2 style={styles.sectionTitle}>RECENT RESULTS</h2>
+          <SectionHeader title="RECENT RESULTS" icon="correct" />
           {matches.recent.slice(0, 5).map((m) => (
             <MatchCard key={m.id} match={m} />
           ))}
         </div>
       )}
+
+      {/* Footer */}
+      <div style={styles.footer}>
+        <PixelIcon name="walrus" size={12} color={text.faint} />
+        <span>Walrus Memory World Cup Hackathon 2026</span>
+      </div>
     </div>
   )
 }
@@ -396,22 +432,35 @@ const styles: Record<string, React.CSSProperties> = {
     background: palette.surface,
     color: palette.paper,
     fontFamily: fonts.body,
-    padding: '16px',
-    paddingBottom: '80px',
+    padding: spacing.md,
+    paddingBottom: 80,
   },
+
+  /* ── Header ─────────────────────────────────────────────── */
   header: {
+    marginBottom: spacing.lg,
+    paddingBottom: spacing.md,
+    borderBottom: `2px solid ${accents.gold}`,
+  },
+  titleRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
+    gap: spacing.sm,
   },
   title: {
-    ...typo.hdr,
+    ...typo.hdrLg,
     fontWeight: 700,
     margin: 0,
     color: accents.gold,
     fontFamily: fonts.header,
     letterSpacing: '-0.5px',
+    flex: 1,
+  },
+  subtitle: {
+    ...typo.dataSm,
+    color: text.muted,
+    fontFamily: fonts.body,
+    margin: `${spacing.xs}px 0 0`,
   },
   connectionDot: {
     width: 10,
@@ -419,22 +468,39 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 0,
     flexShrink: 0,
   },
+
+  /* ── Sections ───────────────────────────────────────────── */
   section: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
     ...typo.hdrSm,
     fontWeight: 600,
     color: text.muted,
-    marginBottom: 8,
     textTransform: 'uppercase' as const,
     letterSpacing: '0.5px',
     fontFamily: fonts.header,
+    margin: 0,
+    whiteSpace: 'nowrap',
   },
+  sectionRule: {
+    flex: 1,
+    height: 1,
+    background: palette.wood700,
+    marginLeft: spacing.sm,
+  },
+
+  /* ── Agent cards ────────────────────────────────────────── */
   agentsGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-    gap: 12,
+    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+    gap: spacing.sm,
   },
   card: {
     display: 'block',
@@ -443,97 +509,120 @@ const styles: Record<string, React.CSSProperties> = {
     background: palette.wood900,
     border: borders.standard,
     borderRadius: 0,
-    padding: 12,
+    padding: 0,
+    paddingBottom: spacing.sm,
     cursor: 'pointer',
     color: palette.paper,
     fontFamily: fonts.body,
-    ...typo.dataSm,
     boxShadow: shadows.hardSmall,
+    overflow: 'hidden',
   },
   cardHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 4,
+    padding: `0 ${spacing.sm}px`,
+    marginBottom: 2,
   },
   agentName: {
     fontWeight: 700,
-    ...typo.body,
+    fontFamily: fonts.header,
+    ...typo.hdrXs,
   },
   statusBadge: {
-    ...typo.hdrSm,
+    ...typo.hdrXs,
     padding: '2px 6px',
     borderRadius: 0,
     color: palette.paper,
     textTransform: 'uppercase' as const,
     fontFamily: fonts.header,
     letterSpacing: '-0.5px',
+    fontSize: 8,
   },
   cardRole: {
     ...typo.caption,
     color: text.muted,
-    marginBottom: 8,
+    padding: `0 ${spacing.sm}px`,
+    marginBottom: spacing.xs,
   },
+
+  /* Stats row */
+  statsRow: {
+    display: 'flex',
+    gap: 1,
+    padding: `0 ${spacing.sm}px`,
+    marginBottom: spacing.xs,
+  },
+  statBlock: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    background: palette.surface,
+    padding: '4px 2px',
+  },
+  statValue: {
+    fontFamily: fonts.body,
+    ...typo.data,
+    fontWeight: 700,
+    color: text.primary,
+  },
+  statLabel: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    color: text.faint,
+    textTransform: 'uppercase' as const,
+  },
+
   cardPrediction: {
-    marginBottom: 4,
+    padding: `0 ${spacing.sm}px`,
+    ...typo.dataSm,
   },
   label: {
     color: text.faint,
     ...typo.caption,
   },
   pick: {
-    fontWeight: 600,
-    color: accents.gold,
+    fontWeight: 700,
+    fontFamily: fonts.body,
+    ...typo.data,
   },
-  confidence: {
-    color: text.muted,
-    ...typo.caption,
-  },
-  cardStats: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    ...typo.caption,
-    color: text.muted,
-    marginTop: 4,
-  },
-  accuracy: {
-    color: accents.green,
-    fontWeight: 600,
-  },
-  cardMeta: {
-    ...typo.caption,
-    color: text.faint,
-    marginTop: 4,
-    fontStyle: 'italic' as const,
-  },
+
+  /* ── Match cards ────────────────────────────────────────── */
   matchCard: {
     background: palette.wood900,
     border: borders.standard,
+    borderLeft: `3px solid ${palette.wood700}`,
     borderRadius: 0,
-    padding: '8px 12px',
-    marginBottom: 6,
+    padding: `${spacing.sm}px ${spacing.sm + 4}px`,
+    marginBottom: spacing.xs,
     boxShadow: shadows.hardSmall,
   },
   matchTeams: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    ...typo.dataSm,
-    fontWeight: 600,
+    ...typo.data,
+  },
+  matchTeamName: {
+    fontWeight: 700,
+    flex: 1,
   },
   matchVs: {
     color: text.faint,
     ...typo.caption,
+    padding: `0 ${spacing.sm}px`,
   },
   matchScore: {
     color: accents.gold,
     fontWeight: 700,
-    ...typo.data,
+    ...typo.bodyLg,
+    padding: `0 ${spacing.sm}px`,
   },
   matchTime: {
     ...typo.caption,
     color: text.faint,
-    marginTop: 4,
+    marginTop: 2,
   },
   liveTag: {
     display: 'inline-flex',
@@ -544,14 +633,8 @@ const styles: Record<string, React.CSSProperties> = {
     ...typo.hdrXs,
     letterSpacing: '-0.5px',
   },
-  liveDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 0,
-    background: accents.red,
-    display: 'inline-block',
-  },
-  // T34: paper leaderboard panel — wood-ramp rows, dark text, medal ranks.
+
+  /* ── Leaderboard ────────────────────────────────────────── */
   leaderboard: {
     background: palette.paper,
     border: borders.standard,
@@ -563,7 +646,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 8,
-    padding: '8px 12px',
+    padding: `${spacing.sm}px ${spacing.sm + 4}px`,
     ...typo.body,
     color: palette.wood900,
   },
@@ -575,5 +658,17 @@ const styles: Record<string, React.CSSProperties> = {
   leaderScore: {
     fontWeight: 700,
     color: palette.wood700,
+  },
+
+  /* ── Footer ─────────────────────────────────────────────── */
+  footer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingTop: spacing.lg,
+    ...typo.caption,
+    color: text.faint,
+    fontFamily: fonts.body,
   },
 }

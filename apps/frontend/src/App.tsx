@@ -1,14 +1,13 @@
 /**
- * App | v0.9.0 | 2026-06-18
+ * App | v1.0.0 | 2026-06-19
  * Conditional mount: lite mode shows LiteDashboard, full mode lazy-loads PhaserGame.
- * T51: replaced standalone Leaderboard button with NavMenu + SectionOverlay.
+ * T51: NavMenu + SectionOverlay.
  * T59: OnboardingOverlay for first-run guided walkthrough.
  * T13: pixel-art loading skeleton shown until Phaser scene:ready fires.
  * T18: OfflineBanner for connection status.
- * T68: ErrorBoundary around Phaser canvas and AgentModal — heavy widgets
- *      that may crash independently without taking down the whole app.
-* T75: MemoryLab, WalrusProof, AboutDoor modals for board_left/board_scout/door props.
- * Overlay components (HUD, AgentModal, etc.) work in both modes.
+ * T68: ErrorBoundary around Phaser canvas and AgentModal.
+ * T75: MemoryLab, WalrusProof, AboutDoor modals.
+ * P0: removed duplicate MatchTV/AgentModal, added CRT scanline overlay.
  */
 
 import React, { lazy, Suspense, useState } from 'react'
@@ -40,6 +39,7 @@ import { PortraitGuard } from '@/components/PortraitGuard'
 import { PixelButton } from '@/components/ui'
 import { LoadingSkeleton, useSceneReady } from '@/components/LoadingSkeleton'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
+import { CrtOverlay } from '@/components/CrtOverlay'
 
 // Lazy-load Phaser so it's never imported in lite mode
 const PhaserGame = lazy(() =>
@@ -52,7 +52,7 @@ export default function App() {
   const liteMode = useUiPrefs((s) => s.liteMode)
   const sceneReady = useSceneReady()
 
-const [statsOpen, setStatsOpen] = useState(false)
+  const [statsOpen, setStatsOpen] = useState(false)
   const [hiveOpen, setHiveOpen] = useState(false)
 
   return (
@@ -64,18 +64,19 @@ const [statsOpen, setStatsOpen] = useState(false)
           <Suspense fallback={<LoadingSkeleton />}>
             <PhaserGame />
           </Suspense>
-          {/* Show skeleton over Phaser until scene:ready */}
           {!sceneReady && <LoadingSkeleton />}
         </ErrorBoundary>
       )}
+
+      {/* CRT scanline effect over game canvas */}
+      {!liteMode && <CrtOverlay />}
+
       <HUD />
       {!liteMode && <NavMenu />}
       <SectionOverlay />
-      {!liteMode && <MatchTV />}
-      <ErrorBoundary label="Agent Dossier" minHeight="300px">
-        <AgentModal />
-      </ErrorBoundary>
-{!liteMode && (
+
+      {/* Top-center quick-access buttons */}
+      {!liteMode && (
         <div style={{
           position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60,
           display: 'flex', gap: 8,
@@ -90,12 +91,18 @@ const [statsOpen, setStatsOpen] = useState(false)
       )}
       {statsOpen && !liteMode && <StatsBoard onClose={() => setStatsOpen(false)} />}
       {hiveOpen && <ConnectedAgents onClose={() => setHiveOpen(false)} />}
-{!liteMode && <TacticsBoard />}
-{!liteMode && <MemoryLab />}
+
+      {/* Overlay panels (full mode only) */}
+      {!liteMode && <TacticsBoard />}
+      {!liteMode && <MemoryLab />}
       {!liteMode && <WalrusProof />}
       {!liteMode && <AboutDoor />}
       {!liteMode && <MatchTV />}
-      <AgentModal />
+
+      {/* Shared overlays (both modes) */}
+      <ErrorBoundary label="Agent Dossier" minHeight="300px">
+        <AgentModal />
+      </ErrorBoundary>
       <WalletFlowOverlay />
       <AuthSync />
       <LiteModeToggle />
