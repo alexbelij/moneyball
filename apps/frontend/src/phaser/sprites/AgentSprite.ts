@@ -19,6 +19,7 @@ export class AgentSprite extends Phaser.GameObjects.Container {
   private label: Phaser.GameObjects.Text
   private thoughtText?: Phaser.GameObjects.Text
   private thoughtBg?: Phaser.GameObjects.Rectangle
+  private thoughtTail?: Phaser.GameObjects.Triangle
   private hideTimer?: Phaser.Time.TimerEvent
 
   constructor(scene: Phaser.Scene, agent: WorldAgentState) {
@@ -30,10 +31,12 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     this.bodyRect.on('pointerdown', () => GameEventBus.emit('agent:click', { agentId: this.id }))
 
     this.label = scene.add.text(0, 56, agent.name, {
-      fontSize: '14px',
-      color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 3,
+      fontFamily: 'VT323, monospace',
+      fontSize: '18px',
+      color: '#f4ede2',
+      stroke: '#181009',
+      strokeThickness: 4,
+      padding: { x: 4, y: 2 },
     }).setOrigin(0.5, 0)
 
     this.add([this.bodyRect, this.label])
@@ -43,30 +46,45 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     this.hideTimer?.destroy()
     this.thoughtText?.destroy()
     this.thoughtBg?.destroy()
+    this.thoughtTail?.destroy()
 
-    // T29: pixel paper card with a hard 2px wood border (no rounded corners),
-    // matching the design-spec dialog/bubble styling.
-    this.thoughtText = this.scene.add.text(0, -70, text, {
+    // Pixel speech bubble: paper card with 2px wood border + triangle tail
+    this.thoughtText = this.scene.add.text(0, -80, text, {
       fontFamily: 'VT323, monospace',
-      fontSize: '14px',
+      fontSize: '16px',
       color: Phaser.Display.Color.IntegerToColor(BUBBLE_TEXT).rgba,
       wordWrap: { width: 180 },
       align: 'center',
+      stroke: '#000000',
+      strokeThickness: 0.5,
+      padding: { x: 2, y: 2 },
     }).setOrigin(0.5, 0.5)
 
-    const w = Math.min(this.thoughtText.width + 14, 200)
-    const h = this.thoughtText.height + 10
+    const w = Math.min(this.thoughtText.width + 20, 220)
+    const h = this.thoughtText.height + 14
+    const by = -80
+
+    // Main bubble body
     this.thoughtBg = this.scene.add
-      .rectangle(0, -70, w, h, BUBBLE_BG, 1)
+      .rectangle(0, by, w, h, BUBBLE_BG, 1)
       .setStrokeStyle(2, BUBBLE_BORDER)
 
-    this.add([this.thoughtBg, this.thoughtText])
+    // Speech bubble tail (triangle pointing down)
+    this.thoughtTail = this.scene.add.triangle(
+      4, by + h / 2 + 6,  // slightly offset from center
+      0, 0, 10, 0, 5, 8,
+      BUBBLE_BG, 1,
+    ).setStrokeStyle(2, BUBBLE_BORDER)
+
+    this.add([this.thoughtBg, this.thoughtTail, this.thoughtText])
 
     this.hideTimer = this.scene.time.delayedCall(ttlMs, () => {
       this.thoughtText?.destroy()
       this.thoughtBg?.destroy()
+      this.thoughtTail?.destroy()
       this.thoughtText = undefined
       this.thoughtBg = undefined
+      this.thoughtTail = undefined
     })
   }
 }

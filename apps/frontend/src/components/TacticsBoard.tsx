@@ -355,7 +355,12 @@ interface MatchRow {
   hasDisagreement: boolean
 }
 
+type MatrixSort = 'match' | 'score' | 'consensus'
+
 function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: MatchInfo[] }) {
+  const [sortBy, setSortBy] = useState<MatrixSort>('match')
+  const [sortAsc, setSortAsc] = useState(true)
+
   const predicted = matches.filter((m) =>
     agentData.some((a) => a.predMap.has(m.id)),
   )
@@ -373,6 +378,26 @@ function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: Ma
     return { match, consensus, hasDisagreement: uniquePicks.size > 1 }
   })
 
+  // Sort rows
+  const sorted = [...rows].sort((a, b) => {
+    let cmp = 0
+    if (sortBy === 'match') cmp = a.match.kickoffUtc.localeCompare(b.match.kickoffUtc)
+    else if (sortBy === 'score') {
+      const sA = a.match.result ? a.match.result.homeScore + a.match.result.awayScore : -1
+      const sB = b.match.result ? b.match.result.homeScore + b.match.result.awayScore : -1
+      cmp = sA - sB
+    } else {
+      cmp = (a.consensus ?? '').localeCompare(b.consensus ?? '')
+    }
+    return sortAsc ? cmp : -cmp
+  })
+
+  const toggleSort = (col: MatrixSort) => {
+    if (sortBy === col) setSortAsc(!sortAsc)
+    else { setSortBy(col); setSortAsc(true) }
+  }
+  const sortIcon = (col: MatrixSort) => sortBy === col ? (sortAsc ? ' ▲' : ' ▼') : ''
+
   if (rows.length === 0) {
     return <div style={S.empty}>No predictions yet. The scouts are still studying the fixtures.</div>
   }
@@ -383,18 +408,18 @@ function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: Ma
         <table style={S.table}>
           <thead>
             <tr style={S.thead}>
-              <th style={{ ...S.th, ...S.matchCol }}>Match</th>
-              <th style={{ ...S.th, ...S.scoreCol }}>Score</th>
+              <th style={{ ...S.th, ...S.matchCol, cursor: 'pointer' }} onClick={() => toggleSort('match')}>Match{sortIcon('match')}</th>
+              <th style={{ ...S.th, ...S.scoreCol, cursor: 'pointer' }} onClick={() => toggleSort('score')}>Score{sortIcon('score')}</th>
               {agentData.map((a) => (
                 <th key={a.agentId} style={{ ...S.th, ...S.agentCol, borderBottom: `3px solid ${a.color}` }}>
                   {AGENT_SHORT[a.agentId] ?? a.name}
                 </th>
               ))}
-              <th style={{ ...S.th, ...S.consensusCol }}>ALL</th>
+              <th style={{ ...S.th, ...S.consensusCol, cursor: 'pointer' }} onClick={() => toggleSort('consensus')}>ALL{sortIcon('consensus')}</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
+            {sorted.map((row) => {
               const isLive = row.match.status === 'live'
               return (
                 <tr key={row.match.id} style={{ ...S.row, background: isLive ? 'rgba(192,48,48,0.08)' : undefined }}>
@@ -690,9 +715,9 @@ function AgreementTab({ agentData }: { agentData: AgentData[] }) {
   }, [agentData])
 
   const n = agentData.length
-  const CELL = 52
-  const LABEL_W = 64
-  const LABEL_H = 28
+  const CELL = 72
+  const LABEL_W = 80
+  const LABEL_H = 40
   const W = LABEL_W + n * CELL
   const H = LABEL_H + n * CELL
 

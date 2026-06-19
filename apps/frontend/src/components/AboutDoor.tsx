@@ -44,7 +44,7 @@ const LINKS = [
   { label: 'GitHub', url: 'https://github.com/anna-stolbovskaja/moneyball', icon: '□' },
   { label: 'Live App', url: 'https://taken.wal.app', icon: 'link' },
   { label: 'Walrus Memory', url: 'https://memory.walrus.xyz', icon: 'walrus' },
-  { label: 'Hackathon', url: 'https://memwal.devfolio.co', icon: 'hackathon' },
+  { label: 'Walrus Session 4', url: 'https://www.deepsurge.xyz/hackathons/cbe3390c-88c1-48c6-a86d-5c1edb4b6d17', icon: 'hackathon' },
 ]
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -150,7 +150,7 @@ export function AboutDoor() {
           <div style={S.section}>
             <h3 style={S.sectionTitle}>Hackathon</h3>
             <p style={S.description}>
-              Built for the <strong style={{ color: accents.gold }}>Walrus Memory World Cup</strong> hackathon.
+              Built for the <strong style={{ color: accents.gold }}>Walrus Session 4</strong> hackathon.
               Deadline: June 24, 2026. The challenge: build an application that leverages
               Walrus Memory for persistent, verifiable AI agent state.
             </p>

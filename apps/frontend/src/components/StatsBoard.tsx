@@ -79,8 +79,9 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
 
   return (
     <div style={{
-      position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)',
-      zIndex: zIndex.stats, width: 520, maxWidth: '92vw',
+      position: 'absolute', top: 40, left: '50%', transform: 'translateX(-50%)',
+      zIndex: zIndex.stats, width: 680, maxWidth: '96vw',
+      maxHeight: 'calc(100vh - 80px)', overflowY: 'auto',
       background: palette.wood900, border: borders.standard, borderRadius: 0,
       padding: 14, color: palette.paper, boxShadow: shadows.hard,
     }}>

@@ -98,31 +98,31 @@ export const fonts = {
 export const type = {
   /* ── Header scale (Press Start 2P — short labels only) ────────── */
   /** Large header: 14px (used sparingly). */
-  hdrLg:    { fontSize: 18, lineHeight: '24px' },
-  /** Standard header: 12px (section titles, HUD labels). */
-  hdr:      { fontSize: 16, lineHeight: '22px' },
-  /** Small header: 11px (stat labels, tab badges). */
-  hdrSm:    { fontSize: 14, lineHeight: '20px' },
-  /** Table header: 10px (dense column headers). */
-  hdrXs:    { fontSize: 14, lineHeight: '18px' },
+  hdrLg:    { fontSize: 22, lineHeight: '28px' },
+  /** Standard header (section titles, HUD labels). */
+  hdr:      { fontSize: 18, lineHeight: '24px' },
+  /** Small header (stat labels, tab badges). */
+  hdrSm:    { fontSize: 16, lineHeight: '22px' },
+  /** Table header (dense column headers). */
+  hdrXs:    { fontSize: 15, lineHeight: '20px' },
 
   /* ── Body scale (VT323 — body, data, captions) ────────────────── */
-  /** Large body text: 18px. */
-  bodyLg:   { fontSize: 18, lineHeight: '24px' },
-  /** Standard body / paragraphs: 16px. */
-  body:     { fontSize: 16, lineHeight: '22px' },
-  /** Data values / table cells: 16px (same as body, distinct name). */
-  data:     { fontSize: 16, lineHeight: '20px' },
-  /** Smaller data / secondary: 14px (minimum for VT323 body). */
-  dataSm:   { fontSize: 14, lineHeight: '18px' },
-  /** Captions / timestamps: 13px. */
-  caption:  { fontSize: 14, lineHeight: '18px' },
+  /** Large body text. */
+  bodyLg:   { fontSize: 22, lineHeight: '28px' },
+  /** Standard body / paragraphs. */
+  body:     { fontSize: 18, lineHeight: '24px' },
+  /** Data values / table cells. */
+  data:     { fontSize: 18, lineHeight: '22px' },
+  /** Smaller data / secondary. */
+  dataSm:   { fontSize: 16, lineHeight: '20px' },
+  /** Captions / timestamps. */
+  caption:  { fontSize: 15, lineHeight: '20px' },
 
   /* ── SVG scale (chart axes, diagram labels — smaller is OK) ───── */
   /** SVG axis / tick labels. */
-  svgAxis:  { fontSize: 11 },
+  svgAxis:  { fontSize: 13 },
   /** SVG sub-labels / annotations. */
-  svgLabel: { fontSize: 12 },
+  svgLabel: { fontSize: 14 },
   /** SVG tiny dot / indicator (e.g. ● legend). */
   svgDot:   { fontSize: 10 },
 } as const

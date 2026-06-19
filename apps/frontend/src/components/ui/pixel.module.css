@@ -121,9 +121,9 @@
 
 .modal {
   position: relative;
-  width: 560px;
-  max-width: 94vw;
-  max-height: 88vh;
+  width: 640px;
+  max-width: 96vw;
+  max-height: 90vh;
   overflow-y: auto;
   background: var(--px-wood-900);
   border: 2px solid var(--px-wood-700);
@@ -145,7 +145,7 @@
 
 .modalTitle {
   font-family: var(--px-font-header);
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: -0.5px;
   color: var(--px-accent-gold);
   margin: 0;

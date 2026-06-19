@@ -57,10 +57,20 @@ function AgentCard({
       : null
   const color = agentColors[agent.agentId] ?? accents.gold
 
+  const [hovered, setHovered] = useState(false)
+
   return (
     <button
       onClick={onSelect}
-      style={styles.card}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        ...styles.card,
+        borderColor: hovered ? color : palette.wood700,
+        transform: hovered ? 'translateY(-2px)' : undefined,
+        boxShadow: hovered ? `0 4px 0 ${palette.wood900}, inset 0 0 0 1px ${color}40` : styles.card.boxShadow,
+        transition: 'transform 100ms, border-color 100ms, box-shadow 100ms',
+      }}
       aria-label={`View details for ${agent.name}`}
     >
       {/* Top accent bar in agent color */}

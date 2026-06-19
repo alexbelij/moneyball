@@ -80,22 +80,30 @@ function CycleDiagram() {
       {/* Circle path */}
       <circle cx={CX} cy={CY} r={R} fill="none" stroke={palette.wood500} strokeWidth={2} strokeDasharray="6 4" />
 
-      {/* Arrows between steps */}
+      {/* Arrows between steps (along the circle arc) */}
       {points.map((p, i) => {
         const next = points[(i + 1) % points.length]
-        const dx = next.x - p.x
-        const dy = next.y - p.y
-        const len = Math.sqrt(dx * dx + dy * dy)
-        const nx = dx / len
-        const ny = dy / len
-        const mx = (p.x + next.x) / 2
-        const my = (p.y + next.y) / 2
+        // Midpoint along the arc
+        const midAngle = ((steps[i].angle + steps[(i + 1) % steps.length].angle) / 2
+          + (steps[(i + 1) % steps.length].angle < steps[i].angle ? 180 : 0)) * Math.PI / 180
+        const mx = CX + R * Math.cos(midAngle)
+        const my = CY + R * Math.sin(midAngle)
+        // Tangent direction (perpendicular to radius, clockwise)
+        const tx = -Math.sin(midAngle)
+        const ty = Math.cos(midAngle)
+        // Outward normal
+        const ox = Math.cos(midAngle)
+        const oy = Math.sin(midAngle)
+        const S = 6 // arrow half-size
         return (
           <polygon
             key={i}
-            points={`${mx},${my - 4} ${mx + 6 * nx},${my + 6 * ny - 4 * nx} ${mx - 6 * nx},${my - 6 * ny - 4 * nx}`}
+            points={[
+              `${mx + tx * S},${my + ty * S}`,
+              `${mx - tx * S + ox * S * 0.5},${my - ty * S + oy * S * 0.5}`,
+              `${mx - tx * S - ox * S * 0.5},${my - ty * S - oy * S * 0.5}`,
+            ].join(' ')}
             fill={accents.gold}
-            transform={`rotate(${Math.atan2(dy, dx) * 180 / Math.PI}, ${mx}, ${my})`}
           />
         )
       })}
@@ -111,7 +119,7 @@ function CycleDiagram() {
             x={p.x} y={p.y - 2}
             textAnchor="middle" dominantBaseline="middle"
             fill={accents.gold}
-            fontFamily={fonts.header} fontSize={7}
+            fontFamily={fonts.header} fontSize={9}
           >
             {p.icon}
           </text>
@@ -119,7 +127,7 @@ function CycleDiagram() {
             x={p.x} y={p.y + 10}
             textAnchor="middle" dominantBaseline="middle"
             fill={text.primary}
-            fontFamily={fonts.header} fontSize={6}
+            fontFamily={fonts.header} fontSize={8}
           >
             {p.label}
           </text>
