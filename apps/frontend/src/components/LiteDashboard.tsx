@@ -73,7 +73,7 @@ function AgentCard({
         </div>
         <span
           style={{
-            ...styles.statusBadge,
+            ...styles.agentStatusBadge,
             background:
               agent.status === 'idle'
                 ? palette.wood700
@@ -345,15 +345,41 @@ export function LiteDashboard() {
       {/* Branding header */}
       <div style={styles.header}>
         <div style={styles.titleRow}>
-          <PixelIcon name="hackathon" size={16} color={accents.gold} />
-          <h1 style={styles.title}>MONEYBALL CABINET</h1>
-          <span
-            style={{
-              ...styles.connectionDot,
-              background: isConnected ? accents.green : accents.red,
-            }}
-            aria-label={isConnected ? 'Connected' : 'Disconnected'}
-          />
+          {/* Pixel football logo */}
+          <svg width="28" height="28" viewBox="0 0 16 16" style={{ flexShrink: 0, imageRendering: 'pixelated' as any }}>
+            <rect x="5" y="1" width="6" height="1" fill={accents.gold} />
+            <rect x="3" y="2" width="10" height="1" fill={accents.gold} />
+            <rect x="2" y="3" width="12" height="1" fill={accents.gold} />
+            <rect x="2" y="4" width="12" height="1" fill={accents.gold} />
+            <rect x="1" y="5" width="14" height="1" fill={accents.gold} />
+            <rect x="1" y="6" width="14" height="1" fill={accents.gold} />
+            <rect x="1" y="7" width="14" height="1" fill={accents.gold} />
+            <rect x="1" y="8" width="14" height="1" fill={accents.gold} />
+            <rect x="1" y="9" width="14" height="1" fill={accents.gold} />
+            <rect x="1" y="10" width="14" height="1" fill={accents.gold} />
+            <rect x="2" y="11" width="12" height="1" fill={accents.gold} />
+            <rect x="2" y="12" width="12" height="1" fill={accents.gold} />
+            <rect x="3" y="13" width="10" height="1" fill={accents.gold} />
+            <rect x="5" y="14" width="6" height="1" fill={accents.gold} />
+            {/* Pentagon pattern */}
+            <rect x="6" y="4" width="4" height="3" fill={palette.wood900} />
+            <rect x="3" y="8" width="3" height="2" fill={palette.wood900} />
+            <rect x="10" y="8" width="3" height="2" fill={palette.wood900} />
+            <rect x="5" y="11" width="2" height="2" fill={palette.wood900} />
+            <rect x="9" y="11" width="2" height="2" fill={palette.wood900} />
+          </svg>
+          <h1 style={styles.title}>MONEYBALL</h1>
+          <div style={styles.statusBadge}>
+            <span
+              style={{
+                ...styles.connectionDot,
+                background: isConnected ? accents.green : accents.red,
+              }}
+            />
+            <span style={styles.statusText}>
+              {isConnected ? `${Object.keys(agents).length} agents` : 'offline'}
+            </span>
+          </div>
         </div>
         <p style={styles.subtitle}>
           5 AI Agents × FIFA World Cup 2026 × Walrus Memory
@@ -463,10 +489,24 @@ const styles: Record<string, React.CSSProperties> = {
     margin: `${spacing.xs}px 0 0`,
   },
   connectionDot: {
-    width: 10,
-    height: 10,
+    width: 8,
+    height: 8,
     borderRadius: 0,
     flexShrink: 0,
+  },
+  statusBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 4,
+    padding: '4px 8px',
+    background: palette.wood700,
+    border: borders.standard,
+  },
+  statusText: {
+    ...typo.caption,
+    fontFamily: fonts.body,
+    color: text.muted,
+    whiteSpace: 'nowrap',
   },
 
   /* ── Sections ───────────────────────────────────────────── */
@@ -529,7 +569,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: fonts.header,
     ...typo.hdrXs,
   },
-  statusBadge: {
+  agentStatusBadge: {
     ...typo.hdrXs,
     padding: '2px 6px',
     borderRadius: 0,
@@ -537,7 +577,7 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase' as const,
     fontFamily: fonts.header,
     letterSpacing: '-0.5px',
-    fontSize: 8,
+    fontSize: 14,
   },
   cardRole: {
     ...typo.caption,

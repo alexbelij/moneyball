@@ -10,7 +10,7 @@
  * P0: removed duplicate MatchTV/AgentModal, added CRT scanline overlay.
  */
 
-import React, { lazy, Suspense, useState } from 'react'
+import React, { lazy, Suspense } from 'react'
 import { useSocket } from '@/hooks/useSocket'
 import { useUiPrefs } from '@/store/uiPrefs'
 import { useHashRoute } from '@/hooks/useHashRoute'
@@ -24,7 +24,7 @@ import { config } from '@/lib/config'
 import { WalletDebugPanel } from '@/components/WalletDebugPanel'
 import { AuthSync } from '@/components/AuthSync'
 
-import { StatsBoard } from '@/components/StatsBoard'
+// StatsBoard and ConnectedAgents now opened via NavMenu/SectionOverlay only
 import { TacticsBoard } from '@/components/TacticsBoard'
 import { MemoryLab } from '@/components/MemoryLab'
 import { WalrusProof } from '@/components/WalrusProof'
@@ -34,9 +34,7 @@ import { LiteDashboard } from '@/components/LiteDashboard'
 import { LiteModeToggle } from '@/components/LiteModeToggle'
 import { OfflineBanner } from '@/components/OfflineBanner'
 
-import { ConnectedAgents } from '@/components/ConnectedAgents'
 import { PortraitGuard } from '@/components/PortraitGuard'
-import { PixelButton } from '@/components/ui'
 import { LoadingSkeleton, useSceneReady } from '@/components/LoadingSkeleton'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import { CrtOverlay } from '@/components/CrtOverlay'
@@ -51,9 +49,6 @@ export default function App() {
   useHashRoute()
   const liteMode = useUiPrefs((s) => s.liteMode)
   const sceneReady = useSceneReady()
-
-  const [statsOpen, setStatsOpen] = useState(false)
-  const [hiveOpen, setHiveOpen] = useState(false)
 
   return (
     <div style={{ position: 'relative', width: '100vw', height: '100vh', overflow: 'hidden' }}>
@@ -71,26 +66,11 @@ export default function App() {
       {/* CRT scanline effect over game canvas */}
       {!liteMode && <CrtOverlay />}
 
-      <HUD />
+      {!liteMode && <HUD />}
       {!liteMode && <NavMenu />}
       <SectionOverlay />
 
-      {/* Top-center quick-access buttons */}
-      {!liteMode && (
-        <div style={{
-          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', zIndex: 60,
-          display: 'flex', gap: 8,
-        }}>
-          <PixelButton size="small" onClick={() => setStatsOpen((v: boolean) => !v)} aria-pressed={statsOpen}>
-            Leaderboard
-          </PixelButton>
-          <PixelButton size="small" onClick={() => setHiveOpen((v: boolean) => !v)} aria-pressed={hiveOpen}>
-            Hive
-          </PixelButton>
-        </div>
-      )}
-      {statsOpen && !liteMode && <StatsBoard onClose={() => setStatsOpen(false)} />}
-      {hiveOpen && <ConnectedAgents onClose={() => setHiveOpen(false)} />}
+      {/* StatsBoard / ConnectedAgents — opened via NavMenu only */}
 
       {/* Overlay panels (full mode only) */}
       {!liteMode && <TacticsBoard />}

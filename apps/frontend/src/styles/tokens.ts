@@ -98,13 +98,13 @@ export const fonts = {
 export const type = {
   /* ── Header scale (Press Start 2P — short labels only) ────────── */
   /** Large header: 14px (used sparingly). */
-  hdrLg:    { fontSize: 14, lineHeight: '20px' },
+  hdrLg:    { fontSize: 18, lineHeight: '24px' },
   /** Standard header: 12px (section titles, HUD labels). */
-  hdr:      { fontSize: 12, lineHeight: '18px' },
+  hdr:      { fontSize: 16, lineHeight: '22px' },
   /** Small header: 11px (stat labels, tab badges). */
-  hdrSm:    { fontSize: 11, lineHeight: '16px' },
+  hdrSm:    { fontSize: 14, lineHeight: '20px' },
   /** Table header: 10px (dense column headers). */
-  hdrXs:    { fontSize: 10, lineHeight: '14px' },
+  hdrXs:    { fontSize: 14, lineHeight: '18px' },
 
   /* ── Body scale (VT323 — body, data, captions) ────────────────── */
   /** Large body text: 18px. */
@@ -116,7 +116,7 @@ export const type = {
   /** Smaller data / secondary: 14px (minimum for VT323 body). */
   dataSm:   { fontSize: 14, lineHeight: '18px' },
   /** Captions / timestamps: 13px. */
-  caption:  { fontSize: 13, lineHeight: '16px' },
+  caption:  { fontSize: 14, lineHeight: '18px' },
 } as const
 
 /** Responsive breakpoint — mobile-first at 480px. */

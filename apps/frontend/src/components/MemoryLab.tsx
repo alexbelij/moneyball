@@ -17,6 +17,7 @@ import {
 import { PixelButton } from '@/components/ui'
 import { GameEventBus } from '@/events/GameEventBus'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
+import { formatKickoff } from '@/lib/formatDate'
 import {
   palette, accents, text, fonts, borders, shadows, zIndex,
   type as typo, agentColors, spacing, overlay,
@@ -56,11 +57,11 @@ interface AgentEvoData {
  * ═══════════════════════════════════════════════════════════════════════ */
 
 function CycleDiagram() {
-  const W = 320
-  const H = 200
+  const W = 360
+  const H = 260
   const CX = W / 2
   const CY = H / 2 + 4
-  const R = 62
+  const R = 90
 
   const steps = [
     { label: 'SLEEP', angle: -90, icon: '▾' },
@@ -129,7 +130,7 @@ function CycleDiagram() {
       <text
         x={CX} y={CY}
         textAnchor="middle" dominantBaseline="middle"
-        fill={text.muted} fontFamily={fonts.body} fontSize={12}
+        fill={text.muted} fontFamily={fonts.body} fontSize={14}
       >
         self-learning loop
       </text>
@@ -340,9 +341,7 @@ export function MemoryLab() {
                           .map((ev, i) => (
                           <div key={i} style={S.evoEntry}>
                             <div style={S.evoTime}>
-                              {new Date(ev.createdAt).toLocaleString(undefined, {
-                                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                              })}
+                              {formatKickoff(ev.createdAt)}
                               {ev.fromVersion != null && ev.toVersion != null && (
                                 <span style={S.evoVersion}> v{ev.fromVersion} → v{ev.toVersion}</span>
                               )}

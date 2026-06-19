@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Moneyball Cabinet — AI Football Prediction Engine</title>
 
     <!-- T47: SEO meta -->
@@ -94,7 +94,7 @@
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { background: #0c0c0c; overflow: hidden; font-family: 'VT323', 'Press Start 2P', monospace; color: #f4ede2; }
-      #root { width: 100vw; height: 100vh; }
+      #root { width: 100vw; height: 100vh; touch-action: manipulation; }
 
       /* P0: Custom scrollbar — pixel-art styled */
       ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -157,5 +157,13 @@
     </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      /* Block Ctrl+wheel and pinch zoom to keep pixel-art layout stable (#24) */
+      document.addEventListener('wheel', function(e) {
+        if (e.ctrlKey) e.preventDefault();
+      }, { passive: false });
+      document.addEventListener('gesturestart', function(e) { e.preventDefault(); });
+      document.addEventListener('gesturechange', function(e) { e.preventDefault(); });
+    </script>
   </body>
 </html>

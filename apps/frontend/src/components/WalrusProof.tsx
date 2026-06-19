@@ -17,6 +17,7 @@ import {
 import { PixelButton } from '@/components/ui'
 import { GameEventBus } from '@/events/GameEventBus'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
+import { formatKickoff } from '@/lib/formatDate'
 import {
   palette, accents, text, fonts, borders, shadows, zIndex,
   type as typo, agentColors, spacing, overlay,
@@ -277,9 +278,7 @@ curl -X POST https://relayer.memory.walrus.xyz/recall \\
                       </span>
                       <span style={S.writeSummary}>{w.summary}</span>
                       <span style={S.writeTime}>
-                        {new Date(w.createdAt).toLocaleString(undefined, {
-                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                        })}
+                        {formatKickoff(w.createdAt)}
                       </span>
                     </div>
                   ))}

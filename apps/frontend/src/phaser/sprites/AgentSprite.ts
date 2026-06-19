@@ -25,12 +25,12 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     super(scene, agent.position.x, agent.position.y)
     this.id = agent.agentId
 
-    this.bodyRect = scene.add.rectangle(0, 0, 52, 72, 0x3a3a5c).setStrokeStyle(2, 0x6a6a9c)
-    this.bodyRect.setInteractive({ cursor: 'pointer' })
+    this.bodyRect = scene.add.rectangle(0, 0, 72, 96, 0x3a3a5c).setStrokeStyle(2, 0x6a6a9c)
+    this.bodyRect.setInteractive({ cursor: 'pointer', useHandCursor: true })
     this.bodyRect.on('pointerdown', () => GameEventBus.emit('agent:click', { agentId: this.id }))
 
-    this.label = scene.add.text(0, 44, agent.name, {
-      fontSize: '11px',
+    this.label = scene.add.text(0, 56, agent.name, {
+      fontSize: '14px',
       color: '#ffffff',
       stroke: '#000000',
       strokeThickness: 3,

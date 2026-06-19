@@ -47,6 +47,7 @@ export function NavMenu() {
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: zIndex.stats,
+        pointerEvents: 'auto',
       }}
     >
       <PixelButton

@@ -300,7 +300,6 @@ export function TacticsBoard() {
                 background: tab === t ? palette.wood700 : 'transparent',
               }}
             >
-              <span style={{ marginRight: 3 }}>{TAB_ICONS[t]}</span>
               {TAB_LABELS[t]}
             </button>
           ))}
@@ -975,6 +974,51 @@ function CalibrationTab({ agentData }: { agentData: AgentData[] }) {
  * TAB 5 — DOSSIER (submission pack)
  * ═══════════════════════════════════════════════════════════════════════ */
 
+/** SVG architecture diagram — replaces ASCII art for stable rendering (#6). */
+function ArchitectureDiagram() {
+  const W = 520, H = 320
+  const boxH = 80
+  const gap = 16
+  const y1 = 20, y2 = y1 + boxH + gap, y3 = y2 + boxH + gap
+  const bx = 20, bw = W - 40
+
+  const boxStyle = { fill: palette.wood700, stroke: palette.wood500, strokeWidth: 2 }
+  const labelStyle = { fill: accents.gold, fontFamily: fonts.header, fontSize: 14 }
+  const subStyle = { fill: text.primary, fontFamily: fonts.body, fontSize: 14 }
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', maxWidth: W }}>
+      {/* Browser layer */}
+      <rect x={bx} y={y1} width={bw} height={boxH} {...boxStyle} />
+      <text x={bx + 10} y={y1 + 22} {...labelStyle}>BROWSER</text>
+      <text x={bx + 10} y={y1 + 42} {...subStyle}>React 18 + Phaser 3 + Vite</text>
+      <text x={bx + 10} y={y1 + 60} {...subStyle} style={{ fill: text.muted }}>Cabinet · HUD · Modals · Tactics Board</text>
+
+      {/* Arrow down */}
+      <line x1={W / 2} y1={y1 + boxH} x2={W / 2} y2={y2} stroke={accents.gold} strokeWidth={2} />
+      <polygon points={`${W/2-5},${y2-6} ${W/2+5},${y2-6} ${W/2},${y2}`} fill={accents.gold} />
+      <text x={W/2 + 10} y={y1 + boxH + 12} {...subStyle} style={{ fill: text.faint, fontSize: 12 }}>REST + WebSocket</text>
+
+      {/* Backend layer */}
+      <rect x={bx} y={y2} width={bw} height={boxH} {...boxStyle} />
+      <text x={bx + 10} y={y2 + 22} {...labelStyle}>BACKEND</text>
+      <text x={bx + 10} y={y2 + 42} {...subStyle}>Express + Socket.io + sleep-worker</text>
+      <text x={bx + 10} y={y2 + 60} {...subStyle} style={{ fill: text.muted }}>Match Pipeline · Reflection → Evolution</text>
+
+      {/* Arrow down */}
+      <line x1={W / 2} y1={y2 + boxH} x2={W / 2} y2={y3} stroke={accents.gold} strokeWidth={2} />
+      <polygon points={`${W/2-5},${y3-6} ${W/2+5},${y3-6} ${W/2},${y3}`} fill={accents.gold} />
+      <text x={W/2 + 10} y={y2 + boxH + 12} {...subStyle} style={{ fill: text.faint, fontSize: 12 }}>remember() / recall()</text>
+
+      {/* Walrus layer */}
+      <rect x={bx} y={y3} width={bw} height={boxH} {...boxStyle} style={{ stroke: accents.green }} />
+      <text x={bx + 10} y={y3 + 22} {...labelStyle} style={{ fill: accents.green }}>WALRUS MAINNET</text>
+      <text x={bx + 10} y={y3 + 42} {...subStyle}>MemWal semantic blob store</text>
+      <text x={bx + 10} y={y3 + 60} {...subStyle} style={{ fill: text.muted }}>Append-only · Immutable · Verifiable</text>
+    </svg>
+  )
+}
+
 function DossierTab({
   profiles,
   dataSource,
@@ -1005,32 +1049,7 @@ function DossierTab({
 
       {/* Architecture */}
       <Section title="ARCHITECTURE">
-        <Pre>{`
-┌──────────────────────────────────────────────────────┐
-│                   Browser (SPA)                      │
-│  React 18 + Phaser 3 + Vite                          │
-│  ┌──────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐  │
-│  │ Cabinet  │ │  HUD   │ │ Modals   │ │ Tactics  │  │
-│  │ (Phaser) │ │        │ │ (Agent,  │ │  Board   │  │
-│  │          │ │        │ │  Stats)  │ │          │  │
-│  └────┬─────┘ └───┬────┘ └────┬─────┘ └────┬─────┘  │
-│       └────────────┴──────────┴─────────────┘        │
-│                    │ REST + WebSocket                 │
-├────────────────────┼─────────────────────────────────┤
-│              Node.js Backend                         │
-│  Express + Socket.io                                 │
-│  ┌────────────────┐ ┌────────────────┐               │
-│  │  Match Pipeline│ │  sleep-worker  │               │
-│  │  (football-    │ │  Reflection →  │               │
-│  │   data.org)    │ │  Evolution     │               │
-│  └───────┬────────┘ └───────┬────────┘               │
-│          └──────────────────┘                        │
-│                    │ remember() / recall()            │
-├────────────────────┼─────────────────────────────────┤
-│           Walrus Mainnet (MemWal)                    │
-│           Append-only semantic blob store            │
-└──────────────────────────────────────────────────────┘`}
-        </Pre>
+        <ArchitectureDiagram />
       </Section>
 
       {/* Tech Stack */}

@@ -177,7 +177,11 @@ export function AboutDoor() {
 
           {/* Footer */}
           <div style={S.footer}>
-            Made with ■ in Minsk, 2026
+            Made with{' '}
+            <svg width="14" height="14" viewBox="0 0 16 16" fill={accents.red} style={{ verticalAlign: 'middle', margin: '0 2px' }}>
+              <path d="M8 14s-5-3.5-5-7.5C3 4 5 2 8 4c3-2 5 0 5 2.5S8 14 8 14z" />
+            </svg>
+            {' '}in Minsk, 2026
           </div>
         </div>
       </div>

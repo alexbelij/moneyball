@@ -5,7 +5,7 @@
  * T33: migrated to shared tokens.
  */
 
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   useAccounts,
   useConnectWallet,
@@ -91,8 +91,23 @@ export function WalletControls() {
   const connected = !!currentAccount?.address
   const short = connected ? `${currentAccount!.address.slice(0, 6)}…${currentAccount!.address.slice(-4)}` : 'Connect'
 
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  /* Outside-click close for wallet popup */
+  useEffect(() => {
+    if (!open && !openAccounts) return
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setOpenAccounts(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open, openAccounts])
+
   return (
-    <div style={{ position: 'relative', display: 'inline-flex', gap: 8, alignItems: 'center' }}>
+    <div ref={containerRef} style={{ position: 'relative', display: 'inline-flex', gap: 8, alignItems: 'center' }}>
       {!connected ? (
         <>
           <PixelButton busy={connectAction.pending} onClick={() => setOpen((v) => !v)} disabled={busy}>

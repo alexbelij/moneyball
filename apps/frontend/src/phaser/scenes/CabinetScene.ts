@@ -245,6 +245,8 @@ export class CabinetScene extends Phaser.Scene {
     const scale = paused ? 0 : 1
     this.time.timeScale = scale
     this.tweens.timeScale = scale
+    // Disable input so clicks don't pass through modals to Phaser props
+    this.input.enabled = !paused
 
     if (!paused && this.pendingThoughts.size > 0) {
       // Replay latest buffered thought per agent

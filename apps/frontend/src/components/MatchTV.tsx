@@ -1,12 +1,13 @@
 /**
- * MatchTV | v0.3.0 | 2026-06-14
+ * MatchTV | v0.4.0 | 2026-06-19
  * Purpose: Cabinet TV ticker — live/next/recent WC2026 matches from the
  * public match feed. Polls every 30s; collapsible to a one-line bar.
+ * FIX: outside-click close + × button (#4).
  * T49: typography scale — body ≥16px; responsive max-width.
  * T33: migrated to shared tokens.
  */
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { getMatches, type MatchInfo } from '@/lib/api'
 import { GameEventBus } from '@/events/GameEventBus'
 import { palette, accents, text, fonts, borders, shadows, zIndex, type as typo } from '@/styles/tokens'
@@ -17,6 +18,7 @@ const POLL_MS = 30_000
 export function MatchTV() {
   const [feed, setFeed] = useState<{ live: MatchInfo[]; upcoming: MatchInfo[]; recent: MatchInfo[] } | null>(null)
   const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let alive = true
@@ -24,14 +26,26 @@ export function MatchTV() {
       (r) => {
         if (!alive) return
         setFeed({ live: r.live, upcoming: r.upcoming, recent: r.recent })
-        GameEventBus.emit('matches:live', { live: r.live.length > 0 }) // drives cabinet TV state
+        GameEventBus.emit('matches:live', { live: r.live.length > 0 })
       },
-      () => undefined, // keep last good feed on transient errors
+      () => undefined,
     )
     load()
     const t = setInterval(load, POLL_MS)
     return () => { alive = false; clearInterval(t) }
   }, [])
+
+  /* Outside-click close */
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
 
   const live = feed?.live[0]
   const next = feed?.upcoming[0]
@@ -42,7 +56,7 @@ export function MatchTV() {
       : 'WC2026'
 
   return (
-    <div style={{
+    <div ref={containerRef} style={{
       position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)',
       zIndex: zIndex.matchTV, width: open ? 460 : 'auto', maxWidth: '92vw',
       background: palette.wood900, border: borders.standard, borderRadius: 0,
@@ -58,7 +72,12 @@ export function MatchTV() {
         }}
       >
         {live ? <span style={{ color: accents.red }}>■ </span> : <span style={{ color: accents.gold }}>▶ </span>}
-        {headline} <span style={{ color: text.faint }}>{open ? '▾' : '▴'}</span>
+        {headline}
+        {open ? (
+          <span style={{ float: 'right', color: text.muted, cursor: 'pointer' }}>✕</span>
+        ) : (
+          <span style={{ color: text.faint, marginLeft: 6 }}>▴</span>
+        )}
       </button>
 
       {open && feed && (
