@@ -4,7 +4,7 @@
 
 services:
   - type: web
-    name: moneyball-backend
+    name: mball-api
     runtime: docker
     dockerfilePath: apps/backend/Dockerfile
     dockerContext: .

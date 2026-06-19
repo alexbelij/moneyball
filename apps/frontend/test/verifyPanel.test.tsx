@@ -8,9 +8,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 Object.defineProperty(window, 'WebGLRenderingContext', { value: class {}, writable: true, configurable: true })
 window.matchMedia = vi.fn().mockReturnValue({ matches: false }) as any
 
+// Mock the api module so config.ts (which requires VITE_BACKEND_URL) never loads.
+vi.mock('@/lib/api', () => ({
+  getVerifiability: vi.fn(),
+}))
+
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { VerifyPanel } from '@/components/VerifyPanel'
+import { getVerifiability } from '@/lib/api'
+
+const mockGetVerifiability = vi.mocked(getVerifiability)
 
 const MOCK_DATA = {
   ok: true,
@@ -38,7 +46,7 @@ const MOCK_DATA = {
 }
 
 beforeEach(() => {
-  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve(MOCK_DATA) }))
+  mockGetVerifiability.mockResolvedValue(MOCK_DATA)
 })
 
 describe('VerifyPanel (T64)', () => {
@@ -103,13 +111,13 @@ describe('VerifyPanel (T64)', () => {
   })
 
   it('shows error state on fetch failure', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
+    mockGetVerifiability.mockRejectedValue(new Error('Network error'))
     render(<VerifyPanel />)
     await waitFor(() => { expect(screen.getByText(/could not load/i)).toBeInTheDocument() })
   })
 
   it('shows loading state initially', () => {
-    vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})))
+    mockGetVerifiability.mockReturnValue(new Promise(() => {}))
     render(<VerifyPanel />)
     expect(screen.getByText(/loading/i)).toBeInTheDocument()
   })
