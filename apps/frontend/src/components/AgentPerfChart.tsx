@@ -89,7 +89,7 @@ export function AgentPerfChart({ series }: { series: AgentPerfSeries }) {
             <line x1={PAD.left} y1={yScale(v)} x2={CHART_W - PAD.right} y2={yScale(v)}
               stroke={chartGrid} strokeWidth={1} strokeDasharray="2 4" />
             <text x={PAD.left - 4} y={yScale(v) + 4} textAnchor="end" fill={text.muted}
-              style={{ fontSize: 9, fontFamily: fonts.body }}>{v.toFixed(1)}</text>
+              style={{ ...typo.svgAxis, fontFamily: fonts.body }}>{v.toFixed(1)}</text>
           </g>
         ))}
 
@@ -99,14 +99,14 @@ export function AgentPerfChart({ series }: { series: AgentPerfSeries }) {
             <line x1={xScale(idx)} y1={PAD.top} x2={xScale(idx)} y2={PAD.top + PLOT_H}
               stroke={accents.gold} strokeWidth={1} strokeDasharray="3 2" opacity={0.7} />
             <text x={xScale(idx)} y={PAD.top - 4} textAnchor="middle" fill={accents.gold}
-              style={{ fontSize: 9, fontFamily: fonts.body }}>evo</text>
+              style={{ ...typo.svgAxis, fontFamily: fonts.body }}>evo</text>
           </g>
         ))}
 
         {/* x labels */}
         {pts.map((pt) => (
           <text key={`x-${pt.matchIndex}`} x={xScale(pt.matchIndex)} y={CHART_H - 6}
-            textAnchor="middle" fill={text.muted} style={{ fontSize: 9, fontFamily: fonts.body }}>
+            textAnchor="middle" fill={text.muted} style={{ ...typo.svgAxis, fontFamily: fonts.body }}>
             {pt.matchIndex}
           </text>
         ))}

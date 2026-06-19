@@ -117,6 +117,14 @@ export const type = {
   dataSm:   { fontSize: 14, lineHeight: '18px' },
   /** Captions / timestamps: 13px. */
   caption:  { fontSize: 14, lineHeight: '18px' },
+
+  /* ── SVG scale (chart axes, diagram labels — smaller is OK) ───── */
+  /** SVG axis / tick labels. */
+  svgAxis:  { fontSize: 11 },
+  /** SVG sub-labels / annotations. */
+  svgLabel: { fontSize: 12 },
+  /** SVG tiny dot / indicator (e.g. ● legend). */
+  svgDot:   { fontSize: 10 },
 } as const
 
 /** Responsive breakpoint — mobile-first at 480px. */

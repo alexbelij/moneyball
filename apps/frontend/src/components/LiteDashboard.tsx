@@ -371,6 +371,9 @@ export function LiteDashboard() {
           <h1 style={styles.title}>MONEYBALL</h1>
           <div style={styles.statusBadge}>
             <span
+              role="status"
+              aria-label={isConnected ? 'Connected' : 'Disconnected'}
+              data-testid={isConnected ? 'status-connected' : 'status-disconnected'}
               style={{
                 ...styles.connectionDot,
                 background: isConnected ? accents.green : accents.red,
@@ -577,7 +580,7 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase' as const,
     fontFamily: fonts.header,
     letterSpacing: '-0.5px',
-    fontSize: 14,
+    ...typo.hdrSm,
   },
   cardRole: {
     ...typo.caption,
@@ -609,7 +612,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   statLabel: {
     fontFamily: fonts.body,
-    fontSize: 11,
+    ...typo.dataSm,
     color: text.faint,
     textTransform: 'uppercase' as const,
   },

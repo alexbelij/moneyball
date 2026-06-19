@@ -187,7 +187,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
           <div
             style={{
               fontFamily: fonts.header,
-              fontSize: 8,
+              ...typo.svgDot,
               color: accentColor,
               letterSpacing: '0.5px',
               marginBottom: 4,
@@ -200,7 +200,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
         <div
           style={{
             fontFamily: fonts.body,
-            fontSize: 16,
+            ...typo.body,
             lineHeight: 1.3,
             color: palette.paper,
             overflowY: 'auto',
@@ -232,7 +232,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
           border: 'none',
           color: textTokens.muted,
           fontFamily: fonts.body,
-          fontSize: 16,
+          ...typo.body,
           cursor: 'pointer',
           padding: 0,
           lineHeight: 1,

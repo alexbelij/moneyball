@@ -165,7 +165,7 @@ const S_EVO_DIFF_BLOCK: React.CSSProperties = { marginTop: 6, ...typo.caption, f
 
 const S_BRIER_ROW: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 12,
-  marginTop: 8, fontSize: 15, fontFamily: 'monospace',
+  marginTop: 8, ...typo.dataSm, fontFamily: 'monospace',
 }
 
 const S_BRIER_LABEL: React.CSSProperties = { ...typo.hdrSm, color: text.muted }

@@ -108,7 +108,7 @@ function AgentRow({ agent }: { agent: AgentVerifiability }) {
     <div style={{ ...cardStyle, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: spacing.sm }}>
       <div>
         <div style={{ ...typo.dataSm, fontFamily: fonts.header, color: text.muted }}>{agent.agentId}</div>
-        <code style={{ ...monoStyle, fontSize: 13 }}>{agent.memwalNamespace}</code>
+        <code style={{ ...monoStyle, ...typo.dataSm }}>{agent.memwalNamespace}</code>
       </div>
       <div style={{ display: 'flex', gap: spacing.md, flexWrap: 'wrap' }}>
         <Stat label="predictions" value={agent.counts.predictions} />

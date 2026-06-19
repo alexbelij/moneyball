@@ -459,7 +459,7 @@ function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: Ma
       <div style={S.legend}>
         <span><span style={{ color: accents.green, marginRight: 3 }}>■</span>Correct</span>
         <span style={{ marginLeft: spacing.md }}><span style={{ color: accents.red, marginRight: 3 }}>■</span>Wrong</span>
-        <span style={{ marginLeft: spacing.md }}><span style={{ color: accents.red, marginRight: 3, fontSize: 8 }}>●</span>Disagreement</span>
+        <span style={{ marginLeft: spacing.md }}><span style={{ color: accents.red, marginRight: 3, ...typo.svgDot }}>●</span>Disagreement</span>
         <span style={{ marginLeft: spacing.md }}>H=Home · D=Draw · A=Away</span>
       </div>
     </>
@@ -578,7 +578,7 @@ function RadarTab({ agentData }: { agentData: AgentData[] }) {
                 x={labelPos.x} y={labelPos.y}
                 textAnchor="middle" dominantBaseline="middle"
                 fill={text.muted}
-                style={{ fontSize: 9, fontFamily: fonts.header }}
+                style={{ ...typo.svgAxis, fontFamily: fonts.header }}
               >
                 {label.slice(0, 5).toUpperCase()}
               </text>
@@ -720,7 +720,7 @@ function AgreementTab({ agentData }: { agentData: AgentData[] }) {
               y={LABEL_H - 6}
               textAnchor="middle"
               fill={a.color}
-              style={{ fontSize: 9, fontFamily: fonts.header }}
+              style={{ ...typo.svgAxis, fontFamily: fonts.header }}
             >
               {(AGENT_SHORT[a.agentId] ?? a.name).slice(0, 5)}
             </text>
@@ -735,7 +735,7 @@ function AgreementTab({ agentData }: { agentData: AgentData[] }) {
                 y={LABEL_H + i * CELL + CELL / 2 + 4}
                 textAnchor="end"
                 fill={a.color}
-                style={{ fontSize: 9, fontFamily: fonts.header }}
+                style={{ ...typo.svgAxis, fontFamily: fonts.header }}
               >
                 {(AGENT_SHORT[a.agentId] ?? a.name).slice(0, 5)}
               </text>
@@ -760,7 +760,7 @@ function AgreementTab({ agentData }: { agentData: AgentData[] }) {
                       y={LABEL_H + i * CELL + CELL / 2 + 5}
                       textAnchor="middle"
                       fill={isDiag ? text.faint : (val > 0.5 ? palette.wood900 : palette.paper)}
-                      style={{ fontSize: isDiag ? 10 : 13, fontFamily: fonts.body, fontWeight: 700 }}
+                      style={{ fontSize: isDiag ? typo.svgDot.fontSize : typo.dataSm.fontSize, fontFamily: fonts.body, fontWeight: 700 }}
                     >
                       {isDiag ? '—' : `${Math.round(val * 100)}%`}
                     </text>
@@ -870,7 +870,7 @@ function CalibrationTab({ agentData }: { agentData: AgentData[] }) {
           return (
             <g key={v}>
               <line x1={PAD.left} y1={y} x2={CHART_W - PAD.right} y2={y} stroke={chartGrid} strokeWidth={1} strokeDasharray="2 4" />
-              <text x={PAD.left - 4} y={y + 4} textAnchor="end" fill={text.muted} style={{ fontSize: 10, fontFamily: fonts.body }}>
+              <text x={PAD.left - 4} y={y + 4} textAnchor="end" fill={text.muted} style={{ ...typo.svgAxis, fontFamily: fonts.body }}>
                 {Math.round(v * 100)}%
               </text>
             </g>
@@ -886,7 +886,7 @@ function CalibrationTab({ agentData }: { agentData: AgentData[] }) {
         <text
           x={CHART_W - PAD.right - 2} y={PAD.top - 4}
           textAnchor="end" fill={text.faint}
-          style={{ fontSize: 9, fontFamily: fonts.body }}
+          style={{ ...typo.svgAxis, fontFamily: fonts.body }}
         >
           perfect
         </text>
@@ -931,7 +931,7 @@ function CalibrationTab({ agentData }: { agentData: AgentData[] }) {
                   x={groupX}
                   y={PAD.top + plotH - actualH - 4}
                   textAnchor="middle" fill={palette.paper}
-                  style={{ fontSize: 11, fontFamily: fonts.body }}
+                  style={{ ...typo.svgLabel, fontFamily: fonts.body }}
                 >
                   n={band.count}
                 </text>
@@ -942,7 +942,7 @@ function CalibrationTab({ agentData }: { agentData: AgentData[] }) {
                 x={groupX}
                 y={CHART_H - PAD.bottom + 16}
                 textAnchor="middle" fill={text.muted}
-                style={{ fontSize: 10, fontFamily: fonts.body }}
+                style={{ ...typo.svgAxis, fontFamily: fonts.body }}
               >
                 {band.label}
               </text>
@@ -983,8 +983,8 @@ function ArchitectureDiagram() {
   const bx = 20, bw = W - 40
 
   const boxStyle = { fill: palette.wood700, stroke: palette.wood500, strokeWidth: 2 }
-  const labelStyle = { fill: accents.gold, fontFamily: fonts.header, fontSize: 14 }
-  const subStyle = { fill: text.primary, fontFamily: fonts.body, fontSize: 14 }
+  const labelStyle = { fill: accents.gold, fontFamily: fonts.header, ...typo.hdrSm }
+  const subStyle = { fill: text.primary, fontFamily: fonts.body, ...typo.dataSm }
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', maxWidth: W }}>
@@ -997,7 +997,7 @@ function ArchitectureDiagram() {
       {/* Arrow down */}
       <line x1={W / 2} y1={y1 + boxH} x2={W / 2} y2={y2} stroke={accents.gold} strokeWidth={2} />
       <polygon points={`${W/2-5},${y2-6} ${W/2+5},${y2-6} ${W/2},${y2}`} fill={accents.gold} />
-      <text x={W/2 + 10} y={y1 + boxH + 12} {...subStyle} style={{ fill: text.faint, fontSize: 12 }}>REST + WebSocket</text>
+      <text x={W/2 + 10} y={y1 + boxH + 12} {...subStyle} style={{ fill: text.faint, ...typo.svgLabel }}>REST + WebSocket</text>
 
       {/* Backend layer */}
       <rect x={bx} y={y2} width={bw} height={boxH} {...boxStyle} />
@@ -1008,7 +1008,7 @@ function ArchitectureDiagram() {
       {/* Arrow down */}
       <line x1={W / 2} y1={y2 + boxH} x2={W / 2} y2={y3} stroke={accents.gold} strokeWidth={2} />
       <polygon points={`${W/2-5},${y3-6} ${W/2+5},${y3-6} ${W/2},${y3}`} fill={accents.gold} />
-      <text x={W/2 + 10} y={y2 + boxH + 12} {...subStyle} style={{ fill: text.faint, fontSize: 12 }}>remember() / recall()</text>
+      <text x={W/2 + 10} y={y2 + boxH + 12} {...subStyle} style={{ fill: text.faint, ...typo.svgLabel }}>remember() / recall()</text>
 
       {/* Walrus layer */}
       <rect x={bx} y={y3} width={bw} height={boxH} {...boxStyle} style={{ stroke: accents.green }} />
@@ -1348,9 +1348,8 @@ const S = {
     display: 'inline-block',
     marginLeft: 6,
     padding: '1px 4px',
-    ...typo.caption,
+    ...typo.hdrXs,
     fontFamily: fonts.header,
-    fontSize: 8,
     background: accents.red,
     color: palette.paper,
     border: `1px solid ${palette.wood900}`,
@@ -1361,7 +1360,7 @@ const S = {
     display: 'inline-block',
     marginLeft: 3,
     color: accents.red,
-    fontSize: 8,
+    ...typo.svgDot,
     verticalAlign: 'super' as const,
   },
 

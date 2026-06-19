@@ -343,7 +343,7 @@ const S: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    position: 'sticky' as const, top: -spacing.md, marginBottom: spacing.md, marginLeft: -spacing.md, marginRight: -spacing.md, paddingLeft: spacing.md, paddingRight: spacing.md, paddingTop: spacing.sm, background: palette.wood900, zIndex: 1,
     paddingBottom: spacing.sm,
     borderBottom: borders.standard,
   },
@@ -455,7 +455,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   writeType: {
     fontFamily: fonts.body,
-    fontSize: 14,
+    ...typo.hdrSm,
     flexShrink: 0,
   },
   writeSummary: {

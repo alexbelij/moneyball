@@ -207,7 +207,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   closeBtn: {
     background: 'none', border: 'none', color: text.muted, cursor: 'pointer',
-    fontFamily: fonts.header, fontSize: 14,
+    fontFamily: fonts.header, ...type.hdrSm,
   },
   matchInfo: {
     display: 'flex', justifyContent: 'center', alignItems: 'center',
@@ -244,7 +244,7 @@ const S: Record<string, React.CSSProperties> = {
     minWidth: 0, transition: 'width 0.3s ease',
   },
   barLabel: {
-    fontFamily: fonts.body, fontSize: 12, color: palette.bgBlack,
+    fontFamily: fonts.body, ...type.dataSm, color: palette.bgBlack,
     fontWeight: 'bold', textShadow: 'none',
   },
   noPred: {

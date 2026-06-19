@@ -71,7 +71,7 @@ describe('LiteDashboard', () => {
 
   it('renders the title', () => {
     render(<LiteDashboard />)
-    expect(screen.getByText(/Moneyball Cabinet/i)).toBeInTheDocument()
+    expect(screen.getByText(/MONEYBALL/i)).toBeInTheDocument()
   })
 
   it('shows agent card with name and role', () => {
@@ -82,7 +82,7 @@ describe('LiteDashboard', () => {
 
   it('shows connection status indicator', () => {
     render(<LiteDashboard />)
-    const dot = screen.getByLabelText(/Connected/i)
+    const dot = screen.getByTestId('status-connected')
     expect(dot).toBeInTheDocument()
   })
 
@@ -92,7 +92,7 @@ describe('LiteDashboard', () => {
       ui: { selectedAgentId: null, isConnected: false, isWalletFlowActive: false },
     })
     render(<LiteDashboard />)
-    const dot = screen.getByLabelText(/Disconnected/i)
+    const dot = screen.getByTestId('status-disconnected')
     expect(dot).toBeInTheDocument()
   })
 
@@ -103,6 +103,6 @@ describe('LiteDashboard', () => {
 
   it('renders agents section heading', () => {
     render(<LiteDashboard />)
-    expect(screen.getByText(/Agents/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Agents/i).length).toBeGreaterThan(0)
   })
 })

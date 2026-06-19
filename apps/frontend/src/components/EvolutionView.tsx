@@ -160,7 +160,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   closeBtn: {
     background: 'none', border: 'none', color: text.muted, cursor: 'pointer',
-    fontFamily: fonts.header, fontSize: 14,
+    fontFamily: fonts.header, ...type.hdrSm,
   },
   timelineContainer: {
     display: 'flex', flexDirection: 'column', gap: spacing.sm,

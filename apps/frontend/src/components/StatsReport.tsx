@@ -169,14 +169,14 @@ export function StatsReport() {
               <th style={{
                 padding: '6px 8px', textAlign: 'left', color: text.muted,
                 borderBottom: borders.standard,
-                fontSize: 11, fontFamily: fonts.header, letterSpacing: '-0.5px',
+                ...typo.hdrXs, fontFamily: fonts.header, letterSpacing: '-0.5px',
               }}>
                 Pick
               </th>
               <th style={{
                 padding: '6px 8px', textAlign: 'center', color: text.muted,
                 borderBottom: borders.standard,
-                fontSize: 11, fontFamily: fonts.header, letterSpacing: '-0.5px',
+                ...typo.hdrXs, fontFamily: fonts.header, letterSpacing: '-0.5px',
               }}>
                 ✓
               </th>
@@ -295,7 +295,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
             <text
               x={PAD.left - 4} y={yScale(v) + 4}
               textAnchor="end" fill={text.muted}
-              style={{ fontSize: 10, fontFamily: fonts.body }}
+              style={{ ...typo.svgAxis, fontFamily: fonts.body }}
             >
               {v.toFixed(1)}
             </text>
@@ -308,7 +308,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
             key={`x-${idx}`}
             x={xScale(idx)} y={CHART_H - 6}
             textAnchor="middle" fill={text.muted}
-            style={{ fontSize: 10, fontFamily: fonts.body }}
+            style={{ ...typo.svgAxis, fontFamily: fonts.body }}
           >
             {idx}
           </text>

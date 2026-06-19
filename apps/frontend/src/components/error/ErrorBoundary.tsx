@@ -117,7 +117,7 @@ function ErrorFallback({ label, message, fullScreen, minHeight = '200px', onRetr
         <div
           style={{
             fontFamily: fonts.header,
-            fontSize: 12,
+            ...typo.svgLabel,
             color: accents.red,
             letterSpacing: '1px',
             marginBottom: 12,
@@ -143,7 +143,7 @@ function ErrorFallback({ label, message, fullScreen, minHeight = '200px', onRetr
           onClick={onRetry}
           style={{
             fontFamily: fonts.header,
-            fontSize: 10,
+            ...typo.svgAxis,
             color: palette.bgBlack,
             background: accents.gold,
             border: `${borders.width}px solid ${palette.bgBlack}`,

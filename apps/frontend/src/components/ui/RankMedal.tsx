@@ -6,7 +6,7 @@
  */
 
 import React from 'react'
-import { palette, accents, text, fonts, shadows } from '@/styles/tokens'
+import { palette, accents, text, fonts, shadows, type as typo } from '@/styles/tokens'
 
 const MEDAL_BG: Record<number, string> = {
   1: accents.gold,
@@ -29,7 +29,7 @@ export function RankMedal({ rank }: { rank: number }) {
         height: 22,
         padding: '0 4px',
         fontFamily: fonts.header,
-        fontSize: 9,
+        ...typo.svgAxis,
         lineHeight: 1,
         color: fg,
         background: bg,

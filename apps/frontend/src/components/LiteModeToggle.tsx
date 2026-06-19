@@ -7,7 +7,7 @@
 
 import React, { useCallback } from 'react'
 import { useUiPrefs } from '@/store/uiPrefs'
-import { palette, accents, text, fonts, borders, zIndex } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, zIndex, type as typo } from '@/styles/tokens'
 
 export function LiteModeToggle() {
   const liteMode = useUiPrefs((s) => s.liteMode)
@@ -74,7 +74,7 @@ export function LiteModeToggle() {
       <span
         style={{
           fontFamily: fonts.header,
-          fontSize: 14,
+          ...typo.hdrSm,
           color: liteMode ? text.muted : accents.green,
           letterSpacing: 1,
           textTransform: 'uppercase',
