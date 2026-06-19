@@ -14,6 +14,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { PixelIcon } from '@/components/icons/PixelIcon'
 import { useGameStore } from '@/store/gameStore'
 import {
   getAgentPredictions, getMatches, getAgentProfile, getDataSource, getAgentParams,
@@ -66,10 +67,10 @@ const TAB_LABELS: Record<Tab, string> = {
   dossier: 'ABOUT',
 }
 const TAB_ICONS: Record<Tab, string> = {
-  matrix: '▦',
-  radar: '◎',
+  matrix: 'matrix',
+  radar: 'radar',
   agreement: '⇄',
-  calibration: '△',
+  calibration: 'calibration',
   dossier: '≡',
 }
 

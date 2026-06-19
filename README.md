@@ -228,7 +228,7 @@ evolve cycle:
 | Component | Platform | URL |
 |-----------|----------|-----|
 | Frontend | Walrus Sites (mainnet) | [taken.wal.app](https://taken.wal.app) |
-| Backend | Render (free tier) | `moneyball-backend-axzr.onrender.com` |
+| Backend | Render (free tier) | `taken-api.onrender.com` |
 
 📖 **[docs/deploy.md](docs/deploy.md)** — production deployment guide
 

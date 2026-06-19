@@ -82,7 +82,7 @@ jobs:
       - name: Health check
         run: |
           echo "Checking production health endpoint..."
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://moneyball-backend-axzr.onrender.com/health || echo "000")
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://taken-api.onrender.com/health || echo "000")
           echo "Health status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "::warning::Health endpoint returned $STATUS (Render free tier may be sleeping)"
@@ -91,7 +91,7 @@ jobs:
       - name: Public API smoke
         run: |
           echo "Checking public read endpoint..."
-          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://moneyball-backend-axzr.onrender.com/api/agents || echo "000")
+          STATUS=$(curl -s -o /dev/null -w '%{http_code}' https://taken-api.onrender.com/api/agents || echo "000")
           echo "Agents API status: $STATUS"
           if [ "$STATUS" != "200" ]; then
             echo "::warning::Agents endpoint returned $STATUS (Render free tier may be sleeping)"

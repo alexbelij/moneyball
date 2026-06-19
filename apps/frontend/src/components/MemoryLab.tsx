@@ -9,6 +9,7 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { PixelIcon } from '@/components/icons/PixelIcon'
 import {
   getAgentEvolution, getAgentParams,
   type EvolutionItem, type AgentParamsInfo,
@@ -63,9 +64,9 @@ function CycleDiagram() {
 
   const steps = [
     { label: 'SLEEP', angle: -90, icon: '▾' },
-    { label: 'REFLECT', angle: 0, icon: '◎' },
-    { label: 'EVOLVE', angle: 90, icon: '△' },
-    { label: 'PREDICT', angle: 180, icon: '◆' },
+    { label: 'REFLECT', angle: 0, icon: 'reflect' },
+    { label: 'EVOLVE', angle: 90, icon: 'evolve' },
+    { label: 'PREDICT', angle: 180, icon: 'predict' },
   ]
 
   const points = steps.map((s) => {

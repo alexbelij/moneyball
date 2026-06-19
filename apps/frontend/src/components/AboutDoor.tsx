@@ -8,6 +8,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react'
+import { PixelIcon } from '@/components/icons/PixelIcon'
 import { PixelButton } from '@/components/ui'
 import { GameEventBus } from '@/events/GameEventBus'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
@@ -23,11 +24,11 @@ import {
 const MODAL_TITLE_ID = 'about-door-title'
 
 const AGENTS = [
-  { id: 'dr_morgan', name: 'Dr. Morgan', role: 'Statistician', emoji: '▦' },
-  { id: 'scout_alvarez', name: 'Scout Alvarez', role: 'Traditional Scout', emoji: '◎' },
-  { id: 'viktor_kane', name: 'Viktor Kane', role: 'Contrarian', emoji: '◆' },
-  { id: 'sofia_mendes', name: 'Sofia Mendes', role: 'Market Analyst', emoji: '△' },
-  { id: 'madame_pythia', name: 'Madame Pythia', role: 'Mystic Analyst', emoji: '○' },
+  { id: 'dr_morgan', name: 'Dr. Morgan', role: 'Statistician', emoji: 'dr_morgan' },
+  { id: 'scout_alvarez', name: 'Scout Alvarez', role: 'Traditional Scout', emoji: 'scout_alvarez' },
+  { id: 'viktor_kane', name: 'Viktor Kane', role: 'Contrarian', emoji: 'viktor_kane' },
+  { id: 'sofia_mendes', name: 'Sofia Mendes', role: 'Market Analyst', emoji: 'sofia_mendes' },
+  { id: 'madame_pythia', name: 'Madame Pythia', role: 'Mystic Analyst', emoji: 'madame_pythia' },
 ]
 
 const TECH_STACK = [
@@ -41,9 +42,9 @@ const TECH_STACK = [
 
 const LINKS = [
   { label: 'GitHub', url: 'https://github.com/anna-stolbovskaja/moneyball', icon: '□' },
-  { label: 'Live App', url: 'https://taken.wal.app', icon: '◇' },
-  { label: 'Walrus Memory', url: 'https://memory.walrus.xyz', icon: '■' },
-  { label: 'Hackathon', url: 'https://memwal.devfolio.co', icon: '▲' },
+  { label: 'Live App', url: 'https://taken.wal.app', icon: 'link' },
+  { label: 'Walrus Memory', url: 'https://memory.walrus.xyz', icon: 'walrus' },
+  { label: 'Hackathon', url: 'https://memwal.devfolio.co', icon: 'hackathon' },
 ]
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -176,7 +177,7 @@ export function AboutDoor() {
 
           {/* Footer */}
           <div style={S.footer}>
-            Made with ◆ and ■ in Minsk, 2026
+            Made with ■ in Minsk, 2026
           </div>
         </div>
       </div>
