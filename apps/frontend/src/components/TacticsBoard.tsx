@@ -66,11 +66,11 @@ const TAB_LABELS: Record<Tab, string> = {
   dossier: 'ABOUT',
 }
 const TAB_ICONS: Record<Tab, string> = {
-  matrix: '📊',
-  radar: '🕸',
-  agreement: '🤝',
-  calibration: '📈',
-  dossier: '📋',
+  matrix: '▦',
+  radar: '◎',
+  agreement: '⇄',
+  calibration: '△',
+  dossier: '≡',
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -777,9 +777,17 @@ function AgreementTab({ agentData }: { agentData: AgentData[] }) {
         <span style={{ ...typo.caption, fontFamily: fonts.body, color: text.faint }}>0%</span>
         <div style={{
           width: 120, height: 12,
-          background: `linear-gradient(to right, ${palette.wood900}, ${accents.gold})`,
+          background: palette.wood900,
           border: borders.rule,
-        }} />
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            position: 'absolute', top: 0, right: 0,
+            width: '50%', height: '100%',
+            background: accents.gold,
+          }} />
+        </div>
         <span style={{ ...typo.caption, fontFamily: fonts.body, color: text.faint }}>100%</span>
       </div>
     </div>

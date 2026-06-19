@@ -62,10 +62,10 @@ function CycleDiagram() {
   const R = 62
 
   const steps = [
-    { label: 'SLEEP', angle: -90, icon: '💤' },
-    { label: 'REFLECT', angle: 0, icon: '🔍' },
-    { label: 'EVOLVE', angle: 90, icon: '🧬' },
-    { label: 'PREDICT', angle: 180, icon: '🎯' },
+    { label: 'SLEEP', angle: -90, icon: '▾' },
+    { label: 'REFLECT', angle: 0, icon: '◎' },
+    { label: 'EVOLVE', angle: 90, icon: '△' },
+    { label: 'PREDICT', angle: 180, icon: '◆' },
   ]
 
   const points = steps.map((s) => {
@@ -237,7 +237,7 @@ export function MemoryLab() {
       >
         {/* Header */}
         <div style={S.header}>
-          <h2 id={MODAL_TITLE_ID} style={S.title}>💤 MEMORY LAB</h2>
+          <h2 id={MODAL_TITLE_ID} style={S.title}>▾ MEMORY LAB</h2>
           <PixelButton size="small" onClick={close} aria-label="Close memory lab">✕</PixelButton>
         </div>
 

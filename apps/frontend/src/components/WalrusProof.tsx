@@ -204,7 +204,7 @@ curl -X POST https://relayer.memory.walrus.xyz/recall \\
       >
         {/* Header */}
         <div style={S.header}>
-          <h2 id={MODAL_TITLE_ID} style={S.title}>🔒 WALRUS PROOF</h2>
+          <h2 id={MODAL_TITLE_ID} style={S.title}>■ WALRUS PROOF</h2>
           <PixelButton size="small" onClick={close} aria-label="Close walrus proof">✕</PixelButton>
         </div>
 
@@ -273,7 +273,7 @@ curl -X POST https://relayer.memory.walrus.xyz/recall \\
                         ...S.writeType,
                         color: w.type === 'prediction' ? accents.gold : accents.green,
                       }}>
-                        {w.type === 'prediction' ? '🎯' : '🧬'}
+                        {w.type === 'prediction' ? '◆' : '△'}
                       </span>
                       <span style={S.writeSummary}>{w.summary}</span>
                       <span style={S.writeTime}>

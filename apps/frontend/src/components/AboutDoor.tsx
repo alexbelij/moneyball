@@ -23,11 +23,11 @@ import {
 const MODAL_TITLE_ID = 'about-door-title'
 
 const AGENTS = [
-  { id: 'dr_morgan', name: 'Dr. Morgan', role: 'Statistician', emoji: '📊' },
-  { id: 'scout_alvarez', name: 'Scout Alvarez', role: 'Traditional Scout', emoji: '🔭' },
-  { id: 'viktor_kane', name: 'Viktor Kane', role: 'Contrarian', emoji: '🎲' },
-  { id: 'sofia_mendes', name: 'Sofia Mendes', role: 'Market Analyst', emoji: '📈' },
-  { id: 'madame_pythia', name: 'Madame Pythia', role: 'Mystic Analyst', emoji: '🔮' },
+  { id: 'dr_morgan', name: 'Dr. Morgan', role: 'Statistician', emoji: '▦' },
+  { id: 'scout_alvarez', name: 'Scout Alvarez', role: 'Traditional Scout', emoji: '◎' },
+  { id: 'viktor_kane', name: 'Viktor Kane', role: 'Contrarian', emoji: '◆' },
+  { id: 'sofia_mendes', name: 'Sofia Mendes', role: 'Market Analyst', emoji: '△' },
+  { id: 'madame_pythia', name: 'Madame Pythia', role: 'Mystic Analyst', emoji: '○' },
 ]
 
 const TECH_STACK = [
@@ -40,10 +40,10 @@ const TECH_STACK = [
 ]
 
 const LINKS = [
-  { label: 'GitHub', url: 'https://github.com/anna-stolbovskaja/moneyball', icon: '📂' },
-  { label: 'Live App', url: 'https://taken.wal.app', icon: '🌐' },
-  { label: 'Walrus Memory', url: 'https://memory.walrus.xyz', icon: '🐘' },
-  { label: 'Hackathon', url: 'https://memwal.devfolio.co', icon: '🏆' },
+  { label: 'GitHub', url: 'https://github.com/anna-stolbovskaja/moneyball', icon: '□' },
+  { label: 'Live App', url: 'https://taken.wal.app', icon: '◇' },
+  { label: 'Walrus Memory', url: 'https://memory.walrus.xyz', icon: '■' },
+  { label: 'Hackathon', url: 'https://memwal.devfolio.co', icon: '▲' },
 ]
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -90,7 +90,7 @@ export function AboutDoor() {
       >
         {/* Header */}
         <div style={S.header}>
-          <h2 id={MODAL_TITLE_ID} style={S.title}>🚪 MONEYBALL</h2>
+          <h2 id={MODAL_TITLE_ID} style={S.title}>▸ MONEYBALL</h2>
           <PixelButton size="small" onClick={close} aria-label="Close about">✕</PixelButton>
         </div>
 
@@ -176,7 +176,7 @@ export function AboutDoor() {
 
           {/* Footer */}
           <div style={S.footer}>
-            Made with ⚽ and 🤖 in Minsk, 2026
+            Made with ◆ and ■ in Minsk, 2026
           </div>
         </div>
       </div>
