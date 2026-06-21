@@ -208,6 +208,10 @@ export function VerifyPanel() {
         </div>
       )}
       <CopyId label="MemWal relayer" value={data.memwalRelayer} />
+      <div style={{ ...typo.caption, fontFamily: fonts.body, color: text.dim, marginBottom: spacing.sm, lineHeight: 1.6 }}>
+        <span style={{ color: accents.gold, fontFamily: fonts.header }}>■ LIVE</span> — Real memory written to Walrus mainnet{' · '}
+        <span style={{ color: text.faint, fontFamily: fonts.header }}>■ SEED</span> — Preloaded baseline from deterministic fixtures
+      </div>
       <div style={{ marginBottom: spacing.md }}>
         <div style={{ ...typo.dataSm, fontFamily: fonts.header, color: text.muted, marginBottom: 2 }}>Namespace pattern</div>
         <code style={monoStyle}>{data.memwalNamespacePattern}</code>

@@ -98,21 +98,35 @@ export function EvolutionView({ agentId, onClose }: EvolutionViewProps) {
                   {/* Reasoning */}
                   <p style={S.reasoningText}>"{evo.summary}"</p>
 
-                  {/* Walrus proof */}
-                  {evo.blobId && (
-                    <a
-                      href={walrusBlobUrl(evo.blobId)}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      aria-label="Verify this memory on Walrus"
-                      style={S.proofTag}
-                    >
-                      <PixelIcon name="walrus" size={10} color={accents.gold} />
-                      <span style={{ fontFamily: fonts.body, ...type.caption, color: text.faint }}>
-                        blob:{evo.blobId.slice(0, 8)}…
+                  {/* Walrus proof + provenance badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    {evo.blobId && (
+                      <a
+                        href={walrusBlobUrl(evo.blobId)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        aria-label="Verify this memory on Walrus"
+                        style={S.proofTag}
+                      >
+                        <PixelIcon name="walrus" size={10} color={accents.gold} />
+                        <span style={{ fontFamily: fonts.body, ...type.caption, color: text.faint }}>
+                          blob:{evo.blobId.slice(0, 8)}…
+                        </span>
+                      </a>
+                    )}
+                    {evo.source && (
+                      <span style={{
+                        ...type.caption,
+                        fontFamily: fonts.header,
+                        padding: '1px 4px',
+                        border: borders.standard,
+                        color: evo.source === 'live' ? accents.gold : text.faint,
+                        background: evo.source === 'live' ? palette.wood700 : palette.wood900,
+                      }}>
+                        {evo.source === 'live' ? 'LIVE' : 'SEED'}
                       </span>
-                    </a>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

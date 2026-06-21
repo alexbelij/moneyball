@@ -20,6 +20,8 @@ export interface JournalEntry {
   sentiment: 'positive' | 'negative' | 'neutral'
   /** Walrus blob_id for on-chain verification (if available). */
   blobId?: string
+  /** Provenance: 'seed' = baseline fixture, 'live' = real MemWal write. */
+  source?: 'seed' | 'live'
 }
 
 /**
@@ -49,6 +51,7 @@ export function buildJournalEntries(
         : `${agentName} predicted ${p.pick} for ${p.matchId} with ${conf}% confidence, but was wrong. ${conf >= 70 ? 'Overconfidence on this one.' : 'Low confidence — at least the doubt was warranted.'}`,
       sentiment: ok ? 'positive' : 'negative',
       blobId: p.blobId,
+      source: p.source,
     })
   }
 
@@ -71,6 +74,7 @@ export function buildJournalEntries(
         : `After reflecting on recent results, ${agentName} adjusted ${diffs.length} parameter${diffs.length > 1 ? 's' : ''}. Total shift magnitude: ${totalShift.toFixed(3)}. ${totalShift > 0.1 ? 'A significant recalibration.' : 'Fine-tuning the approach.'}`,
       sentiment: 'neutral',
       blobId: ev.blobId,
+      source: ev.source,
     })
   }
 

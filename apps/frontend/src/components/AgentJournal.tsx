@@ -9,7 +9,7 @@ import React from 'react'
 import { getAgentPredictions, getAgentEvolution, getAgentProfile } from '@/lib/api'
 import { buildJournalEntries, type JournalEntry } from '@/lib/journalEntries'
 import { formatTimestamp } from '@/lib/formatDate'
-import { palette, accents, text, fonts, borders, shadows, type as typo, spacing } from '@/styles/tokens'
+import { palette, accents, text, fonts, borders, shadows, type as typo, spacing, } from '@/styles/tokens'
 import { walrusBlobUrl } from '@/lib/explorer'
 
 function useFetchJournal(agentId: string) {
@@ -138,32 +138,45 @@ export function AgentJournal({ agentId }: { agentId: string }) {
               <div style={{ ...typo.caption, color: text.dim, marginTop: 4 }}>
                 {entry.body}
               </div>
-              {entry.blobId && (
-                <a
-                  href={walrusBlobUrl(entry.blobId)}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  aria-label="Verify this memory on Walrus"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    marginTop: 4,
-                    textDecoration: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                {entry.blobId && (
+                  <a
+                    href={walrusBlobUrl(entry.blobId)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    aria-label="Verify this memory on Walrus"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{
+                      width: 6, height: 6,
+                      background: accents.gold,
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }} />
+                    <span style={{ ...typo.caption, color: text.faint }}>
+                      blob:{entry.blobId.slice(0, 8)}…
+                    </span>
+                  </a>
+                )}
+                {entry.source && (
                   <span style={{
-                    width: 6, height: 6,
-                    background: accents.gold,
-                    display: 'inline-block',
-                    flexShrink: 0,
-                  }} />
-                  <span style={{ ...typo.caption, color: text.faint }}>
-                    blob:{entry.blobId.slice(0, 8)}…
+                    ...typo.caption,
+                    fontFamily: fonts.header,
+                    padding: '1px 4px',
+                    border: borders.standard,
+                    color: entry.source === 'live' ? accents.gold : text.faint,
+                    background: entry.source === 'live' ? palette.wood700 : palette.wood900,
+                  }}>
+                    {entry.source === 'live' ? 'LIVE' : 'SEED'}
                   </span>
-                </a>
-              )}
+                )}
+              </div>
             </div>
           </div>
         ))}

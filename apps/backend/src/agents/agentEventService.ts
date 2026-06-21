@@ -40,6 +40,8 @@ export type AgentPredictionEvent = {
   paramsVersion?: number
   /** T76: Walrus blob_id captured from MemWal write/recall. */
   blobId?: string
+  /** Provenance: 'seed' = deterministic baseline fixture, 'live' = real MemWal write. */
+  source?: 'seed' | 'live'
   /** Merged from outcome events on read; never stored on the prediction. */
   outcome?: { correct: boolean; resolvedAt: string }
 }
@@ -68,6 +70,8 @@ export type AgentEvolutionEvent = {
   evolutionType?: string
   /** T76: Walrus blob_id captured from MemWal write/recall. */
   blobId?: string
+  /** Provenance: 'seed' = deterministic baseline fixture, 'live' = real MemWal write. */
+  source?: 'seed' | 'live'
 }
 
 export type AgentEvent = AgentPredictionEvent | AgentOutcomeEvent | AgentEvolutionEvent
@@ -369,6 +373,7 @@ export class AgentEventService {
     input: Omit<AgentPredictionEvent, 'schemaVersion' | 'type' | 'createdAt'> & { createdAt?: string },
   ) {
     const ev: AgentPredictionEvent = {
+      source: 'live',
       ...input,
       schemaVersion: '1.0',
       type: 'prediction',
@@ -412,6 +417,7 @@ export class AgentEventService {
     input: Omit<AgentEvolutionEvent, 'schemaVersion' | 'type' | 'createdAt'> & { createdAt?: string },
   ) {
     const ev: AgentEvolutionEvent = {
+      source: 'live',
       ...input,
       schemaVersion: '1.0',
       type: 'evolution',

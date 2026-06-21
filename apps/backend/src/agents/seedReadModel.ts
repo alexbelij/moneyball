@@ -105,6 +105,7 @@ export async function seedReadModel(svc: AgentEventService): Promise<SeedResult>
         topic,
         rawConfidence: raw.rawConfidence,
         paramsVersion: 0,
+        source: 'seed',
       })
       if (svc.predictionCount(agent.agentId) > beforeP) predictions++
 
@@ -126,6 +127,7 @@ export async function seedReadModel(svc: AgentEventService): Promise<SeedResult>
       fromVersion: evo.fromVersion,
       toVersion: evo.toVersion,
       evolutionType: 'param_update',
+      source: 'seed',
     })
     if (svc.evolutionCount(evo.agentId) > before) evolutions++
   }
@@ -142,6 +144,7 @@ export async function seedReadModel(svc: AgentEventService): Promise<SeedResult>
       fromVersion: evo.fromVersion,
       toVersion: evo.toVersion,
       evolutionType: 'noop',
+      source: 'seed',
     })
     if (svc.evolutionCount(evo.agentId) > before) evolutions++
   }
