@@ -463,7 +463,7 @@ const S: Record<string, React.CSSProperties> = {
   writeRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     padding: `3px ${spacing.sm}px`,
     borderBottom: borders.rule,
   },

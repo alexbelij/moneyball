@@ -47,7 +47,7 @@ export function LiteModeToggle() {
         zIndex: zIndex.topmost,
         display: 'flex',
         alignItems: 'center',
-        gap: 6,
+        gap: 8,
         padding: '6px 10px',
         background: bgC,
         border: `2px solid ${borderC}`,

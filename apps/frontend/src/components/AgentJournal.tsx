@@ -139,7 +139,7 @@ export function AgentJournal({ agentId }: { agentId: string }) {
               <div style={{ ...typo.caption, color: text.dim, marginTop: 4 }}>
                 {entry.body}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                 {entry.blobId && (
                   <a
                     href={walrusBlobUrl(entry.blobId)}

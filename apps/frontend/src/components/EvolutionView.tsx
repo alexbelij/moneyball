@@ -99,7 +99,7 @@ export function EvolutionView({ agentId, onClose }: EvolutionViewProps) {
                   <p style={S.reasoningText}>"{evo.summary}"</p>
 
                   {/* Walrus proof + provenance badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
                     {evo.blobId && (
                       <a
                         href={walrusBlobUrl(evo.blobId)}
@@ -164,7 +164,7 @@ const S: Record<string, React.CSSProperties> = {
   panel: {
     background: palette.wood900, border: borders.standard,
     boxShadow: shadows.hard, padding: spacing.lg,
-    maxWidth: 600, width: '92vw', maxHeight: '85vh', overflowY: 'auto',
+    maxWidth: 600, width: '95vw', maxHeight: '85vh', overflowY: 'auto',
   },
   header: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',

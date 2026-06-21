@@ -579,7 +579,7 @@ const S: Record<string, React.CSSProperties> = {
   evoDiff: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 8,
     marginTop: 2,
   },
   diffBadge: {

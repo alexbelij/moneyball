@@ -311,7 +311,7 @@ const S: Record<string, React.CSSProperties> = {
   linkCard: {
     display: 'flex',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
     padding: `6px ${spacing.md}px`,
     background: palette.wood700,
     border: borders.standard,

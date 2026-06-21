@@ -58,7 +58,7 @@ export function Skeleton({ variant = 'text', width, height, lines = 1 }: Skeleto
 
   if (variant === 'text' && lines > 1) {
     return (
-      <div role="status" aria-label="Loading" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div role="status" aria-label="Loading" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {Array.from({ length: lines }, (_, i) => (
           <div
             key={i}

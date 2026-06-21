@@ -680,7 +680,7 @@ const styles: Record<string, React.CSSProperties> = {
   liveTag: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     color: accents.red,
     fontFamily: fonts.header,
     ...typo.hdrXs,

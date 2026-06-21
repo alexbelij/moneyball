@@ -80,23 +80,23 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
   return (
     <div style={{
       position: 'absolute', top: 40, left: '50%', transform: 'translateX(-50%)',
-      zIndex: zIndex.stats, width: 680, maxWidth: '96vw',
+      zIndex: zIndex.stats, width: 'fit-content', minWidth: 360, maxWidth: '95vw',
       maxHeight: 'calc(100vh - 80px)', overflowY: 'auto',
       background: palette.wood900, border: borders.standard, borderRadius: 0,
-      padding: 14, color: palette.paper, boxShadow: shadows.hard,
+      padding: 16, color: palette.paper, boxShadow: shadows.hard,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ ...typo.hdrSm, fontWeight: 700, fontFamily: fonts.header, letterSpacing: '-0.5px', color: accents.gold }}>SCOUT LEADERBOARD</div>
         <PixelButton size="small" onClick={onClose} aria-label="Close leaderboard">CLOSE</PixelButton>
       </div>
 
-      {err && <div style={{ marginTop: 10, color: accents.red, ...typo.body, fontFamily: fonts.body }}>{err}</div>}
-      {!rows && !err && <div style={{ marginTop: 10 }}><SkeletonRows count={5} /></div>}
+      {err && <div style={{ marginTop: 8, color: accents.red, ...typo.body, fontFamily: fonts.body }}>{err}</div>}
+      {!rows && !err && <div style={{ marginTop: 8 }}><SkeletonRows count={5} /></div>}
 
       {rows && (
         /* Paper leaderboard panel */
         <div style={{
-          marginTop: 10, background: palette.paper, color: palette.wood900,
+          marginTop: 8, background: palette.paper, color: palette.wood900,
           border: borders.standard, borderRadius: 0, boxShadow: shadows.hardSmall,
           overflowX: 'auto',
         }}>

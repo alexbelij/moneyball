@@ -53,13 +53,13 @@ const CARD: React.CSSProperties = {
   background: palette.surface,
   border: borders.standard,
   borderRadius: 0,
-  padding: 10,
+  padding: 8,
   marginBottom: 8,
   boxShadow: shadows.hardSmall,
 }
 
 const S_DIALOG: React.CSSProperties = {
-  width: 'min(80vw, 980px)',
+  width: 'min(95vw, 980px)',
   maxHeight: '86vh',
   background: palette.wood900,
   border: borders.standard,
@@ -85,7 +85,7 @@ const S_ROLE: React.CSSProperties = { ...typo.body, color: text.muted, marginTop
 const S_STATUS: React.CSSProperties = { marginTop: 8, ...typo.body, color: text.dim }
 
 const S_TABLIST: React.CSSProperties = {
-  marginTop: 14, display: 'flex', gap: 4, flexWrap: 'wrap',
+  marginTop: 16, display: 'flex', gap: 4, flexWrap: 'wrap',
 }
 
 const S_PANEL: React.CSSProperties = {
@@ -96,9 +96,9 @@ const S_ACTIONS_ROW: React.CSSProperties = {
   display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center',
 }
 
-const S_ERROR: React.CSSProperties = { marginTop: 10, color: accents.red, ...typo.body }
+const S_ERROR: React.CSSProperties = { marginTop: 8, color: accents.red, ...typo.body }
 const S_THOUGHT_LABEL: React.CSSProperties = { marginTop: 16, ...typo.body, color: text.muted }
-const S_THOUGHT_TEXT: React.CSSProperties = { marginTop: 6, ...typo.body }
+const S_THOUGHT_TEXT: React.CSSProperties = { marginTop: 8, ...typo.body }
 
 const S_FOOTER: React.CSSProperties = {
   marginTop: 12, ...typo.caption, color: text.muted,
@@ -116,10 +116,10 @@ const S_CAPTION_MUTED_MT4: React.CSSProperties = { marginTop: 4, ...typo.caption
 const S_BODY_DIM_ITALIC: React.CSSProperties = { ...typo.body, marginTop: 4, color: text.dim, fontStyle: 'italic' }
 const S_DATASM_MUTED: React.CSSProperties = { ...typo.dataSm, color: text.muted }
 const S_DATASM_MUTED_MB8: React.CSSProperties = { ...typo.dataSm, color: text.muted, marginBottom: 8 }
-const S_BODY_MT6: React.CSSProperties = { marginTop: 6, ...typo.body }
+const S_BODY_MT6: React.CSSProperties = { marginTop: 8, ...typo.body }
 
 const S_FORMULA_PRE: React.CSSProperties = {
-  margin: '6px 0 0', padding: 8,
+  margin: '8px 0 0', padding: 8,
   background: palette.surface, border: borders.rule, borderRadius: 0,
   ...typo.caption, color: accents.green, fontFamily: 'monospace',
   whiteSpace: 'pre-wrap', wordBreak: 'break-word',
@@ -140,19 +140,19 @@ const S_DATASM_DIM_MT4: React.CSSProperties = { ...typo.dataSm, marginTop: 4, co
 
 const S_DATA_INPUT_HEADER: React.CSSProperties = {
   ...typo.caption, color: accents.gold, marginTop: 4, display: 'flex',
-  alignItems: 'center', gap: 6,
+  alignItems: 'center', gap: 8,
 }
 
 const S_DATA_INPUT_ITEM: React.CSSProperties = {
   marginTop: 8, paddingTop: 8, borderTop: borders.rule,
 }
 
-const S_DATA_INPUT_LABEL_ROW: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6 }
+const S_DATA_INPUT_LABEL_ROW: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 8 }
 const S_DATA_INPUT_LABEL: React.CSSProperties = { ...typo.dataSm, color: palette.paper }
 
 const S_NO_CHART: React.CSSProperties = {
   ...typo.caption, color: text.muted, border: borders.standard,
-  background: palette.surface, padding: 10, marginBottom: 8, textAlign: 'center',
+  background: palette.surface, padding: 8, marginBottom: 8, textAlign: 'center',
 }
 
 const S_PRED_HEADER: React.CSSProperties = { display: 'flex', justifyContent: 'space-between', ...typo.dataSm }
@@ -161,7 +161,7 @@ const S_PRED_BODY: React.CSSProperties = { marginTop: 4, ...typo.body }
 const S_PRED_REASONING: React.CSSProperties = { marginTop: 4, ...typo.dataSm, color: text.muted }
 
 const S_EVO_HEADLINE: React.CSSProperties = { ...typo.dataSm, color: accents.gold, fontWeight: 700 }
-const S_EVO_DIFF_BLOCK: React.CSSProperties = { marginTop: 6, ...typo.caption, fontFamily: 'monospace' }
+const S_EVO_DIFF_BLOCK: React.CSSProperties = { marginTop: 8, ...typo.caption, fontFamily: 'monospace' }
 
 const S_BRIER_ROW: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 12,
@@ -196,7 +196,7 @@ const S_EVO_COUNT: React.CSSProperties = {
 }
 
 const S_PARAM_BAR_ROW: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 6, marginTop: 6,
+  display: 'flex', alignItems: 'center', gap: 8, marginTop: 8,
   ...typo.caption, fontFamily: 'monospace',
 }
 
