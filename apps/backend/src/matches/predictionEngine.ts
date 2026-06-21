@@ -1,5 +1,5 @@
 /**
- * predictionEngine | v0.3.0 | 2026-06-18
+ * predictionEngine | v0.4.0 | 2026-06-22
  * Purpose: Deterministic, zero-LLM prediction methodologies for the 5 agents.
  * Same (agentId, match) ⇒ same pick/confidence/reasoning, forever — the
  * decision log rule "LLM never mutates numbers" extends to "no RNG in the
@@ -7,10 +7,15 @@
  * lives in AgentParams (sleep-worker) which calibrates the RAW confidence
  * into the EFFECTIVE one at the call site.
  *
- * V3 note: live data feeds are optional. When available (OddsProvider,
- * FormProvider), they replace synthetic placeholders. When unavailable,
- * the engine falls back to the V2 deterministic hash. See `./dataSource.ts`
- * for the honest provenance declaration.
+ * V4 — T38: Memory-driven pick evolution. Three agents now receive evolved
+ * calibration from the sleep-worker, so that the sleep/evolve cycle actually
+ * shifts borderline picks — not just confidence percentages:
+ *   • Dr. Morgan:   hedgingLevel widens draw band  → more X picks after losses.
+ *   • Viktor Kane:  confidenceBias lowers consensus threshold → contrarian
+ *                   inversions trigger earlier when calibration drifts down.
+ *   • Sofia Mendes: topicMultiplier raises the EV bar → fewer value bets on
+ *                   poorly-calibrated topics.
+ * Scout Alvarez and Madame Pythia are unaffected — gut and stars don't evolve.
  *
  * Provenance of these inputs is declared honestly in `./dataSource.ts` and
  * surfaced to users via GET /api/public/data-source (T30). If you wire a real
@@ -41,6 +46,20 @@ export interface LiveContext {
   odds?: MatchOdds | null
   homeForm?: TeamForm | null
   awayForm?: TeamForm | null
+}
+
+/**
+ * T38 — evolved calibration from the sleep-worker.
+ * Passed into predictMatch so that borderline picks shift over time.
+ * Only three agents consume this; the remaining two ignore it.
+ */
+export interface EvolvedCalibration {
+  /** How much the agent hedges (0 = bold, 1 = ultra-cautious). Default 0.3. */
+  hedgingLevel: number
+  /** Additive correction to raw confidence (−0.3 … +0.3). Default 0. */
+  confidenceBias: number
+  /** Topic-specific multiplier for the current match topic. Default 1.0. */
+  topicMultiplier: number
 }
 
 // ── Deterministic primitives ─────────────────────────────────────────────────
@@ -78,16 +97,25 @@ const pct = (v: number): string => `${Math.round(v * 100)}%`
 
 // ── Methodologies ────────────────────────────────────────────────────────────
 
-function drMorgan(m: Match): AgentPick {
+function drMorgan(m: Match, evo?: EvolvedCalibration): AgentPick {
   const home = teamStrength(m.homeTeam) + 0.04 // home advantage term
   const away = teamStrength(m.awayTeam)
   const margin = home - away
-  const pick = pickByMargin(margin, 0.05)
+
+  // T38: hedgingLevel widens the draw band. Default 0.3 → band = 0.05 (unchanged).
+  // High hedging (e.g. 0.7 after losses) → band = 0.082 → borderline wins become draws.
+  const baseDrawBand = 0.05
+  const hedging = evo?.hedgingLevel ?? 0.3
+  const drawBand = baseDrawBand + (hedging - 0.3) * 0.08
+
+  const pick = pickByMargin(margin, drawBand)
   const rawConfidence = clamp01(0.58 + Math.abs(margin) * 1.4, 0.55, 0.88)
+
+  const evolved = evo && hedging !== 0.3
   return {
     pick,
     rawConfidence,
-    reasoning: `xG model: ${m.homeTeam} ${home.toFixed(2)} vs ${m.awayTeam} ${away.toFixed(2)} (home term +0.04). Margin ${margin.toFixed(2)} → ${pick}. Sample-weighted confidence ${pct(rawConfidence)}.`,
+    reasoning: `xG model: ${m.homeTeam} ${home.toFixed(2)} vs ${m.awayTeam} ${away.toFixed(2)} (home term +0.04). Margin ${margin.toFixed(2)}${evolved ? ` (draw band ${drawBand.toFixed(3)}, hedging ${hedging.toFixed(2)})` : ''} → ${pick}. Sample-weighted confidence ${pct(rawConfidence)}.`,
   }
 }
 
@@ -120,10 +148,17 @@ function scoutAlvarez(m: Match, ctx: LiveContext): AgentPick {
   }
 }
 
-function viktorKane(m: Match, p: Record<string, number>, ctx: LiveContext): AgentPick {
+function viktorKane(m: Match, p: Record<string, number>, ctx: LiveContext, evo?: EvolvedCalibration): AgentPick {
   // Invert the consensus (Dr. Morgan's model = the crowd) when it's strong.
   const consensus = drMorgan(m)
-  const consensusThreshold = p.consensus_threshold ?? 0.72
+  const baseThreshold = p.consensus_threshold ?? 0.72
+
+  // T38: negative confidenceBias (agent learned it was overconfident) → lower
+  // the inversion threshold → contrarian triggers more often.
+  // E.g. bias −0.15 → threshold drops from 0.72 to 0.645 → inverts earlier.
+  const biasShift = (evo?.confidenceBias ?? 0) * 0.5
+  const consensusThreshold = clamp01(baseThreshold + biasShift, 0.55, 0.85)
+
   const floor = p.contrarian_confidence_floor ?? 0.55
   const strongConsensus = consensus.rawConfidence >= consensusThreshold
   const inverted: PickCode =
@@ -134,16 +169,18 @@ function viktorKane(m: Match, p: Record<string, number>, ctx: LiveContext): Agen
     floor,
     0.82,
   )
+
+  const evolved = evo && biasShift !== 0
   return {
     pick,
     rawConfidence,
     reasoning: strongConsensus
-      ? `The herd is ${pct(consensus.rawConfidence)} sure of ${consensus.pick}. That certainty is exactly the trap — fading it: ${pick}.`
-      : `No strong consensus to fade (${pct(consensus.rawConfidence)} < ${pct(consensusThreshold)}). When the crowd hesitates, chaos wins: X.`,
+      ? `The herd is ${pct(consensus.rawConfidence)} sure of ${consensus.pick}.${evolved ? ` Threshold calibrated to ${pct(consensusThreshold)} (bias ${evo!.confidenceBias > 0 ? '+' : ''}${evo!.confidenceBias.toFixed(2)}).` : ''} That certainty is exactly the trap — fading it: ${pick}.`
+      : `No strong consensus to fade (${pct(consensus.rawConfidence)} < ${pct(consensusThreshold)}${evolved ? `, calibrated` : ''}).${evolved ? ` Bias ${evo!.confidenceBias > 0 ? '+' : ''}${evo!.confidenceBias.toFixed(2)}.` : ''} When the crowd hesitates, chaos wins: X.`,
   }
 }
 
-function sofiaMendes(m: Match, p: Record<string, number>, ctx: LiveContext): AgentPick {
+function sofiaMendes(m: Match, p: Record<string, number>, ctx: LiveContext, evo?: EvolvedCalibration): AgentPick {
   // True probabilities from strengths; market odds come from real bookmakers
   // when available, otherwise fall back to synthetic noise.
   const home = teamStrength(m.homeTeam) + 0.04
@@ -180,19 +217,29 @@ function sofiaMendes(m: Match, p: Record<string, number>, ctx: LiveContext): Age
   for (const o of ['1', 'X', '2'] as PickCode[]) ev[o] = pTrue[o] / pMarket[o]
 
   const best = (['1', 'X', '2'] as PickCode[]).reduce((a, b) => (ev[b] > ev[a] ? b : a))
-  const minEdge = p.min_edge ?? 0.04
+
+  // T38: topicMultiplier < 1.0 (poor calibration on this topic) → raise the
+  // value threshold → Sofia demands a bigger edge before committing.
+  // Default multiplier = 1.0 → minEdge unchanged. Multiplier 0.7 → minEdge ≈ 0.057.
+  const baseEdge = p.min_edge ?? 0.04
+  const topicMul = evo?.topicMultiplier ?? 1.0
+  const minEdge = topicMul < 1.0
+    ? baseEdge / topicMul  // poor calibration → higher bar
+    : baseEdge             // good calibration → unchanged
   const hasValue = ev[best] >= 1 + minEdge
+
   const pick: PickCode = hasValue ? best : 'X'
   const rawConfidence = hasValue
     ? clamp01(0.55 + (ev[best] - 1) * 2.2, 0.55, 0.85)
     : 0.55
   const fmt = (o: PickCode) => (1 / pMarket[o]).toFixed(2)
+  const evolved = evo && topicMul !== 1.0
   return {
     pick,
     rawConfidence,
     reasoning: hasValue
-      ? `${oddsSource} 1/X/2 = ${fmt('1')}/${fmt('X')}/${fmt('2')} vs my model — edge ${((ev[best] - 1) * 100).toFixed(1)}% on ${pick}. Value bet, stake-confidence ${pct(rawConfidence)}.`
-      : `${oddsSource} 1/X/2 = ${fmt('1')}/${fmt('X')}/${fmt('2')} are efficient today (best edge ${((ev[best] - 1) * 100).toFixed(1)}% < ${(minEdge * 100).toFixed(0)}%). No value, no bet — X.`,
+      ? `${oddsSource} 1/X/2 = ${fmt('1')}/${fmt('X')}/${fmt('2')} vs my model — edge ${((ev[best] - 1) * 100).toFixed(1)}% on ${pick}${evolved ? ` (bar raised to ${(minEdge * 100).toFixed(1)}%, topic calibration ${topicMul.toFixed(2)})` : ''}. Value bet, stake-confidence ${pct(rawConfidence)}.`
+      : `${oddsSource} 1/X/2 = ${fmt('1')}/${fmt('X')}/${fmt('2')} are efficient today (best edge ${((ev[best] - 1) * 100).toFixed(1)}% < ${(minEdge * 100).toFixed(0)}%${evolved ? `, bar adjusted for calibration` : ''}). No value, no bet — X.`,
   }
 }
 
@@ -211,16 +258,28 @@ export interface AgentMethodology {
   parameters: Record<string, number>
 }
 
-export function predictMatch(agent: AgentMethodology, match: Match, ctx: LiveContext = {}): AgentPick {
+/**
+ * T38: Optional evolved calibration from the sleep-worker. When provided,
+ * Dr. Morgan, Viktor Kane, and Sofia Mendes adjust their decision thresholds
+ * so that the sleep/evolve cycle actually shifts borderline picks — not just
+ * confidence percentages. Scout Alvarez ("gut doesn't evolve") and
+ * Madame Pythia ("the stars are immutable") are intentionally unchanged.
+ */
+export function predictMatch(
+  agent: AgentMethodology,
+  match: Match,
+  ctx: LiveContext = {},
+  evolved?: EvolvedCalibration,
+): AgentPick {
   switch (agent.type) {
     case 'weighted_metrics':
-      return drMorgan(match)
+      return drMorgan(match, evolved)
     case 'narrative_sentiment':
       return scoutAlvarez(match, ctx)
     case 'contrarian_inversion':
-      return viktorKane(match, agent.parameters, ctx)
+      return viktorKane(match, agent.parameters, ctx, evolved)
     case 'expected_value':
-      return sofiaMendes(match, agent.parameters, ctx)
+      return sofiaMendes(match, agent.parameters, ctx, evolved)
     case 'deterministic_mysticism':
       return madamePythia(match, agent.parameters)
   }
