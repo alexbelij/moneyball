@@ -18,6 +18,7 @@
 import { MemWal } from '@mysten-incubation/memwal'
 import { env } from '../config/env'
 import { MemWalWriteQueue } from '../memory/memwalWriteQueue'
+import { WriteJournal } from '../memory/writeJournal'
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
@@ -306,6 +307,11 @@ export class AgentEventService {
     if (q) return q
 
     const client = this.getClient(agentId)
+    // TASK 3: on-disk journal for crash-resilient pending writes
+    const journal = this.persistEnabled
+      ? new WriteJournal(resolve(this.dataDir, 'journals', agentId))
+      : undefined
+
     const queue = new MemWalWriteQueue(
       async (text) => {
         const job: any = await client.remember(text)
@@ -323,6 +329,7 @@ export class AgentEventService {
           if (!blobId) return
           this.attachBlobId(agentId, key, blobId)
         },
+        journal,
       },
     )
     this.writeQueues.set(agentId, queue)
