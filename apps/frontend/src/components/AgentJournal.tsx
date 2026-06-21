@@ -11,6 +11,7 @@ import { buildJournalEntries, type JournalEntry } from '@/lib/journalEntries'
 import { formatTimestamp } from '@/lib/formatDate'
 import { palette, accents, text, fonts, borders, shadows, type as typo, spacing, } from '@/styles/tokens'
 import { walrusBlobUrl } from '@/lib/explorer'
+import { ShareTicketButton, type RetroTicketData } from '@/components/RetroTicket'
 
 function useFetchJournal(agentId: string) {
   const [entries, setEntries] = React.useState<JournalEntry[] | null>(null)
@@ -66,7 +67,7 @@ function KindDot({ kind, sentiment }: { kind: JournalEntry['kind']; sentiment: J
 }
 
 export function AgentJournal({ agentId }: { agentId: string }) {
-  const { entries, loading, err } = useFetchJournal(agentId)
+  const { entries, agentName, loading, err } = useFetchJournal(agentId)
 
   if (loading) return <div style={{ ...typo.dataSm, color: text.muted, marginTop: 8 }}>Loading journal...</div>
   if (err) return <div style={{ ...typo.dataSm, color: accents.red, marginTop: 8 }}>{err}</div>
@@ -176,6 +177,24 @@ export function AgentJournal({ agentId }: { agentId: string }) {
                     {entry.source === 'live' ? 'LIVE' : 'SEED'}
                   </span>
                 )}
+                {entry.kind === 'prediction' && (() => {
+                  // Extract pick and confidence from headline: "Called it: X (N%...)" or "Missed: predicted X (N%)"
+                  const confMatch = entry.headline.match(/(\d+)%/)
+                  const conf = confMatch ? parseInt(confMatch[1], 10) / 100 : 0.5
+                  const pickMatch = entry.headline.match(/(?:Called it:|predicted)\s+(.+?)\s+\(/)
+                  const pick = pickMatch ? pickMatch[1] : entry.headline
+                  return (
+                    <ShareTicketButton data={{
+                      matchTitle: entry.body.match(/for\s+([\w\d_-]+)/)?.[1]?.replace(/_/g, ' ') ?? 'Match',
+                      pick,
+                      confidence: conf,
+                      agentName: agentName || agentId,
+                      date: entry.date,
+                      blobId: entry.blobId,
+                      result: entry.sentiment === 'positive' ? 'correct' : entry.sentiment === 'negative' ? 'incorrect' : 'pending',
+                    }} />
+                  )
+                })()}
               </div>
             </div>
           </div>
