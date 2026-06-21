@@ -42,7 +42,7 @@ export function WalletDebugPanel() {
     <div style={{
       position: 'absolute', top: 80, right: 12, zIndex: zIndex.debug,
       background: palette.wood900, border: borders.standard,
-      borderRadius: 0, padding: 10, color: palette.paper,
+      borderRadius: 0, padding: 8, color: palette.paper,
       ...typo.body, fontFamily: fonts.body,
       width: 420, maxWidth: '92vw', pointerEvents: 'auto',
       boxShadow: shadows.hard,

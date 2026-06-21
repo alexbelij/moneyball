@@ -196,7 +196,7 @@ const S: Record<string, React.CSSProperties> = {
   panel: {
     background: palette.wood900, border: borders.standard,
     boxShadow: shadows.hard, padding: spacing.lg,
-    maxWidth: 520, width: '90vw', maxHeight: '85vh', overflowY: 'auto',
+    maxWidth: 520, width: '95vw', maxHeight: '85vh', overflowY: 'auto',
   },
   header: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -226,7 +226,7 @@ const S: Record<string, React.CSSProperties> = {
     display: 'flex', flexDirection: 'column', gap: 4,
   },
   agentLabel: {
-    display: 'flex', alignItems: 'center', gap: 6,
+    display: 'flex', alignItems: 'center', gap: 8,
   },
   agentName: {
     fontFamily: fonts.header, ...type.hdrXs,

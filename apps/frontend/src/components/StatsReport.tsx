@@ -385,7 +385,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
 
       {/* Legend */}
       <div style={{
-        display: 'flex', flexWrap: 'wrap', gap: 10, padding: '4px 8px',
+        display: 'flex', flexWrap: 'wrap', gap: 8, padding: '4px 8px',
         ...typo.hdrSm, fontFamily: fonts.body, color: text.muted,
       }}>
         {data.map((s) => (

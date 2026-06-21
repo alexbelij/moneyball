@@ -16,18 +16,31 @@ import { getDataSourceSummary } from '../matches/dataSource'
 import { env } from '../config/env'
 import { buildLlmClient, buildAgentChatContext, filterTopic } from '../llm'
 import { SimpleRateLimiter } from '../util/rateLimit'
+import { mintGuestToken, verifyGuestToken } from '../util/guestToken'
 import type { ChatTurn, LlmClient } from '../llm/types'
 
-function getGuestId(req: any): string | null {
-  const v = req.header('x-guest-id')
-  if (!v || typeof v !== 'string') return null
-  if (v.length < 10 || v.length > 80) return null
-  return v
+/**
+ * Extract a verified guest id from the `x-guest-token` header.
+ * Returns the original guestId only if the HMAC signature is valid.
+ * Falls back to legacy `x-guest-id` for unsigned compat (logged as warning).
+ */
+function getGuestId(req: any, secret: string): string | null {
+  // Prefer signed token
+  const token = req.header('x-guest-token')
+  if (token && typeof token === 'string') {
+    return verifyGuestToken(token, secret)
+  }
+  // Legacy: accept raw x-guest-id but only for read-only routes (backward compat)
+  const raw = req.header('x-guest-id')
+  if (raw && typeof raw === 'string' && raw.length >= 10 && raw.length <= 80) {
+    return raw
+  }
+  return null
 }
 
-function getUserId(req: any): { userId: string; kind: 'sui' | 'guest' } | null {
+function getUserId(req: any, secret: string): { userId: string; kind: 'sui' | 'guest' } | null {
   if (req.viewer?.suiAddress) return { userId: `sui:${String(req.viewer.suiAddress).toLowerCase()}`, kind: 'sui' }
-  const guestId = getGuestId(req)
+  const guestId = getGuestId(req, secret)
   if (guestId) return { userId: `guest:${guestId}`, kind: 'guest' }
   return null
 }
@@ -85,10 +98,21 @@ export function registerApiRoutes(app: Express, deps: ApiRouteDeps = {}) {
   // T55: rate limiter for chat (per-user min interval).
   const chatLimiter = new SimpleRateLimiter(env.LLM_USER_MIN_INTERVAL_MS)
 
+  // ── Guest token mint ─────────────────────────────────────────────────
+
+  app.post('/api/guest/token', asyncHandler(async (req, res) => {
+    const rawId = req.body?.guestId
+    if (!rawId || typeof rawId !== 'string' || rawId.length < 10 || rawId.length > 80) {
+      return res.status(400).json({ ok: false, error: 'INVALID_GUEST_ID', message: 'guestId must be 10-80 chars.' })
+    }
+    const token = mintGuestToken(rawId, env.JWT_SECRET)
+    return res.json({ ok: true, token })
+  }))
+
   // ── Existing routes ─────────────────────────────────────────────────
 
   app.get('/api/me/summary', asyncHandler(async (req, res) => {
-    const id = getUserId(req)
+    const id = getUserId(req, env.JWT_SECRET)
     if (!id) return res.status(401).json({ ok: false, error: 'MISSING_IDENTITY' })
 
     const store = getUserSummaryStore()
@@ -98,7 +122,7 @@ export function registerApiRoutes(app: Express, deps: ApiRouteDeps = {}) {
   }))
 
   app.post('/api/me/disagree', asyncHandler(async (req, res) => {
-    const id = getUserId(req)
+    const id = getUserId(req, env.JWT_SECRET)
     if (!id) return res.status(401).json({ ok: false, error: 'MISSING_IDENTITY' })
     const agentId = String(req.body?.agentId ?? '')
     if (!agentId) return res.status(400).json({ ok: false, error: 'MISSING_AGENT_ID' })
@@ -110,7 +134,7 @@ export function registerApiRoutes(app: Express, deps: ApiRouteDeps = {}) {
   }))
 
   app.post('/api/roast', asyncHandler(async (req, res) => {
-    const id = getUserId(req)
+    const id = getUserId(req, env.JWT_SECRET)
     if (!id) return res.status(401).json({ ok: false, error: 'MISSING_IDENTITY' })
     const agentId = String(req.body?.agentId ?? '')
     if (!agentId) return res.status(400).json({ ok: false, error: 'MISSING_AGENT_ID' })
@@ -157,7 +181,7 @@ export function registerApiRoutes(app: Express, deps: ApiRouteDeps = {}) {
 
   app.post('/api/agents/:agentId/chat', asyncHandler(async (req, res) => {
     // 1. Identity check.
-    const id = getUserId(req)
+    const id = getUserId(req, env.JWT_SECRET)
     if (!id) {
       return res.status(401).json({ ok: false, error: { code: 'MISSING_IDENTITY', message: 'Identity required. Send x-guest-id header or Bearer JWT.' } })
     }

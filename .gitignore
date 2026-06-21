@@ -17,3 +17,5 @@ docs/migration.md
 test-results/
 playwright-report/
 var/
+# Graphify cache
+graphify-out/

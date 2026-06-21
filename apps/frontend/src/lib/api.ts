@@ -182,6 +182,8 @@ export interface PredictionItem {
   paramsVersion?: number
   /** T76: Walrus blob_id for on-chain verification. */
   blobId?: string
+  /** Provenance: 'seed' = baseline fixture, 'live' = real MemWal write. */
+  source?: 'seed' | 'live'
   outcome?: { correct: boolean; resolvedAt: string }
 }
 
@@ -195,6 +197,8 @@ export interface EvolutionItem {
   evolutionType?: string
   /** T76: Walrus blob_id for on-chain verification. */
   blobId?: string
+  /** Provenance: 'seed' = baseline fixture, 'live' = real MemWal write. */
+  source?: 'seed' | 'live'
 }
 
 export interface MatchInfo {
@@ -318,6 +322,8 @@ export interface VerifiabilityData {
   frontendUrl: string
   memwalRelayer: string
   memwalAccountId: string
+  /** Ready-built explorer link to the MemWalAccount Sui object, or null if not configured. */
+  memwalAccountObjectUrl: string | null
   memwalNamespacePattern: string
   agents: AgentVerifiability[]
   explorers: {

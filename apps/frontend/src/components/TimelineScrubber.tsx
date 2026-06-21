@@ -161,7 +161,7 @@ export function TimelineScrubber({ evolutions, currentBias, currentHedging }: {
       style={{
         background: palette.surface,
         border: borders.standard,
-        padding: 10,
+        padding: 8,
         marginBottom: 8,
         boxShadow: shadows.hardSmall,
       }}

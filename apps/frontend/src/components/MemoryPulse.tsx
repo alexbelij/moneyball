@@ -53,7 +53,7 @@ export function MemoryPulse({ agentId }: { agentId: string }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 6,
+        gap: 8,
         padding: '2px 8px',
         border: borders.rule,
         background: palette.surface,

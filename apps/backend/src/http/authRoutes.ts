@@ -10,6 +10,7 @@ import jwt from 'jsonwebtoken'
 import { verifyPersonalMessageSignature } from '@mysten/sui/verify'
 import { env } from '../config/env'
 import { NonceStore } from './nonceStore'
+import { SimpleRateLimiter } from '../util/rateLimit'
 
 function normAddr(a: string) {
   return a.trim().toLowerCase()
@@ -37,13 +38,26 @@ function buildCanonicalMessage(params: {
   ].join('\n')
 }
 
+/** Derive rate-limit key from IP + suiAddress. */
+function authRateLimitKey(req: any, suiAddress: string): string {
+  const ip = req.ip ?? req.socket?.remoteAddress ?? 'unknown'
+  return `${ip}:${suiAddress}`
+}
+
 export function registerAuthRoutes(app: Express) {
   const store = new NonceStore(env.AUTH_NONCE_TTL_MS)
+  // Rate-limit: 1 request per 2s per IP+address (prevents nonce/verify flooding)
+  const nonceLimiter = new SimpleRateLimiter(2_000)
+  const verifyLimiter = new SimpleRateLimiter(3_000)
 
   app.post('/api/auth/nonce', (req, res) => {
     const suiAddress = normAddr(String(req.body?.suiAddress ?? ''))
     if (!suiAddress.startsWith('0x') || suiAddress.length < 10) {
       return res.status(400).json({ error: { code: 'BAD_SUI_ADDRESS', message: 'Invalid Sui address.' } })
+    }
+
+    if (!nonceLimiter.allow(authRateLimitKey(req, suiAddress))) {
+      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many nonce requests. Try again shortly.' } })
     }
 
     // Issue with placeholder, then build message using issued values
@@ -77,6 +91,10 @@ export function registerAuthRoutes(app: Express) {
 
     if (!suiAddress || !nonce || !message || !signature) {
       return res.status(400).json({ error: { code: 'MISSING_FIELDS', message: 'All fields are required.' } })
+    }
+
+    if (!verifyLimiter.allow(authRateLimitKey(req, suiAddress))) {
+      return res.status(429).json({ error: { code: 'RATE_LIMITED', message: 'Too many verify requests. Try again shortly.' } })
     }
 
     try {

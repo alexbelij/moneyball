@@ -173,7 +173,7 @@ export function AgentChat({ agentId, agentName }: AgentChatProps) {
 /** Pixel-style typing indicator: three blinking squares. */
 function TypingIndicator({ color }: { color: string }) {
   return (
-    <span style={{ display: 'inline-flex', gap: 3, alignItems: 'center' }}>
+    <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
       {[0, 1, 2].map((i) => (
         <span
           key={i}

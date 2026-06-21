@@ -14,7 +14,7 @@
 
 import type { PredictionEvent } from '@moneyball/sleep-worker'
 import type { SleepService } from '../agents/sleepService'
-import { predictMatch, type AgentMethodology, type LiveContext } from './predictionEngine'
+import { predictMatch, type AgentMethodology, type EvolvedCalibration, type LiveContext } from './predictionEngine'
 import type { AgentEventService } from '../agents/agentEventService'
 import { computeMood, MOOD_THOUGHTS, type AgentMood } from '../agents/agentMood'
 import { computeConsensus, consensusNarrative } from '../agents/crossAgentInfluence'
@@ -122,8 +122,15 @@ export class MatchWorker {
     }
 
     for (const agent of this.agents) {
-      const raw = predictMatch(agent, match, ctx)
+      // T38: Fetch evolved params BEFORE prediction so they can shift picks
       const params = await this.sleep.getParams(agent.agentId)
+      const topicMul = params.topicCalibration[topic]?.multiplier ?? 1.0
+      const evolved: EvolvedCalibration = {
+        hedgingLevel: params.hedgingLevel,
+        confidenceBias: params.confidenceBias,
+        topicMultiplier: topicMul,
+      }
+      const raw = predictMatch(agent, match, ctx, evolved)
       let effective = await this.sleep.calibrate(agent.agentId, topic, raw.rawConfidence)
 
       // T79: Apply mood-based confidence modifier

@@ -12,6 +12,7 @@ import { palette, accents, text, fonts, type, borders, shadows, spacing, agentCo
 import { PixelIcon } from '@/components/icons/PixelIcon'
 import { useGameStore } from '@/store/gameStore'
 import { getAgentEvolution, type EvolutionItem } from '@/lib/api'
+import { walrusBlobUrl } from '@/lib/explorer'
 
 interface EvolutionViewProps {
   agentId: string
@@ -97,15 +98,35 @@ export function EvolutionView({ agentId, onClose }: EvolutionViewProps) {
                   {/* Reasoning */}
                   <p style={S.reasoningText}>"{evo.summary}"</p>
 
-                  {/* Walrus proof */}
-                  {evo.blobId && (
-                    <div style={S.proofTag}>
-                      <PixelIcon name="walrus" size={10} color={accents.gold} />
-                      <span style={{ fontFamily: fonts.body, ...type.caption, color: text.faint }}>
-                        blob:{evo.blobId.slice(0, 8)}…
+                  {/* Walrus proof + provenance badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                    {evo.blobId && (
+                      <a
+                        href={walrusBlobUrl(evo.blobId)}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        aria-label="Verify this memory on Walrus"
+                        style={S.proofTag}
+                      >
+                        <PixelIcon name="walrus" size={10} color={accents.gold} />
+                        <span style={{ fontFamily: fonts.body, ...type.caption, color: text.faint }}>
+                          blob:{evo.blobId.slice(0, 8)}…
+                        </span>
+                      </a>
+                    )}
+                    {evo.source && (
+                      <span style={{
+                        ...type.caption,
+                        fontFamily: fonts.header,
+                        padding: '1px 4px',
+                        border: borders.standard,
+                        color: evo.source === 'live' ? accents.gold : text.faint,
+                        background: evo.source === 'live' ? palette.wood700 : palette.wood900,
+                      }}>
+                        {evo.source === 'live' ? 'LIVE' : 'SEED'}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -143,7 +164,7 @@ const S: Record<string, React.CSSProperties> = {
   panel: {
     background: palette.wood900, border: borders.standard,
     boxShadow: shadows.hard, padding: spacing.lg,
-    maxWidth: 600, width: '92vw', maxHeight: '85vh', overflowY: 'auto',
+    maxWidth: 600, width: '95vw', maxHeight: '85vh', overflowY: 'auto',
   },
   header: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -192,6 +213,8 @@ const S: Record<string, React.CSSProperties> = {
   proofTag: {
     display: 'flex', alignItems: 'center', gap: 4,
     marginTop: 4,
+    textDecoration: 'none',
+    cursor: 'pointer',
   },
   summary: {
     marginTop: spacing.md, paddingTop: spacing.sm, borderTop: borders.rule,

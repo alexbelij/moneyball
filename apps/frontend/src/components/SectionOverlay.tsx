@@ -40,7 +40,7 @@ export function SectionOverlay() {
 
   return (
     <PixelModal open onClose={close} title={section.title}>
-      <div style={{ padding: 12, maxHeight: '60vh', overflowY: 'auto' }}>
+      <div style={{ padding: 16, maxHeight: '60vh', overflowY: 'auto' }}>
         <SectionContent id={active} />
       </div>
     </PixelModal>

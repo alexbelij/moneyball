@@ -18,6 +18,7 @@
 import { MemWal } from '@mysten-incubation/memwal'
 import { env } from '../config/env'
 import { MemWalWriteQueue } from '../memory/memwalWriteQueue'
+import { WriteJournal } from '../memory/writeJournal'
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
@@ -40,6 +41,8 @@ export type AgentPredictionEvent = {
   paramsVersion?: number
   /** T76: Walrus blob_id captured from MemWal write/recall. */
   blobId?: string
+  /** Provenance: 'seed' = deterministic baseline fixture, 'live' = real MemWal write. */
+  source?: 'seed' | 'live'
   /** Merged from outcome events on read; never stored on the prediction. */
   outcome?: { correct: boolean; resolvedAt: string }
 }
@@ -68,6 +71,8 @@ export type AgentEvolutionEvent = {
   evolutionType?: string
   /** T76: Walrus blob_id captured from MemWal write/recall. */
   blobId?: string
+  /** Provenance: 'seed' = deterministic baseline fixture, 'live' = real MemWal write. */
+  source?: 'seed' | 'live'
 }
 
 export type AgentEvent = AgentPredictionEvent | AgentOutcomeEvent | AgentEvolutionEvent
@@ -302,6 +307,11 @@ export class AgentEventService {
     if (q) return q
 
     const client = this.getClient(agentId)
+    // TASK 3: on-disk journal for crash-resilient pending writes
+    const journal = this.persistEnabled
+      ? new WriteJournal(resolve(this.dataDir, 'journals', agentId))
+      : undefined
+
     const queue = new MemWalWriteQueue(
       async (text) => {
         const job: any = await client.remember(text)
@@ -319,6 +329,7 @@ export class AgentEventService {
           if (!blobId) return
           this.attachBlobId(agentId, key, blobId)
         },
+        journal,
       },
     )
     this.writeQueues.set(agentId, queue)
@@ -369,6 +380,7 @@ export class AgentEventService {
     input: Omit<AgentPredictionEvent, 'schemaVersion' | 'type' | 'createdAt'> & { createdAt?: string },
   ) {
     const ev: AgentPredictionEvent = {
+      source: 'live',
       ...input,
       schemaVersion: '1.0',
       type: 'prediction',
@@ -412,6 +424,7 @@ export class AgentEventService {
     input: Omit<AgentEvolutionEvent, 'schemaVersion' | 'type' | 'createdAt'> & { createdAt?: string },
   ) {
     const ev: AgentEvolutionEvent = {
+      source: 'live',
       ...input,
       schemaVersion: '1.0',
       type: 'evolution',
