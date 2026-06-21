@@ -382,6 +382,11 @@ patterns and pain points. We filed 13 GitHub issues on
 | 5-min SEAL SessionKey expiry | Chunk batch operations, recreate client on error | [#295](https://github.com/MystenLabs/MemWal/issues/295) |
 | No `recallBulk()` for dashboards | `Promise.all()` with N sequential calls | Documented for account #2 |
 | Positional overload type bugs | Always use object-form `recall({ query, ... })` | [#293](https://github.com/MystenLabs/MemWal/issues/293) |
+| No control over analyze() extraction | Accept defaults, post-filter client-side | [#294](https://github.com/MystenLabs/MemWal/issues/294) |
+| RecallManualResult union type mismatch | Type assertion at call site | [#298](https://github.com/MystenLabs/MemWal/issues/298) |
+| No TTL / auto-expiry on `remember()` | Manual cleanup via key conventions | [#297](https://github.com/MystenLabs/MemWal/issues/297) |
+| No `blob_id` on `recall()` results | Store blob\_id in text payload as workaround | [#311](https://github.com/MystenLabs/MemWal/issues/311) |
+| No semantic top-K control | Accept SDK defaults, filter post-recall | [#312](https://github.com/MystenLabs/MemWal/issues/312) |
 
 ### Recommendations for other builders
 
