@@ -39,15 +39,15 @@ export const palette = {
 export const accents = {
   /** Desk-lamp amber / primary call-to-action. */
   gold:  '#e8a44a',
-  /** Exit-sign red / danger / incorrect. */
-  red:   '#c03030',
+  /** Exit-sign red / danger / incorrect. WCAG AA ≥ 4.5:1 on wood700/wood900. */
+  red:   '#e85c5c',
   /** LCD/LED green / success / correct. */
   green: '#39c04a',
 } as const
 
 /* ── Semantic text helpers ────────────────────────────────────────
  * T46: text.muted and text.faint decoupled from palette wood tones
- *      and brightened to pass WCAG AA ≥ 4.5:1 on wood900 (#181009).
+ *      and brightened to pass WCAG AA ≥ 4.5:1 on wood700 AND wood900.
  *      palette.wood500 / wood300 are still available for borders/fills.
  * ─────────────────────────────────────────────────────────────────── */
 
@@ -56,8 +56,8 @@ export const text = {
   primary:  palette.paper,
   /** Slightly muted text. */
   dim:      '#d5cec0',
-  /** Secondary / label text. WCAG AA 4.89:1 on wood900. */
-  muted:    '#9e7c54',
+  /** Secondary / label text. WCAG AA ≥ 4.5:1 on wood700/wood900. */
+  muted:    '#b08a5e',
   /** Very dim (captions, meta). WCAG AA 5.42:1 on wood900. */
   faint:    '#a5845c',
 } as const
@@ -91,8 +91,9 @@ export const fonts = {
 /**
  * T49: Typography scale — fontSize + lineHeight pairs.
  * Rules:
- *   - Press Start 2P (fonts.header): only `hdr*` sizes (≥ 12px, short labels).
- *   - VT323 (fonts.body): `body*` / `data*` / `caption` sizes (body ≥ 16px).
+ *   - Minimum font size: 14px everywhere (thick pixel fonts are unreadable below).
+ *   - Press Start 2P (fonts.header): only `hdr*` sizes (≥ 16px, short labels).
+ *   - VT323 (fonts.body): `body*` / `data*` / `caption` sizes (≥ 14px).
  *   - Never use fonts.header with body/data sizes.
  */
 export const type = {
@@ -104,7 +105,7 @@ export const type = {
   /** Small header (stat labels, tab badges). */
   hdrSm:    { fontSize: 16, lineHeight: '22px' },
   /** Table header (dense column headers). */
-  hdrXs:    { fontSize: 15, lineHeight: '20px' },
+  hdrXs:    { fontSize: 16, lineHeight: '22px' },
 
   /* ── Body scale (VT323 — body, data, captions) ────────────────── */
   /** Large body text. */
@@ -116,15 +117,15 @@ export const type = {
   /** Smaller data / secondary. */
   dataSm:   { fontSize: 16, lineHeight: '20px' },
   /** Captions / timestamps. */
-  caption:  { fontSize: 15, lineHeight: '20px' },
+  caption:  { fontSize: 16, lineHeight: '22px' },
 
   /* ── SVG scale (chart axes, diagram labels — smaller is OK) ───── */
   /** SVG axis / tick labels. */
-  svgAxis:  { fontSize: 13 },
+  svgAxis:  { fontSize: 14 },
   /** SVG sub-labels / annotations. */
   svgLabel: { fontSize: 14 },
   /** SVG tiny dot / indicator (e.g. ● legend). */
-  svgDot:   { fontSize: 10 },
+  svgDot:   { fontSize: 14 },
 } as const
 
 /** Responsive breakpoint — mobile-first at 480px. */

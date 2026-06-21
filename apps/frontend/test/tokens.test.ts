@@ -24,7 +24,7 @@ describe('palette matches design-spec §2', () => {
 
 describe('accents', () => {
   it('gold (desk-lamp amber)', () => expect(accents.gold).toBe('#e8a44a'))
-  it('red (exit-sign)', () => expect(accents.red).toBe('#c03030'))
+  it('red (exit-sign)', () => expect(accents.red).toBe('#e85c5c'))
   it('green (LCD/LED)', () => expect(accents.green).toBe('#39c04a'))
 })
 

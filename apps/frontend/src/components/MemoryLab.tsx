@@ -112,22 +112,22 @@ function CycleDiagram() {
       {points.map((p, i) => (
         <g key={i}>
           <rect
-            x={p.x - 28} y={p.y - 14} width={56} height={28}
+            x={p.x - 36} y={p.y - 18} width={72} height={36}
             fill={palette.wood700} stroke={palette.wood500} strokeWidth={2}
           />
           <text
-            x={p.x} y={p.y - 2}
+            x={p.x} y={p.y - 4}
             textAnchor="middle" dominantBaseline="middle"
             fill={accents.gold}
-            fontFamily={fonts.header} fontSize={9}
+            fontFamily={fonts.body} fontSize={16}
           >
             {p.icon}
           </text>
           <text
-            x={p.x} y={p.y + 10}
+            x={p.x} y={p.y + 12}
             textAnchor="middle" dominantBaseline="middle"
             fill={text.primary}
-            fontFamily={fonts.header} fontSize={8}
+            fontFamily={fonts.body} fontSize={14}
           >
             {p.label}
           </text>
@@ -138,7 +138,7 @@ function CycleDiagram() {
       <text
         x={CX} y={CY}
         textAnchor="middle" dominantBaseline="middle"
-        fill={text.muted} fontFamily={fonts.body} fontSize={14}
+        fill={text.muted} fontFamily={fonts.body} fontSize={16}
       >
         self-learning loop
       </text>
