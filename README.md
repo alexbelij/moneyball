@@ -67,6 +67,25 @@ Moneyball uses [MemWal SDK](https://github.com/MystenLabs/MemWal) as its **only 
 | **Zero-database architecture** | MemWal is the sole durable store. `MemWalWriteQueue` handles rate limits, coalescing, and exponential backoff. In-memory read-model rebuilds from MemWal on cold boot via `restore()`. |
 | **Crash-resilient writes** | JSONL write journal on disk ensures pending MemWal writes survive Render cold boots — no provenance gaps. |
 
+### Evolution Cycle (Day 1 ≠ Day N)
+
+```mermaid
+flowchart LR
+    M["Match resolved<br/>(result + score)"] --> R["Reflection Engine<br/>(Brier score, per-topic<br/>accuracy, disagree pressure)"]
+    R --> D["ParamDelta[]<br/>(confidenceBias, hedgingLevel,<br/>topicCalibration)"]
+    D --> E["Evolution Engine<br/>(CAS versioning,<br/>hard-bound clamping)"]
+    E --> W["MemWal blob<br/>(immutable on-chain)"]
+    W --> P["Updated AgentParams<br/>(version N+1)"]
+    P -->|"shifts picks"| PR["Next prediction<br/>(draw band, EV bar,<br/>consensus threshold)"]
+    P -->|"shifts confidence"| C["Calibrated confidence<br/>(raw × multiplier + bias)"]
+
+    style M fill:#4a6741,color:#fff
+    style W fill:#8b6914,color:#fff
+    style PR fill:#6b4226,color:#fff
+```
+
+> **Memory affects behavior, not just logs.** Three agents (Dr. Morgan, Viktor Kane, Sofia Mendes) have their decision thresholds shifted by evolved parameters — a loss streak measurably changes future picks. Scout Alvarez and Madame Pythia are intentionally unaffected: the scout's gut and the oracle's stars don't recalibrate.
+
 ---
 
 ## Architecture
@@ -105,17 +124,17 @@ Full C4 diagrams: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 
 ## The Five Agents
 
-Each agent uses a distinct, deterministic prediction model — no LLM calls in the pipeline:
+Each agent uses a distinct, deterministic prediction model — no LLM calls in the pipeline. Agents marked with 🧬 have their picks shifted by memory evolution (T38):
 
-| Agent | Methodology | Personality |
-|-------|-------------|-------------|
-| **Dr. Morgan** | Weighted metrics: teamStrength + homeAdvantage → margin → pick | Academic statistician. Trusts the numbers. |
-| **Scout Alvarez** | Narrative sentiment: matchday-salted signal | Old-school scout. Gut feeling over spreadsheets. |
-| **Viktor Kane** | Contrarian inversion: fades Dr. Morgan's consensus when confidence is high | Provocateur. Bets against the crowd. |
-| **Sofia Mendes** | Expected value: true probability vs. market odds → value bet | Sharp bettor. Only plays when the edge is real. |
-| **Madame Pythia** | Deterministic mysticism: numerology + classical astrology | Enigmatic oracle. No external data — only the stars. |
+| Agent | Methodology | Evolves picks? | Personality |
+|-------|-------------|:--------------:|-------------|
+| **Dr. Morgan** | Weighted metrics: teamStrength + homeAdvantage → margin → pick | 🧬 `hedgingLevel` widens draw band | Academic statistician. Trusts the numbers — but learns humility. |
+| **Scout Alvarez** | Narrative sentiment: live team form (api-football) or matchday hash | — | Old-school scout. Gut feeling over spreadsheets. |
+| **Viktor Kane** | Contrarian inversion: fades consensus when confidence is high | 🧬 `confidenceBias` shifts threshold | Provocateur. The more the crowd is wrong, the bolder he gets. |
+| **Sofia Mendes** | Expected value: true probability vs. Bet365 odds → value bet | 🧬 `topicMultiplier` raises EV bar | Sharp bettor. Demands bigger edges on poorly-calibrated topics. |
+| **Madame Pythia** | Deterministic mysticism: Pythagorean numerology + classical astrology | — | Enigmatic oracle. The stars are immutable. |
 
-All five agents participate in a weighted consensus for each match. After match resolution, the sleep-worker runs the evolution engine: Brier score metrics + per-topic calibration errors → parameter deltas → new parameter version persisted to MemWal via CAS (compare-and-swap).
+All five agents participate in a weighted consensus for each match. After match resolution, the sleep-worker runs the evolution engine: Brier score metrics + per-topic calibration errors → parameter deltas → new parameter version persisted to MemWal via CAS (compare-and-swap). For three agents, these evolved parameters feed back into the prediction engine — shifting borderline picks, not just confidence percentages.
 
 ---
 
@@ -125,13 +144,13 @@ Moneyball is **honest about what is real and what is synthetic.** Every model in
 
 | Input | Source | Detail |
 |-------|--------|--------|
-| **Team strength** | Live | FIFA World Ranking (June 2025) mapped to [0.30, 0.70]. 48 WC2026 teams. |
+| **Team strength** | Live | FIFA World Ranking mapped to [0.30, 0.70]. 48 WC2026 teams. |
 | **Match schedule & results** | Live | [football-data.org](https://www.football-data.org/) v4 API, polled every 120s. |
+| **Team form (narrative sentiment)** | Live | Last 5 match results from [api-football.com](https://www.api-football.com/). Fallback to matchday-salted hash. |
+| **Bookmaker odds** | Live | 1X2 odds from Bet365 via [api-football.com](https://www.api-football.com/). Used by Sofia Mendes for EV calculation. Fallback to synthetic model. |
 | **Home advantage** | Manual | Fixed +0.04 term. A hand-set constant, not measured. |
-| **Narrative sentiment** | Synthetic | Matchday-salted hash. Not sourced from news or social feeds. |
-| **Bookmaker odds** | Synthetic | Derived from team strength + noise. No live odds feed connected. |
 
-> `MODEL_INPUTS_VERSION` in `dataSource.ts` is bumped whenever a synthetic input goes live.
+> `GET /api/public/data-source` reports provenance at runtime. Currently: *3 of 4 inputs use live data feeds.*
 
 ---
 
