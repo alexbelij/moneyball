@@ -56,6 +56,8 @@ export interface VerifiabilityResponse {
   frontendUrl: string
   memwalRelayer: string
   memwalAccountId: string
+  /** Ready-built explorer link to the MemWalAccount Sui object, or null if not configured. */
+  memwalAccountObjectUrl: string | null
   memwalNamespacePattern: string
   agents: AgentVerifiability[]
   explorers: {
@@ -81,12 +83,17 @@ export function registerVerifiabilityRoutes(
       },
     }))
 
+    const memwalAccountObjectUrl = env.MEMWAL_ACCOUNT_ID
+      ? `https://suiscan.xyz/mainnet/object/${env.MEMWAL_ACCOUNT_ID}`
+      : null
+
     const response: VerifiabilityResponse = {
       ok: true,
       walrusSiteObject: WALRUS_SITE_OBJECT,
       frontendUrl: 'https://taken.wal.app',
       memwalRelayer: env.MEMWAL_RELAYER,
       memwalAccountId: env.MEMWAL_ACCOUNT_ID || '(not configured in this environment)',
+      memwalAccountObjectUrl,
       memwalNamespacePattern: 'mwc-agent:{agentId}',
       agents,
       explorers: {

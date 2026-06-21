@@ -12,6 +12,7 @@ import { palette, accents, text, fonts, type, borders, shadows, spacing, agentCo
 import { PixelIcon } from '@/components/icons/PixelIcon'
 import { useGameStore } from '@/store/gameStore'
 import { getAgentEvolution, type EvolutionItem } from '@/lib/api'
+import { walrusBlobUrl } from '@/lib/explorer'
 
 interface EvolutionViewProps {
   agentId: string
@@ -99,12 +100,18 @@ export function EvolutionView({ agentId, onClose }: EvolutionViewProps) {
 
                   {/* Walrus proof */}
                   {evo.blobId && (
-                    <div style={S.proofTag}>
+                    <a
+                      href={walrusBlobUrl(evo.blobId)}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      aria-label="Verify this memory on Walrus"
+                      style={S.proofTag}
+                    >
                       <PixelIcon name="walrus" size={10} color={accents.gold} />
                       <span style={{ fontFamily: fonts.body, ...type.caption, color: text.faint }}>
                         blob:{evo.blobId.slice(0, 8)}…
                       </span>
-                    </div>
+                    </a>
                   )}
                 </div>
               ))}
@@ -192,6 +199,8 @@ const S: Record<string, React.CSSProperties> = {
   proofTag: {
     display: 'flex', alignItems: 'center', gap: 4,
     marginTop: 4,
+    textDecoration: 'none',
+    cursor: 'pointer',
   },
   summary: {
     marginTop: spacing.md, paddingTop: spacing.sm, borderTop: borders.rule,

@@ -18,6 +18,8 @@ export interface JournalEntry {
   body: string
   /** Sentiment: positive / negative / neutral */
   sentiment: 'positive' | 'negative' | 'neutral'
+  /** Walrus blob_id for on-chain verification (if available). */
+  blobId?: string
 }
 
 /**
@@ -46,6 +48,7 @@ export function buildJournalEntries(
         ? `${agentName} correctly predicted ${p.pick} for ${p.matchId}. ${conf >= 70 ? 'High confidence paid off.' : 'Cautious but accurate.'}`
         : `${agentName} predicted ${p.pick} for ${p.matchId} with ${conf}% confidence, but was wrong. ${conf >= 70 ? 'Overconfidence on this one.' : 'Low confidence — at least the doubt was warranted.'}`,
       sentiment: ok ? 'positive' : 'negative',
+      blobId: p.blobId,
     })
   }
 
@@ -67,6 +70,7 @@ export function buildJournalEntries(
         ? ev.summary
         : `After reflecting on recent results, ${agentName} adjusted ${diffs.length} parameter${diffs.length > 1 ? 's' : ''}. Total shift magnitude: ${totalShift.toFixed(3)}. ${totalShift > 0.1 ? 'A significant recalibration.' : 'Fine-tuning the approach.'}`,
       sentiment: 'neutral',
+      blobId: ev.blobId,
     })
   }
 

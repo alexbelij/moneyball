@@ -11,9 +11,10 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import {
-  getAgentPredictions, getAgentEvolution,
+  getAgentPredictions, getAgentEvolution, getVerifiability,
   type PredictionItem, type EvolutionItem,
 } from '@/lib/api'
+import { walrusBlobUrl, suiObjectUrl } from '@/lib/explorer'
 import { PixelButton } from '@/components/ui'
 import { GameEventBus } from '@/events/GameEventBus'
 import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
@@ -75,6 +76,8 @@ export function WalrusProof() {
   const [totalPredictions, setTotalPredictions] = useState(0)
   const [totalEvolutions, setTotalEvolutions] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [accountObjectUrl, setAccountObjectUrl] = useState<string | null>(null)
+  const [accountId, setAccountId] = useState<string>('')
 
   const trapRef = useFocusTrap<HTMLDivElement>({ onClose: () => setOpen(false), active: open })
 
@@ -106,6 +109,15 @@ export function WalrusProof() {
         const allWrites: RecentWrite[] = []
         let preds = 0
         let evos = 0
+
+        // Fetch verifiability data for the MemWal account link
+        try {
+          const v = await getVerifiability()
+          if (alive) {
+            setAccountObjectUrl(v.memwalAccountObjectUrl ?? null)
+            setAccountId(v.memwalAccountId ?? '')
+          }
+        } catch { /* non-critical */ }
 
         await Promise.all(
           AGENT_IDS.map(async (agentId) => {
@@ -165,11 +177,11 @@ export function WalrusProof() {
 
   const close = useCallback(() => setOpen(false), [])
 
+  const accountIdDisplay = accountId || '<ACCOUNT_ID>'
   const curlRecipe = `# Verify Moneyball data on Walrus Memory
-# Replace <ACCOUNT_ID> with the MemWal account object ID from Sui explorer
 
-# 1. Check account on Sui
-open https://suiscan.xyz/mainnet/object/<ACCOUNT_ID>
+# 1. Check MemWal account on Sui
+open ${accountObjectUrl ?? `https://suiscan.xyz/mainnet/object/${accountIdDisplay}`}
 
 # 2. Recall agent memories via MemWal API
 curl -X POST https://relayer.memory.walrus.xyz/recall \\
@@ -243,6 +255,20 @@ curl -X POST https://relayer.memory.walrus.xyz/recall \\
                   <div style={S.statLabel}>Namespaces</div>
                 </div>
               </div>
+
+              {/* MemWal account link */}
+              {accountObjectUrl && (
+                <div style={S.section}>
+                  <a
+                    href={accountObjectUrl}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    style={{ ...S.accountLink }}
+                  >
+                    ■ View MemWal Account on SuiScan →
+                  </a>
+                </div>
+              )}
 
               {/* Namespaces */}
               <div style={S.section}>
@@ -494,6 +520,18 @@ const S: Record<string, React.CSSProperties> = {
     margin: 0,
     whiteSpace: 'pre-wrap',
     wordBreak: 'break-all',
+  },
+  accountLink: {
+    fontFamily: fonts.header,
+    ...typo.hdrXs,
+    color: accents.gold,
+    textDecoration: 'none',
+    display: 'block',
+    padding: `${spacing.sm}px`,
+    border: borders.standard,
+    background: palette.wood700,
+    textAlign: 'center',
+    cursor: 'pointer',
   },
   techNote: {
     fontFamily: fonts.body,

@@ -8,8 +8,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { text, palette, spacing, type as typo, fonts, borders, accents } from '@/styles/tokens'
 import { getVerifiability, type VerifiabilityData, type AgentVerifiability } from '@/lib/api'
-
-const SUI_OBJECT_EXPLORER = 'https://suivision.xyz/object'
+import { suiObjectUrl } from '@/lib/explorer'
 
 const FEEDBACK_ISSUES = [
   {
@@ -194,11 +193,20 @@ export function VerifyPanel() {
       <SectionHeading>On-chain identifiers</SectionHeading>
       <CopyId label="Walrus site object" value={data.walrusSiteObject} />
       <div style={{ marginBottom: spacing.sm }}>
-        <ExternalLink href={`${SUI_OBJECT_EXPLORER}/${data.walrusSiteObject}`}>View on Suivision</ExternalLink>
+        <ExternalLink href={suiObjectUrl(data.walrusSiteObject)}>View on SuiScan</ExternalLink>
         {' | '}
         <ExternalLink href="https://walruscan.com">WalrusScan explorer</ExternalLink>
       </div>
       <CopyId label="MemWal account ID" value={data.memwalAccountId} />
+      {data.memwalAccountObjectUrl ? (
+        <div style={{ marginBottom: spacing.sm }}>
+          <ExternalLink href={data.memwalAccountObjectUrl}>View MemWal account on SuiScan</ExternalLink>
+        </div>
+      ) : (
+        <div style={{ ...typo.caption, fontFamily: fonts.body, color: text.faint, marginBottom: spacing.sm }}>
+          MemWal account ID not configured in environment
+        </div>
+      )}
       <CopyId label="MemWal relayer" value={data.memwalRelayer} />
       <div style={{ marginBottom: spacing.md }}>
         <div style={{ ...typo.dataSm, fontFamily: fonts.header, color: text.muted, marginBottom: 2 }}>Namespace pattern</div>
