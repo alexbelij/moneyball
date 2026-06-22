@@ -9,9 +9,10 @@
 [![CI](https://github.com/anna-stolbovskaja/moneyball/actions/workflows/ci.yml/badge.svg)](https://github.com/anna-stolbovskaja/moneyball/actions/workflows/ci.yml)
 [![npm: @moneyball-ai/memwal-utils](https://img.shields.io/npm/v/@moneyball-ai/memwal-utils?label=%40moneyball-ai%2Fmemwal-utils&color=cb3837)](https://www.npmjs.com/package/@moneyball-ai/memwal-utils)
 [![npm downloads](https://img.shields.io/npm/dw/@moneyball-ai/memwal-utils?label=npm%20downloads&color=cb3837)](https://www.npmjs.com/package/@moneyball-ai/memwal-utils)
+[![Walrus Memories](https://img.shields.io/endpoint?url=https%3A%2F%2Ftaken-api.onrender.com%2Fapi%2Fpublic%2Fbadge%2Fmemories&cacheSeconds=300&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI+PHRleHQgeD0iMCIgeT0iMTMiIGZvbnQtc2l6ZT0iMTQiPvCflLc8L3RleHQ+PC9zdmc+)](https://taken-api.onrender.com/api/public/verifiability)
 [![MemWal SDK](https://img.shields.io/badge/MemWal_SDK-v0.0.7-blue)](https://github.com/MystenLabs/MemWal)
 [![Walrus](https://img.shields.io/badge/Walrus-mainnet-green)](https://walrus.xyz)
-[![Tests](https://img.shields.io/badge/tests-562%20passing-brightgreen)](#tests)
+[![Tests](https://img.shields.io/badge/tests-567%20passing-brightgreen)](#tests)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 [Live Demo](https://taken.wal.app) · [Architecture](docs/ARCHITECTURE.md) · [Memory Design](docs/memory-design.md) · [API Reference](docs/api.md) · [Demo Script](docs/demo-script.md)

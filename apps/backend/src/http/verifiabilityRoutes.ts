@@ -71,6 +71,21 @@ export function registerVerifiabilityRoutes(
   app: Express,
   svc: AgentEventService,
 ) {
+  // ── Dynamic shields.io badge — live Walrus memory count ──────────────
+  app.get('/api/public/badge/memories', (_req, res) => {
+    const report = svc.readinessReport(AGENT_IDS as unknown as string[])
+    const total =
+      report.totals.predictions +
+      report.totals.outcomes +
+      report.totals.evolutions
+    res.json({
+      schemaVersion: 1,
+      label: 'walrus memories',
+      message: total.toLocaleString('en-US'),
+      color: total > 0 ? '0099FF' : 'lightgrey',
+      cacheSeconds: 300,
+    })
+  })
   app.get('/api/public/verifiability', (_req, res) => {
     const agents: AgentVerifiability[] = AGENT_IDS.map((agentId) => ({
       agentId,
