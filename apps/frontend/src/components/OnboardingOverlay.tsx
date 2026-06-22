@@ -161,7 +161,7 @@ const styles = {
     fontFamily: fonts.body,
     color: text.dim,
     margin: `0 0 ${spacing.lg}px`,
-    lineHeight: '1.5',
+    lineHeight: '28px',
   } as React.CSSProperties,
 
   actions: {

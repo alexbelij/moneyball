@@ -12,6 +12,7 @@ import { palette, accents, text, fonts, type, borders, shadows, spacing, agentCo
 import { PixelIcon } from '@/components/icons/PixelIcon'
 import { useGameStore } from '@/store/gameStore'
 import { getAgentPredictions, type PredictionItem, type MatchInfo } from '@/lib/api'
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
 
 /* ── Agent metadata ──────────────────────────────────────────────── */
 const AGENTS = [
@@ -99,9 +100,11 @@ export function ConsensusView({ match, onClose }: ConsensusViewProps) {
   const disagreementLevel = disagreement > 0.6 ? 'HIGH' : disagreement > 0.3 ? 'MED' : 'LOW'
   const disagreementColor = disagreement > 0.6 ? accents.red : disagreement > 0.3 ? accents.gold : accents.green
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onClose, active: true })
+
   return (
-    <div style={S.backdrop} onClick={onClose}>
-      <div style={S.panel} onClick={(e) => e.stopPropagation()}>
+    <div style={S.backdrop} onClick={onClose} role="presentation">
+      <div ref={trapRef} style={S.panel} onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Cabinet vote consensus">
         {/* Header */}
         <div style={S.header}>
           <span style={S.headerTitle}>CABINET VOTE</span>

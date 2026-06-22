@@ -30,7 +30,7 @@ export function RankMedal({ rank }: { rank: number }) {
         padding: '0 4px',
         fontFamily: fonts.header,
         ...typo.svgAxis,
-        lineHeight: 1,
+        lineHeight: '14px',
         color: fg,
         background: bg,
         border: isMedal ? `2px solid ${palette.wood900}` : 'none',
