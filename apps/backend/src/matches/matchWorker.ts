@@ -121,49 +121,55 @@ export class MatchWorker {
       console.error('[matchWorker] live context fetch error (using fallback):', err)
     }
 
+    let predictedCount = 0
     for (const agent of this.agents) {
-      // T38: Fetch evolved params BEFORE prediction so they can shift picks
-      const params = await this.sleep.getParams(agent.agentId)
-      const topicMul = params.topicCalibration[topic]?.multiplier ?? 1.0
-      const evolved: EvolvedCalibration = {
-        hedgingLevel: params.hedgingLevel,
-        confidenceBias: params.confidenceBias,
-        topicMultiplier: topicMul,
-      }
-      const raw = predictMatch(agent, match, ctx, evolved)
-      let effective = await this.sleep.calibrate(agent.agentId, topic, raw.rawConfidence)
+      try {
+        // T38: Fetch evolved params BEFORE prediction so they can shift picks
+        const params = await this.sleep.getParams(agent.agentId)
+        const topicMul = params.topicCalibration[topic]?.multiplier ?? 1.0
+        const evolved: EvolvedCalibration = {
+          hedgingLevel: params.hedgingLevel,
+          confidenceBias: params.confidenceBias,
+          topicMultiplier: topicMul,
+        }
+        const raw = predictMatch(agent, match, ctx, evolved)
+        let effective = await this.sleep.calibrate(agent.agentId, topic, raw.rawConfidence)
 
-      // T79: Apply mood-based confidence modifier
-      if (this.opts.publicEvents) {
-        const outcomeList = (this.opts.publicEvents as any).outcomeIndex?.get(agent.agentId) ?? []
-        const recentOutcomes = outcomeList
-          .sort((a: any, b: any) => (a.resolvedAt < b.resolvedAt ? 1 : -1))
-          .slice(0, 5)
-          .map((o: any) => o.correct as boolean)
-        const mood = computeMood(recentOutcomes)
-        effective = Math.min(0.99, Math.max(0.01, effective * mood.confidenceModifier))
-      }
+        // T79: Apply mood-based confidence modifier
+        if (this.opts.publicEvents) {
+          const outcomeList = (this.opts.publicEvents as any).outcomeIndex?.get(agent.agentId) ?? []
+          const recentOutcomes = outcomeList
+            .sort((a: any, b: any) => (a.resolvedAt < b.resolvedAt ? 1 : -1))
+            .slice(0, 5)
+            .map((o: any) => o.correct as boolean)
+          const mood = computeMood(recentOutcomes)
+          effective = Math.min(0.99, Math.max(0.01, effective * mood.confidenceModifier))
+        }
 
-      const event: PredictionEvent = {
-        id: `pred:${match.id}:${agent.agentId}`,
-        agentId: agent.agentId,
-        userId: 'world',
-        topic,
-        prediction: `${pickLabel(match, raw.pick)} — ${raw.reasoning}`,
-        rawConfidence: raw.rawConfidence,
-        effectiveConfidence: effective,
-        paramsVersion: params.version,
-        outcome: null,
-        disagree: null,
-        ts: new Date().toISOString(),
+        const event: PredictionEvent = {
+          id: `pred:${match.id}:${agent.agentId}`,
+          agentId: agent.agentId,
+          userId: 'world',
+          topic,
+          prediction: `${pickLabel(match, raw.pick)} — ${raw.reasoning}`,
+          rawConfidence: raw.rawConfidence,
+          effectiveConfidence: effective,
+          paramsVersion: params.version,
+          outcome: null,
+          disagree: null,
+          ts: new Date().toISOString(),
+        }
+        await this.sleep.reader.recordPrediction(event, match.id, raw.pick)
+        this.opts.onThought?.(
+          agent.agentId,
+          `${match.homeTeam} vs ${match.awayTeam}: ${pickLabel(match, raw.pick)} (${Math.round(effective * 100)}%)`,
+        )
+        predictedCount++
+      } catch (agentErr) {
+        console.error(`[matchWorker] agent ${agent.agentId} prediction failed for ${match.id}:`, agentErr)
       }
-      await this.sleep.reader.recordPrediction(event, match.id, raw.pick)
-      this.opts.onThought?.(
-        agent.agentId,
-        `${match.homeTeam} vs ${match.awayTeam}: ${pickLabel(match, raw.pick)} (${Math.round(effective * 100)}%)`,
-      )
     }
-    console.log(`[matchWorker] predicted ${match.id}: ${match.homeTeam} vs ${match.awayTeam}`)
+    console.log(`[matchWorker] predicted ${match.id}: ${match.homeTeam} vs ${match.awayTeam} (${predictedCount}/${this.agents.length} agents)`)
   }
 
   private async maybeResolve(match: Match): Promise<void> {
@@ -173,20 +179,26 @@ export class MatchWorker {
     this.resolvedMatchIds.add(match.id)
 
     const resolvedAt = new Date().toISOString()
+    let resolvedCount = 0
     for (const agent of this.agents) {
-      const predictionId = `pred:${match.id}:${agent.agentId}`
-      const raw = predictMatch(agent, match) // deterministic ⇒ same pick as stored
-      const correct = raw.pick === match.result.outcome
-      await this.sleep.reader.recordOutcome(predictionId, correct, resolvedAt)
-      await this.sleep.onOutcomeResolved(agent.agentId)
-      this.opts.onThought?.(
-        agent.agentId,
-        correct
-          ? `Called it. ${match.homeTeam} ${match.result.homeScore}–${match.result.awayScore} ${match.awayTeam}.`
-          : `${match.homeTeam} ${match.result.homeScore}–${match.result.awayScore}… noted. Recalibrating.`,
-      )
+      try {
+        const predictionId = `pred:${match.id}:${agent.agentId}`
+        const raw = predictMatch(agent, match) // deterministic ⇒ same pick as stored
+        const correct = raw.pick === match.result.outcome
+        await this.sleep.reader.recordOutcome(predictionId, correct, resolvedAt)
+        await this.sleep.onOutcomeResolved(agent.agentId)
+        this.opts.onThought?.(
+          agent.agentId,
+          correct
+            ? `Called it. ${match.homeTeam} ${match.result.homeScore}–${match.result.awayScore} ${match.awayTeam}.`
+            : `${match.homeTeam} ${match.result.homeScore}–${match.result.awayScore}… noted. Recalibrating.`,
+        )
+        resolvedCount++
+      } catch (agentErr) {
+        console.error(`[matchWorker] agent ${agent.agentId} resolve failed for ${match.id}:`, agentErr)
+      }
     }
-    console.log(`[matchWorker] resolved ${match.id} → ${match.result.outcome}`)
+    console.log(`[matchWorker] resolved ${match.id} → ${match.result.outcome} (${resolvedCount}/${this.agents.length} agents)`)
 
     // T79: Cross-agent consensus (after all agents graded)
     if (this.opts.publicEvents) {
