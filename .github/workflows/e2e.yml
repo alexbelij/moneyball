@@ -27,8 +27,7 @@ jobs:
       - name: Build frontend
         run: pnpm -C apps/frontend exec vite build
         env:
-          VITE_API_URL: http://localhost:4001
-          VITE_SOCKET_URL: http://localhost:4001
+          VITE_BACKEND_URL: http://localhost:4001
 
       - name: Install Playwright browsers
         run: pnpm -C apps/frontend exec playwright install --with-deps chromium
@@ -36,8 +35,7 @@ jobs:
       - name: Run e2e smoke tests
         run: pnpm -C apps/frontend exec playwright test
         env:
-          VITE_API_URL: http://localhost:4001
-          VITE_SOCKET_URL: http://localhost:4001
+          VITE_BACKEND_URL: http://localhost:4001
 
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
