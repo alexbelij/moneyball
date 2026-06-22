@@ -17,5 +17,7 @@ docs/migration.md
 test-results/
 playwright-report/
 var/
+# E2E screenshots (generated)
+apps/frontend/e2e/screenshots/*.png
 # Graphify cache
 graphify-out/

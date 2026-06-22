@@ -450,7 +450,6 @@ const S: Record<string, React.CSSProperties> = {
     ...typo.body,
     color: text.dim,
     margin: 0,
-    lineHeight: '22px',
   },
   statsRow: {
     display: 'flex',

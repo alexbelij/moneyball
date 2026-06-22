@@ -13,6 +13,7 @@ import { PixelIcon } from '@/components/icons/PixelIcon'
 import { useGameStore } from '@/store/gameStore'
 import { getAgentEvolution, type EvolutionItem } from '@/lib/api'
 import { walrusBlobUrl } from '@/lib/explorer'
+import { useFocusTrap } from '@/lib/a11y/useFocusTrap'
 
 interface EvolutionViewProps {
   agentId: string
@@ -39,9 +40,11 @@ export function EvolutionView({ agentId, onClose }: EvolutionViewProps) {
   const first = evolutions[0]
   const last = evolutions[evolutions.length - 1]
 
+  const trapRef = useFocusTrap<HTMLDivElement>({ onClose, active: true })
+
   return (
-    <div style={S.backdrop} onClick={onClose}>
-      <div style={S.panel} onClick={(e) => e.stopPropagation()}>
+    <div style={S.backdrop} onClick={onClose} role="presentation">
+      <div ref={trapRef} style={S.panel} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`${agentName} evolution history`}>
         {/* Header */}
         <div style={S.header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

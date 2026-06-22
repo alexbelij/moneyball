@@ -136,7 +136,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
         alignItems: 'stretch',
         background: palette.wood900,
         border: `${borders.width}px solid ${accentColor}`,
-        borderRadius: 5,
+        borderRadius: 0,
         boxShadow: shadows.hardSmall,
         overflow: 'hidden',
         position: 'relative',
@@ -155,7 +155,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '10px 0 10px 10px',
+          padding: '8px 0 8px 8px',
         }}
       >
         <img
@@ -165,7 +165,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
           height={56}
           style={{
             imageRendering: 'pixelated',
-            borderRadius: 3,
+            borderRadius: 0,
             border: `1px solid ${palette.wood500}`,
           }}
         />
@@ -175,7 +175,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
       <div
         style={{
           flex: 1,
-          padding: '10px 28px 10px 10px',
+          padding: '8px 24px 8px 8px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
@@ -191,7 +191,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
               color: accentColor,
               letterSpacing: '0.5px',
               marginBottom: 4,
-              lineHeight: 1.2,
+              lineHeight: '18px',
             }}
           >
             {options.title}
@@ -201,7 +201,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
           style={{
             fontFamily: fonts.body,
             ...typo.body,
-            lineHeight: 1.3,
+            lineHeight: '24px',
             color: palette.paper,
             overflowY: 'auto',
             maxHeight: options.title ? 40 : 56,
@@ -235,7 +235,7 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
           ...typo.body,
           cursor: 'pointer',
           padding: 0,
-          lineHeight: 1,
+          lineHeight: '18px',
         }}
       >
         ✕
