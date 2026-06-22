@@ -2,7 +2,7 @@
  * PortraitGuard | v1.0.0 | 2026-06-17
  * Purpose: On narrow mobile viewports in portrait orientation, shows a
  * full-screen overlay asking the user to rotate their device to landscape.
- * Uses a pixel-art SVG rotate icon (no emoji) matching the SNES aesthetic.
+ * Uses a pixel-art SVG rotate icon (no emoji) matching the pixel-art aesthetic.
  * Only appears on screens narrower than 600px in portrait mode.
  */
 

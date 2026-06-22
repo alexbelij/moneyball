@@ -2,7 +2,7 @@
  * Toast | v1.0.0 | 2026-06-17
  * Purpose: Single pixel "coach dialogue" toast notification.
  *
- * T66: Anna's design — rounded SNES bevel box, 240px wide, 56×56 coach
+ * T66: Anna's design — rounded 16-bit bevel box, 240px wide, 56×56 coach
  * avatar on the left, scrollable text column, variant accent border,
  * thin progress bar, pause-on-hover, Esc to dismiss focused toast.
  * All colours from tokens.ts.

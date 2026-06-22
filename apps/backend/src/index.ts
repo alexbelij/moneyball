@@ -67,7 +67,7 @@ async function main() {
 
   // ── T56: helmet — standard security headers ────────────────────────────
   // CSP is set to allow the Walrus-hosted frontend, the backend itself for
-  // API/WS, and inline pixel styles (the SNES UI relies on them).
+  // API/WS, and inline pixel styles (the pixel-art UI relies on them).
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {

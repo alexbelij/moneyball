@@ -1,6 +1,6 @@
 /**
  * Spinner | v1.0.0 | 2026-06-17
- * Purpose: Small SNES-style pixel loading animation.
+ * Purpose: Small 16-bit-style pixel loading animation.
  * T67: async blocking-states — inline spinner for busy buttons.
  * Design: 4-frame rotating pixel block (CSS steps animation).
  * Respects prefers-reduced-motion (static square).

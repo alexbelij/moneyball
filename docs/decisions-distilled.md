@@ -14,7 +14,7 @@
 Submission: Airtable form, demo video < 3 min, GitHub tickets for bugs = "Best Feedback" prize track.
 
 ## 2. Product concept (approved World Design v1)
-Pixel-art (16-bit SNES, side view) scouts' cabinet. 5 AI agents with distinct methodologies predict FIFA WC 2026 matches, evolve from outcomes, roast users. Shared world: all users see the same scene (Socket.io). Click agent → modal (predictions / evolution / memory). Thought bubbles over agents like NPC games. Interactive objects over background: TV (match in progress + popup), coffee machine, magnetic boards (agent chat), door, light switch, phone, radio/cassette player, folders. Stretch: more rooms (corridor, kitchen, archive, toilet), user-created agents appearing at the door, betting (v2, no own funds), Seal encryption (v2).
+Pixel-art (cinematic 16-bit-inspired, side view) scouts' cabinet. 5 AI agents with distinct methodologies predict FIFA WC 2026 matches, evolve from outcomes, roast users. Shared world: all users see the same scene (Socket.io). Click agent → modal (predictions / evolution / memory). Thought bubbles over agents like NPC games. Interactive objects over background: TV (match in progress + popup), coffee machine, magnetic boards (agent chat), door, light switch, phone, radio/cassette player, folders. Stretch: more rooms (corridor, kitchen, archive, toilet), user-created agents appearing at the door, betting (v2, no own funds), Seal encryption (v2).
 
 ## 3. Fixed architecture decisions (Decision Log, do not re-litigate)
 - Monorepo pnpm: apps/frontend (React+Phaser+Zustand+mitt EventBus), apps/backend (Node+Express+Socket.io), packages/shared (typed socket contract).

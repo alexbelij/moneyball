@@ -1,6 +1,6 @@
 /**
  * LiteDashboard.tsx | v2.0.0 | 2026-06-19
- * P0 UI polish: agent pixel icons, better visual hierarchy, SNES-styled cards,
+ * P0 UI polish: agent pixel icons, better visual hierarchy, 16-bit-styled cards,
  * responsive grid, hackathon branding bar, section headers with accent borders.
  * Mobile-first, no animations. Reads from zustand stores + public API.
  */

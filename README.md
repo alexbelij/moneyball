@@ -4,7 +4,7 @@
 
 # 🕹️ Moneyball Cabinet
 
-**Five AI agents with persistent, evolving memory predict FIFA World Cup 2026 — inside an SNES-style pixel-art arcade cabinet. Zero databases. All state lives on Walrus mainnet.**
+**Five AI agents with persistent, evolving memory predict FIFA World Cup 2026 — inside an cinematic 16-bit-inspired pixel-art arcade cabinet. Zero databases. All state lives on Walrus mainnet.**
 
 [![CI](https://github.com/anna-stolbovskaja/moneyball/actions/workflows/ci.yml/badge.svg)](https://github.com/anna-stolbovskaja/moneyball/actions/workflows/ci.yml)
 [![npm: @moneyball-ai/memwal-utils](https://img.shields.io/npm/v/@moneyball-ai/memwal-utils?label=%40moneyball-ai%2Fmemwal-utils&color=cb3837)](https://www.npmjs.com/package/@moneyball-ai/memwal-utils)
@@ -34,7 +34,7 @@ Most prediction apps wrap a single LLM in a chat interface. Moneyball is fundame
 - 🗄️ **Zero databases.** No PostgreSQL, no Redis, no Supabase, no IndexedDB. MemWal on Walrus mainnet is the *sole* persistent storage layer. The in-memory read-model rebuilds from MemWal on every cold boot.
 - 📦 **Published npm SDK.** We extracted production-tested MemWal patterns into [`@moneyball-ai/memwal-utils`](https://www.npmjs.com/package/@moneyball-ai/memwal-utils) — a reusable open-source package for any builder working with MemWal.
 - 🐛 **13 SDK issues filed** upstream on [MystenLabs/MemWal](https://github.com/MystenLabs/MemWal/issues) — bug reports, feature requests, and documentation gaps discovered during production use.
-- 🕹️ **SNES pixel-art arcade cabinet** built with Phaser 3 — interactive props (TV, coffee machine, flower), animated agent personas with thought bubbles, strict design system enforced by automated tests (no gradients, no rounded corners, pixel-perfect).
+- 🕹️ **16-bit-inspired pixel-art arcade cabinet** built with Phaser 3 — interactive props (TV, coffee machine, flower), animated agent personas with thought bubbles, strict design system enforced by automated tests (no gradients, no rounded corners, pixel-perfect).
 - 🎫 **Retro pixel ticket generator** — shareable 8-bit match tickets with predictions, agent weights, and Walrus blob IDs for social virality.
 - 💾 **Crash-resilient write journal** — JSONL journal on disk ensures pending MemWal writes survive Render cold boots. No provenance gaps, even on ephemeral free-tier hosting.
 - 🔒 **HMAC-signed guest identity** — prevents IDOR spoofing without requiring wallet connection.
@@ -47,7 +47,7 @@ Most prediction apps wrap a single LLM in a chat interface. Moneyball is fundame
 | Criterion | How Moneyball Delivers | Evidence |
 |-----------|------------------------|----------|
 | **C1 · Memory Depth & Authenticity** | 5 agents run sleep/evolve cycles: Brier score + per-topic calibration → parameter drift. Day 1 ≠ Day 4. Every mutation is a Walrus blob with provenance badges (`[SEED]`/`[LIVE]`). User disagree history persists per Sui wallet. | [`docs/memory-design.md`](docs/memory-design.md) · [`GET /api/public/agents/:id/evolution`](docs/api.md) |
-| **C2 · Creativity & Flair** | SNES pixel-art arcade cabinet (Phaser 3). 5 animated agent personas with thought bubbles. Interactive props. Retro pixel ticket generator for social sharing. Strict design system — no gradients, no rounded corners, pixel-perfect. | [`docs/design-spec.md`](docs/design-spec.md) · [`tokens.ts`](apps/frontend/src/styles/tokens.ts) · [`RetroTicket.tsx`](apps/frontend/src/components/RetroTicket.tsx) |
+| **C2 · Creativity & Flair** | 16-bit-inspired pixel-art arcade cabinet (Phaser 3). 5 animated agent personas with thought bubbles. Interactive props. Retro pixel ticket generator for social sharing. Strict design system — no gradients, no rounded corners, pixel-perfect. | [`docs/design-spec.md`](docs/design-spec.md) · [`tokens.ts`](apps/frontend/src/styles/tokens.ts) · [`RetroTicket.tsx`](apps/frontend/src/components/RetroTicket.tsx) |
 | **C3 · Technical Execution** | MemWal is the *sole* durable store — zero traditional databases. 562 automated tests. Deterministic evolution engine (no LLM in the prediction pipeline). Published npm SDK. HMAC-signed guest identity. Durable JSONL write journal survives cold boots. | [`packages/memwal-utils`](packages/memwal-utils/) · [CI pipeline](.github/workflows/ci.yml) · [`writeJournal.ts`](apps/backend/src/memory/writeJournal.ts) |
 
 ---

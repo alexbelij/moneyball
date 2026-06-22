@@ -1,6 +1,6 @@
 /**
  * RoastCard | v1.0.0 | 2026-06-17
- * Purpose: Shareable roast card — SNES-pixel aesthetic canvas image (T61).
+ * Purpose: Shareable roast card — 16-bit-pixel aesthetic canvas image (T61).
  * Generates a canvas-based card with the roast text, agent name/role, and
  * Moneyball branding. Offers Download (PNG) and Share (Web Share API) buttons.
  *
@@ -92,7 +92,7 @@ function drawCard(
   ctx.fillStyle = accentColor
   ctx.fillRect(8, 8, STRIPE_W, CARD_H - 16)
 
-  // Scanline overlay (SNES feel — very subtle)
+  // Scanline overlay (16-bit feel — very subtle)
   ctx.fillStyle = 'rgba(0,0,0,0.08)'
   for (let y = 0; y < CARD_H; y += 3) {
     ctx.fillRect(0, y, CARD_W, 1)

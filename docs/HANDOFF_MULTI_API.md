@@ -21,7 +21,7 @@
 
 ## Project Context
 
-**Moneyball** — 5 AI agents in SNES pixel-art style predict FIFA World Cup 2026 matches. Backend on Express + TypeScript, pnpm monorepo.
+**Moneyball** — 5 AI agents in 16-bit-inspired pixel-art style predict FIFA World Cup 2026 matches. Backend on Express + TypeScript, pnpm monorepo.
 
 ---
 

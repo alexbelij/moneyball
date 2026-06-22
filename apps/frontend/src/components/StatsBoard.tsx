@@ -3,7 +3,7 @@
  * Purpose: Scouts' leaderboard — per-agent record/accuracy/streak computed
  * client-side from the public predictions feed (no extra backend endpoint).
  * T49: typography scale — header ≥10px, body ≥16px; responsive layout.
- * T34: pixel reskin — paper leaderboard panel, wood-ramp rows, SNES header,
+ * T34: pixel reskin — paper leaderboard panel, wood-ramp rows, 16-bit header,
  *      pixel-medal rank, PixelButton "CLOSE" (no emoji icons).
  * T33: migrated to shared tokens.
  * T15: embeds StatsReport (predictions table + Brier chart) below leaderboard.

@@ -1,11 +1,11 @@
-# @moneyball/sleep-worker — MVP SleepWorker поверх MemWal
+# @moneyball/sleep-worker — MVP SleepWorker on MemWal
 
-Самообучение агентов **без LLM, без embeddings, только TypeScript, только MemWal**.
-Компилируется под `tsc --strict` (+ `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`).
-E2E-симуляция (`test/simulation.ts`) доказывает реальную эволюцию: v0 → v1 → v2,
-overconfidence-bias уходит в минус, слабая тема получает multiplier < 1, cooldown работает.
+Agent self-learning **without LLM, without embeddings — pure TypeScript, pure MemWal**.
+Compiles under `tsc --strict` (+ `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`).
+E2E simulation (`test/simulation.ts`) proves real evolution: v0 → v1 → v2,
+overconfidence bias goes negative, weak topic gets multiplier < 1, cooldown works.
 
-## Файловая структура
+## File Structure
 
 ```
 sleep-worker/
@@ -14,121 +14,121 @@ sleep-worker/
 ├── src/
 │   ├── index.ts                   # public API + createSleepWorker() (composition root)
 │   ├── memory/
-│   │   ├── keys.ts                # ЕДИНСТВЕННОЕ место конструирования MemWal-ключей
-│   │   └── MemWalClient.ts        # порт над MemWal: read / write(CAS, priority) / listKeys + Clock
+│   │   ├── keys.ts                # SINGLE source of truth for MemWal key construction
+│   │   └── MemWalClient.ts        # port over MemWal: read / write(CAS, priority) / listKeys + Clock
 │   ├── params/
 │   │   ├── AgentParams.ts         # AgentParams, PARAM_BOUNDS, ParamDelta (discriminated union),
-│   │   │                          # applyCalibration() — inference-side хелпер
+│   │   │                          # applyCalibration() — inference-side helper
 │   │   └── AgentParamsStore.ts    # versioned store: getCached(30s) / getOrCreate /
 │   │                              # commitNewVersion(CAS) / rollbackTo / history prune
 │   ├── events/
-│   │   └── types.ts               # PredictionEvent (целевая форма), EvolutionEvent,
-│   │                              # AgentEventReader — порт над вашим AgentEventService
+│   │   └── types.ts               # PredictionEvent (target schema), EvolutionEvent,
+│   │                              # AgentEventReader — port over AgentEventService
 │   ├── reflection/
-│   │   ├── metrics.ts             # чистые функции: Brier, calibration buckets, gap,
+│   │   ├── metrics.ts             # pure functions: Brier, calibration buckets, gap,
 │   │   │                          # per-topic/per-version stats, capped disagree rate
-│   │   └── ReflectionEngine.ts    # детерминированные дельты + shadow-eval → rollback
+│   │   └── ReflectionEngine.ts    # deterministic deltas + shadow-eval → rollback
 │   ├── evolution/
-│   │   └── EvolutionEngine.ts     # ЕДИНСТВЕННЫЙ мутатор params: валидация, audit-first,
-│   │                              # идемпотентность по runId, dryRun (shadow mode)
+│   │   └── EvolutionEngine.ts     # SOLE params mutator: validation, audit-first,
+│   │                              # idempotency by runId, dryRun (shadow mode)
 │   └── sleep/
 │       ├── SleepState.ts          # SleepState, SleepCheckpoint, SleepRunResult, SleepLockRecord
-│       ├── SleepStateStore.ts     # счётчики (lossy NORMAL) + COMMIT/abort/checkpoint (HIGH)
-│       ├── SleepLock.ts           # CAS-lock c TTL 10 мин, кража протухшего лока через CAS
-│       └── SleepWorker.ts         # оркестратор: trigger → LOCK → COLLECT → REFLECT → EVOLVE → COMMIT
+│       ├── SleepStateStore.ts     # counters (lossy NORMAL) + COMMIT/abort/checkpoint (HIGH)
+│       ├── SleepLock.ts           # CAS-lock with 10 min TTL, stale lock theft via CAS
+│       └── SleepWorker.ts         # orchestrator: trigger → LOCK → COLLECT → REFLECT → EVOLVE → COMMIT
 └── test/
-    └── simulation.ts              # e2e: FakeMemWal (CAS-корректный) + FakeEventReader
+    └── simulation.ts              # e2e: FakeMemWal (CAS-correct) + FakeEventReader
 ```
 
-## Ключевые инварианты (зашиты в код)
+## Key Invariants (enforced in code)
 
-1. **Единственная мутабельная поверхность** — `AgentParams`. Меняется только через
-   `EvolutionEngine` → `AgentParamsStore.commitNewVersion()` с CAS по `memwalVersion`
-   и по логической `version`.
-2. **Audit-first**: `EvolutionEvent` пишется ДО изменения params. Событие без изменения —
-   восстановимая аномалия; изменение без события — неаудируемая порча.
-3. **History-before-pointer**: снапшот новой версии в `personality_history/{v}` пишется
-   до переключения живого указателя — краш между записями не теряет версию.
-4. **Watermark по `outcome.resolvedAt`**, не по `ts` события — поздно резолвящиеся
-   прогнозы не теряются.
-5. **Разделение сигналов**: outcomes → калибровка; disagree → только hedging
-   (+ cap 20% веса на одного userId — анти-накрутка).
-6. **Идемпотентность**: `runId = agentId:watermark:paramsVersion` детерминирован;
-   `EvolutionEvent.id = evo_{runId}`; повторный прогон упавшего сна не применит дважды.
-7. **`delta.from` must match live params** — устаревший reflection падает, а не применяется.
-8. **Бюджет изменений**: Σ|delta| ≤ 0.10 за сон + cooldown 2 сна на тему + клампы границ
-   проверяются дважды (Reflection clamps, Evolution re-validates — defense in depth).
-9. **Shadow rollback**: Brier(vN) > Brier(vN−1) + 0.05 при n≥15 на обеих версиях →
-   rollback (как новая forward-версия, история не переписывается).
+1. **Single mutable surface** — `AgentParams`. Changed only via
+   `EvolutionEngine` → `AgentParamsStore.commitNewVersion()` with CAS on `memwalVersion`
+   and logical `version`.
+2. **Audit-first**: `EvolutionEvent` is written BEFORE params change. An event without
+   a change is a recoverable anomaly; a change without an event is unauditable corruption.
+3. **History-before-pointer**: a snapshot of the new version at `personality_history/{v}` is written
+   before switching the live pointer — a crash between writes doesn't lose the version.
+4. **Watermark by `outcome.resolvedAt`**, not by event `ts` — late-resolving
+   predictions are never lost.
+5. **Signal separation**: outcomes → calibration; disagree → hedging only
+   (+ 20% weight cap per userId — anti-manipulation).
+6. **Idempotency**: `runId = agentId:watermark:paramsVersion` is deterministic;
+   `EvolutionEvent.id = evo_{runId}`; re-running a failed sleep never applies twice.
+7. **`delta.from` must match live params** — stale reflection fails rather than applies.
+8. **Change budget**: Σ|delta| ≤ 0.10 per sleep + 2-sleep cooldown per topic + boundary clamps
+   checked twice (Reflection clamps, Evolution re-validates — defense in depth).
+9. **Shadow rollback**: Brier(vN) > Brier(vN−1) + 0.05 with n≥15 on both versions →
+   rollback (as a new forward version, history is never rewritten).
 
-## Что нужно реализовать на вашей стороне (2 адаптера)
+## Required Adapters (2 ports to implement)
 
 ```ts
 const { worker, paramsStore } = createSleepWorker({ memwal, eventReader, dryRun: true });
 ```
 
-- `MemWalClient` — обёртка над вашим MemWal-доступом + `MemWalWriteQueue`.
-- `AgentEventReader` — обёртка над `AgentEventService`.
+- `MemWalClient` — wrapper over your MemWal access + `MemWalWriteQueue`.
+- `AgentEventReader` — wrapper over `AgentEventService`.
 
-## Migration path от текущего AgentEventService
+## Migration Path from AgentEventService
 
-**Шаг 0 (день 0, без поведенческих изменений).**
-Расширить `PredictionEvent`: добавить `paramsVersion` (для старых событий backfill `0`),
-`rawConfidence`/`effectiveConfidence` (backfill = текущий `confidence`). Outcome-резолвер
-начинает писать `outcome.resolvedAt`.
+**Step 0 (day 0, no behavioral changes).**
+Extend `PredictionEvent`: add `paramsVersion` (backfill `0` for old events),
+`rawConfidence`/`effectiveConfidence` (backfill = current `confidence`). Outcome resolver
+starts writing `outcome.resolvedAt`.
 
-**Шаг 1. Индекс по resolvedAt.**
-`AgentEventReader.listResolvedSince()` требует выборку «outcome.resolvedAt > X, order asc».
-Если MemWal не даёт такого скана — вести компактный индекс-документ
-`agent/{id}/sys/resolved_index` (append id при резолве, тем же путём, что запись outcome).
+**Step 1. Index by resolvedAt.**
+`AgentEventReader.listResolvedSince()` needs a query "outcome.resolvedAt > X, order asc".
+If MemWal doesn't support such a scan — maintain a compact index document
+`agent/{id}/sys/resolved_index` (append id on resolve, same write path as outcome).
 
-**Шаг 2. MemWalWriteQueue: приоритеты + CAS.**
-Добавить `priority: HIGH | NORMAL | LOW_LOSSY` (HIGH не коалесцируется и не дропается;
-LOW_LOSSY дропается первым при 429-шторме) и `awaitDurability` (HIGH-записи ждут
-подтверждения). Если у MemWal нет нативного CAS — эмулировать read-verify-write;
-это безопасно, т.к. sleep-джобы партиционируются по agentId на одного консьюмера,
-а SleepLock даёт вторую линию защиты.
+**Step 2. MemWalWriteQueue: priorities + CAS.**
+Add `priority: HIGH | NORMAL | LOW_LOSSY` (HIGH is never coalesced or dropped;
+LOW_LOSSY is dropped first during 429 storms) and `awaitDurability` (HIGH writes wait
+for confirmation). If MemWal lacks native CAS — emulate with read-verify-write;
+this is safe because sleep jobs are partitioned by agentId to a single consumer,
+and SleepLock provides a second line of defense.
 
-**Шаг 3. AgentParamsStore в inference path (за флагом).**
-В месте, где агент формирует confidence: `applyCalibration(await paramsStore.getCached(agentId), topic, raw)`.
-С params v0 это identity (bias 0, multiplier 1.0) — поведение не меняется.
-Записывать `paramsVersion` и `effectiveConfidence` в каждый новый PredictionEvent.
+**Step 3. AgentParamsStore in inference path (behind a flag).**
+Where the agent forms confidence: `applyCalibration(await paramsStore.getCached(agentId), topic, raw)`.
+With params v0 this is identity (bias 0, multiplier 1.0) — behavior doesn't change.
+Write `paramsVersion` and `effectiveConfidence` into every new PredictionEvent.
 
-**Шаг 4. Outcome-резолвер дёргает счётчик.**
-После записи outcome: `stateStore.recordOutcomeResolved(agentId)` (NORMAL, fire-and-forget).
+**Step 4. Outcome resolver fires counter.**
+After writing outcome: `stateStore.recordOutcomeResolved(agentId)` (NORMAL, fire-and-forget).
 
-**Шаг 5. SleepWorker в shadow mode.**
-Деплой консьюмера (`dryRun: true`): cron/queue зовёт `worker.runIfDue(agentId)`.
-Неделю наблюдаете EvolutionEvent'ы с `dryRun: true` — какие дельты «хотел бы» применить агент.
+**Step 5. SleepWorker in shadow mode.**
+Deploy the consumer (`dryRun: true`): cron/queue calls `worker.runIfDue(agentId)`.
+Observe EvolutionEvents with `dryRun: true` for a week — what deltas the agent "would like" to apply.
 
-**Шаг 6. Включение на пилотном агенте.**
-`dryRun: false` для одного агента. Метрики: Brier по `paramsVersion` (уже в evidence
-каждого EvolutionEvent), частота rollback, `consecutiveAborts`. Алерты: не спал 48ч;
-3 abort подряд; rollback 2 раза подряд (= reflection нестабилен, заморозить агента).
+**Step 6. Enable on a pilot agent.**
+`dryRun: false` for one agent. Metrics: Brier by `paramsVersion` (already in evidence
+of each EvolutionEvent), rollback frequency, `consecutiveAborts`. Alerts: no sleep in 48h;
+3 consecutive aborts; 2 consecutive rollbacks (= unstable reflection, freeze the agent).
 
-**Шаг 7. Раскатка на всех + decommission ничего не требует** — старые поля
-PredictionEvent не удаляются, AgentEventService остаётся source of truth по событиям.
+**Step 7. Full rollout + decommission requires nothing** — old PredictionEvent fields
+are not removed, AgentEventService remains the source of truth for events.
 
-## Конфиги по умолчанию
+## Default Configuration
 
-| Параметр | Значение | Где |
+| Parameter | Value | Location |
 |---|---|---|
 | learningRate | 0.15 | ReflectionConfig |
 | minSamples (global/topic) | 20 / 20 | ReflectionConfig |
 | calibrationGapThreshold | 0.05 | ReflectionConfig |
-| maxTotalDelta за сон | 0.10 | Reflection + Evolution |
+| maxTotalDelta per sleep | 0.10 | Reflection + Evolution |
 | topicCooldownSleeps | 2 | ReflectionConfig |
 | rollback: excess / minSamples | 0.05 / 15 | ReflectionConfig |
-| Триггер сна | 50 resolved ИЛИ 24ч и ≥10 | SleepWorkerConfig |
-| Пол между снами | 60 мин | SleepWorkerConfig |
-| collectLimit (окно) | 500 | SleepWorkerConfig |
-| Lock TTL | 10 мин | SleepLock |
-| Params cache TTL / history | 30с / 10 версий | AgentParamsStoreConfig |
+| Sleep trigger | 50 resolved OR 24h with ≥10 | SleepWorkerConfig |
+| Min interval between sleeps | 60 min | SleepWorkerConfig |
+| collectLimit (window) | 500 | SleepWorkerConfig |
+| Lock TTL | 10 min | SleepLock |
+| Params cache TTL / history | 30s / 10 versions | AgentParamsStoreConfig |
 
-## Команды
+## Commands
 
 ```bash
-bun install          # или npm i
-bun x tsc --noEmit   # typecheck (проходит чисто)
-bun test/simulation.ts  # e2e-симуляция эволюции
+pnpm install
+pnpm exec tsc --noEmit   # typecheck (passes clean)
+pnpm exec tsx test/simulation.ts  # e2e evolution simulation
 ```

@@ -1,6 +1,6 @@
 /**
  * LoadingSkeleton | v2.0.0 | 2026-06-19
- * P0: Enhanced SNES-styled loading skeleton with agent roster preview,
+ * P0: Enhanced 16-bit-styled loading skeleton with agent roster preview,
  * animated pixel loading bar, and hackathon branding.
  * Shown until Phaser scene:ready fires.
  */

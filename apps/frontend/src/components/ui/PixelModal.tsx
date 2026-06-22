@@ -1,6 +1,6 @@
 /**
  * PixelModal | v1.0.0 | 2026-06-13
- * Purpose: SNES-styled modal with focus trap, Escape close, overlay click close.
+ * Purpose: 16-bit-styled modal with focus trap, Escape close, overlay click close.
  * T14: 2px pixel borders, design-spec palette, keyboard accessible.
  * Uses existing useFocusTrap hook.
  */

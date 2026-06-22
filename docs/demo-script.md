@@ -24,7 +24,7 @@
 
 ### 0:00–0:12 — Hook: the cabinet
 
-**Screen:** Wide shot of the SNES arcade cabinet (`CabinetScene`) with 5 agents milling around, thought bubbles floating. `MatchTV` ticker scrolling match results.
+**Screen:** Wide shot of the 16-bit-inspired pixel-art arcade cabinet (`CabinetScene`) with 5 agents milling around, thought bubbles floating. `MatchTV` ticker scrolling match results.
 
 **Voiceover:** "Five AI pundits. One FIFA World Cup. No databases — just permanent memory on Walrus. This is Moneyball."
 

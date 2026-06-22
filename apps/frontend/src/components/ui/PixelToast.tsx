@@ -1,6 +1,6 @@
 /**
  * PixelToast | v1.0.0 | 2026-06-13
- * Purpose: SNES-styled toast notifications (info/success/error).
+ * Purpose: 16-bit-styled toast notifications (info/success/error).
  * T14: auto-dismiss, stacking, design-spec palette.
  */
 

@@ -132,7 +132,7 @@ export const type = {
 export const BP_MOBILE = 480
 
 /* ══════════════════════════════════════════════════════════════════════
- * §4 — COMPONENTS (SNES dialog language)
+ * §4 — COMPONENTS (16-bit dialog language)
  * ══════════════════════════════════════════════════════════════════════ */
 
 /** 8px base spacing grid. Use multiples: 8, 16, 24, 32… */
@@ -161,7 +161,7 @@ export const borders = {
 export const chartGrid = '#2a2a2a'
 
 /**
- * SNES-style bevel: bright top-left (wood-100), dark bottom-right (wood-900).
+ * 16-bit-style bevel: bright top-left (wood-100), dark bottom-right (wood-900).
  * Hard offset shadow (no blur).
  */
 export const shadows = {

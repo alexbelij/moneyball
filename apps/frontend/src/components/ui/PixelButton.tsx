@@ -1,6 +1,6 @@
 /**
  * PixelButton | v1.1.0 | 2026-06-17
- * Purpose: SNES-styled button with pressed/hover/disabled/focus states.
+ * Purpose: 16-bit-styled button with pressed/hover/disabled/focus states.
  * T14: 2px pixel borders, bevel shadow, design-spec palette.
  * T67: `busy` prop — disables button, shows inline Spinner, preserves width.
  */

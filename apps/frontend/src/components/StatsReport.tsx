@@ -359,7 +359,7 @@ function BrierChart({ data }: { data: AgentBrierSeries[] }) {
         })}
       </svg>
 
-      {/* Tooltip (SNES dialog box style) */}
+      {/* Tooltip (16-bit dialog box style) */}
       {tooltip && (
         <div
           role="tooltip"

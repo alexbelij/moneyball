@@ -78,7 +78,7 @@ describe('design-drift guard', () => {
 
   it('border-radius is always 0 (design-spec §4)', () => {
     // T66: Anna's toast spec explicitly requires ~5px rounded corners
-    // ("rounded-corner rectangle in the SNES/Sui pixel style").
+    // ("rounded-corner rectangle in the 16-bit/Sui pixel style").
     const RADIUS_WHITELIST = ['toast/Toast.tsx']
     const offenders: string[] = []
     for (const f of FILES) {

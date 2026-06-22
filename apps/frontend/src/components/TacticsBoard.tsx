@@ -1061,7 +1061,7 @@ function DossierTab({
       <Section title="MISSION">
         <P>
           Five AI scouting agents predict FIFA World Cup 2026 match outcomes from an
-          SNES-style pixel-art arcade cabinet. Each agent has a unique personality,
+          cinematic 16-bit-inspired pixel-art arcade cabinet. Each agent has a unique personality,
           methodology, and calibration parameters that <Em>evolve autonomously</Em> through
           a nightly reflection → evolution pipeline.
         </P>
@@ -1086,7 +1086,7 @@ function DossierTab({
             ['Storage', 'MemWal (Walrus mainnet), semantic KV overlay'],
             ['Auth', 'Sui wallet sign-in (personal message signature)'],
             ['Data', 'football-data.org v4 API (live fixtures)'],
-            ['Design', 'SNES pixel-art, Press Start 2P, VT323, token system'],
+            ['Design', '16-bit pixel-art, Press Start 2P, VT323, token system'],
           ].map(([label, desc]) => (
             <div key={label} style={{ padding: spacing.sm, border: borders.rule, background: 'rgba(52,29,14,0.3)' }}>
               <div style={{ ...typo.hdrXs, fontFamily: fonts.header, color: accents.gold, marginBottom: 4 }}>{label}</div>

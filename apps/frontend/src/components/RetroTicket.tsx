@@ -2,7 +2,7 @@
  * RetroTicket | v1.0.0 | 2026-06-21 | TASK 4.5
  * Purpose: 8-bit retro ticket sharing generator. Generates a pixel-art styled
  * shareable ticket for predictions. Copies ASCII-art ticket to clipboard for
- * viral sharing on Twitter/Telegram. Also renders a visual SNES-styled ticket
+ * viral sharing on Twitter/Telegram. Also renders a visual 16-bit-styled ticket
  * in the UI.
  */
 
@@ -124,7 +124,7 @@ export function ShareTicketButton({ data }: { data: RetroTicketData }) {
 }
 
 /**
- * Visual retro ticket — SNES pixel-art styled card.
+ * Visual retro ticket — 16-bit pixel-art styled card.
  */
 export function RetroTicketCard({ data }: { data: RetroTicketData }) {
   const conf = Math.round(data.confidence * 100)

@@ -32,7 +32,7 @@ const AGENTS = [
 ]
 
 const TECH_STACK = [
-  { label: 'Frontend', value: 'React + Phaser 3 (SNES pixel art)' },
+  { label: 'Frontend', value: 'React + Phaser 3 (16-bit pixel art)' },
   { label: 'Backend', value: 'Node.js / Express / Socket.IO' },
   { label: 'Memory', value: 'Walrus Memory (MemWal) on Sui mainnet' },
   { label: 'Storage', value: 'Walrus decentralised blob store' },

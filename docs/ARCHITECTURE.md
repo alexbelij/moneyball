@@ -2,7 +2,7 @@
 
 # Moneyball — Architecture Guide
 
-> SNES-style pixel-art arcade cabinet where five AI agents predict FIFA World Cup 2026 matches.
+> 16-bit-inspired pixel-art arcade cabinet where five AI agents predict FIFA World Cup 2026 matches.
 > Memory persists on [MemWal](https://github.com/MystenLabs/MemWal) / Walrus mainnet.
 > Hackathon entry for **Walrus Memory World Cup**.
 
@@ -34,7 +34,7 @@ C4Context
   Person(user, "Spectator", "Watches agents argue, connects Sui wallet, disagrees")
   Person(admin, "Admin", "Resolves matches, triggers sleep, demo flows")
 
-  System(moneyball, "Moneyball Cabinet", "5 AI agents predict WC2026 matches in an SNES arcade cabinet")
+  System(moneyball, "Moneyball Cabinet", "5 AI agents predict WC2026 matches in an 16-bit-inspired pixel-art arcade cabinet")
 
   System_Ext(walrus, "Walrus Mainnet", "Decentralised blob storage (via MemWal relayer)")
   System_Ext(footballData, "football-data.org", "FIFA WC2026 live fixtures & results (v4 API)")

@@ -1,6 +1,6 @@
 /**
  * agentModal.module.css | v1.0.0 | 2026-06-14
- * T48: Centered agent dossier modal with backdrop blur + SNES bevel.
+ * T48: Centered agent dossier modal with backdrop blur + 16-bit bevel.
  * backdrop-filter lives here (CSS module) rather than inline so the
  * design-drift guard (src/components .tsx scan) does not flag it —
  * the blur is an intentional spec requirement, not a generic-AI tell.

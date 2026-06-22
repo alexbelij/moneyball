@@ -1,6 +1,6 @@
 /**
  * PixelIcon | v1.0.0 | 2026-06-19
- * SNES pixel-art SVG icon set. All icons are 16×16 grid, hard-edge,
+ * 16-bit pixel-art SVG icon set. All icons are 16×16 grid, hard-edge,
  * no curves — faithful to the arcade cabinet design language.
  *
  * Usage: <PixelIcon name="dr_morgan" size={16} color={accents.gold} />

@@ -4,7 +4,7 @@
 # this spec BEFORE merge.
 
 ## 1. Aesthetic direction (commit to it, no drift)
-"SNES broadcast-studio scouting den": a warm, slightly worn 16-bit office watching the
+"16-bit broadcast-studio scouting den": a warm, slightly worn 16-bit office watching the
 World Cup. CRT/HUD language, pixel craft, paper artifacts. NOT a SaaS dashboard.
 
 ## 2. Palette (sampled from room_bg_v02; use these tokens, no new hues)
@@ -22,9 +22,9 @@ World Cup. CRT/HUD language, pixel craft, paper artifacts. NOT a SaaS dashboard.
   (sparingly, it's loud), "VT323" or "Silkscreen" for body/data/tables.
 - Fallback `monospace`. System sans-serif (Inter/Roboto/system-ui) is FORBIDDEN in UI.
 
-## 4. Components (SNES dialog language)
+## 4. Components (16-bit dialog language)
 - 2px hard borders, **border-radius: 0**, bevel via 2-tone border (light top/left =
-  wood-100, dark bottom/right = wood-900) like SNES dialog boxes.
+  wood-100, dark bottom/right = wood-900) like 16-bit dialog boxes.
 - Shadows: hard offset (e.g. `4px 4px 0 #000`), NEVER blurred drop-shadows.
 - 8px spacing grid; panel fills = paper (documents/reports) or wall-green (HUD/CRT).
 - Focus state: 2px accent outline + 1px offset, visible on every interactive element.
@@ -38,7 +38,7 @@ World Cup. CRT/HUD language, pixel craft, paper artifacts. NOT a SaaS dashboard.
 
 ## 6. Data viz (T15)
 - Pixel charts: stepped/segmented lines, square markers, scanline grid on CRT-dark or
-  paper panels; series colors from accents+wood ramp; tooltips = SNES dialog boxes.
+  paper panels; series colors from accents+wood ramp; tooltips = 16-bit dialog boxes.
 
 ## 7. Anti-patterns = instant review rejection ("generic AI design" tells)
 - purple/blue gradients, glassmorphism, rounded-xl cards with soft shadows,

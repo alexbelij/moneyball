@@ -8,7 +8,7 @@
  * T49: typography scale — body >=16px, header >=10px; responsive content.
  * T48: Redesigned from right-side drawer to centered modal (min(80vw,980px),
  *   max-height 86vh), backdrop blur (CSS module), Phaser scene pause/resume
- *   via GameEventBus, SNES-bevel frame from tokens.
+ *   via GameEventBus, 16-bit-bevel frame from tokens.
  * T36: "Day 1 vs Day N" before/after comparison panel — the demo money-shot.
  * T35: scrim backdrop uses semantic `overlay` token.
  * T33: migrated to shared tokens (fixed wrong wood-700/500 values).

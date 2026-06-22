@@ -1,7 +1,7 @@
 /**
  * formatDate | v1.0.0 | 2026-06-17
  * Purpose: Locale-aware numeric date formatting that avoids locale-specific
- * month names (e.g. "июн" in Russian) which break monospace alignment.
+ * locale-specific month names which break monospace alignment.
  * Uses Intl.DateTimeFormat with numeric-only options so output is always
  * digits + separators — consistent width across all locales.
  */
