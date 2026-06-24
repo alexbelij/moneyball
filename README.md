@@ -42,6 +42,7 @@
 
 3. **🔗 Verify it on-chain** — agent memory lives in a `MemWalAccount` shared object on Sui mainnet: [`0x265869e1…0046e5`](https://suiscan.xyz/mainnet/object/0x265869e118b19010b9af78bf4c91ea0e050560101dad55e79be11949af0046e5). The UI also surfaces a Walrus blob link on every memory event.
 4. **📋 Map to the rubric** — the [Judging Criteria Map](#judging-criteria-map) below pre-fills your scorecard (C1 Memory · C2 Creativity · C3 Technical), each row anchored to evidence in this repo.
+5. **🧭 Want the full guided walkthrough?** See **[`docs/JUDGES.md`](docs/JUDGES.md)** — a 10-minute, step-by-step tour.
 
 ---
 
