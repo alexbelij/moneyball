@@ -1,7 +1,7 @@
 <!-- interactivity-spec.md | v0.1.0 | 2026-06-12 -->
 # Interactive Objects & States Spec
 
-Restored by Anna 2026-06-12 (DM). Source of truth for prop states, hover behaviour and agent animations. Status legend: **MVP** = required for submission, **V2** = nice-to-have, **?** = open question (Anna to decide).
+Source of truth for prop states, hover behaviour and agent animations. Status legend: **MVP** = required for submission, **V2** = nice-to-have, **?** = open question.
 
 ## Global hover rule
 Every interactive element must visually stand out on hover: outline + slight glow (pixel-consistent, no smooth blur halos).

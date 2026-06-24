@@ -699,7 +699,7 @@ outcomes, and triggers the sleep pipeline. Idempotency guards
 **Failure handling:** Tick overlap guard (`ticking` flag). Provider fetch errors
 are caught and logged (next poll retries). Individual agent failures during
 predict/resolve are not currently isolated (a throw in one agent would skip
-remaining agents in that batch — TBD(question for Anna): add per-agent try/catch?).
+remaining agents in that batch — a future hardening would isolate each agent in its own try/catch).
 
 ---
 

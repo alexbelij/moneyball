@@ -96,7 +96,7 @@
 |------|-------|------------|
 | 2026-06-08 | MemWal relayer timeout caused backend crash (AbortError) | fire-and-forget writes + try/catch on recall |
 | 2026-06-08 | MemWal relayer rate limit 429 (30 weighted-requests/min) | Server-side coalesced write queue (debounce + backoff) |
-| 2026-06-08 | Admin token leaked in chat logs | Token rotated, localStorage key updated |
+| 2026-06-08 | Admin token accidentally exposed during development | Token rotated, localStorage key updated |
 | 2026-06-08 | Frontend Vite WS proxy errors (EPIPE/ECONNRESET) during backend restarts | Dev-only; ignore and refresh; production unaffected |
 
 ---

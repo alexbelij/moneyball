@@ -34,11 +34,11 @@ All other vars have safe defaults (see `render.yaml`).
 
 ```bash
 # After deploy completes, check health:
-curl https://moneyball-backend.onrender.com/health
+curl https://taken-api.onrender.com/health
 # Expected: {"ok":true,"ts":"2026-06-12T..."}
 
 # Test Socket.io handshake:
-curl "https://moneyball-backend.onrender.com/socket.io/?EIO=4&transport=polling"
+curl "https://taken-api.onrender.com/socket.io/?EIO=4&transport=polling"
 # Expected: 0{...} (Engine.IO open packet)
 ```
 
@@ -47,7 +47,7 @@ curl "https://moneyball-backend.onrender.com/socket.io/?EIO=4&transport=polling"
 In your frontend deploy (Walrus Sites or local dev), set:
 
 ```
-VITE_BACKEND_URL=https://moneyball-backend.onrender.com
+VITE_BACKEND_URL=https://taken-api.onrender.com
 ```
 
 ## 5. CORS checklist
