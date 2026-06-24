@@ -36,7 +36,7 @@ World Cup. CRT/HUD language, pixel craft, paper artifacts. NOT a SaaS dashboard.
 - Scene: Phaser tweens only. Do NOT add motion/react|framer-motion deps (bundle budget).
 - Respect `prefers-reduced-motion: reduce` (kill non-essential animation).
 
-## 6. Data viz (T15)
+## 6. Data viz
 - Pixel charts: stepped/segmented lines, square markers, scanline grid on CRT-dark or
   paper panels; series colors from accents+wood ramp; tooltips = 16-bit dialog boxes.
 
@@ -45,11 +45,9 @@ World Cup. CRT/HUD language, pixel craft, paper artifacts. NOT a SaaS dashboard.
   Inter + Tailwind-default look, emoji icons, centered gradient hero text,
   generic admin-template layout, any hue outside section 2.
 
-## 8. Required skills (for the implementing Viktor)
-Before starting UI tasks (T13–T19), install/read from your skills marketplace and from
-github.com/affaan-m/ECC `skills/` (vet third-party content first):
-- `frontend_design` (Viktor marketplace) — aesthetic direction & system-first workflow
-- ECC `frontend-design-direction`, `design-system` — product-specific design judgment
-- ECC `motion-foundations`, `motion-ui` — motion principles ONLY (tokens/durations/
-  easing/a11y); do NOT adopt their motion/react dependency, map to CSS/Phaser
-- ECC `frontend-a11y` — keyboard/contrast audit before PR
+## 8. Design workflow
+- **System-first:** define tokens → components → screens. No one-off styling; every value
+  comes from the token system (section 2–4).
+- **Motion:** principled durations/easing with accessibility first (`prefers-reduced-motion`).
+  CSS transitions + Phaser tweens only — do NOT add `framer-motion`/`motion` (bundle budget).
+- **Accessibility:** keyboard navigation + WCAG contrast audit on every UI PR.
