@@ -20,8 +20,8 @@ import { env } from '../config/env'
 import { MemWalWriteQueue } from '../memory/memwalWriteQueue'
 import { WriteJournal } from '../memory/writeJournal'
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
-import { dirname, resolve } from 'path'
-import { fileURLToPath } from 'url'
+import { resolve } from 'path'
+import { tmpdir } from 'os'
 
 export type AgentEventType = 'prediction' | 'outcome' | 'evolution'
 
@@ -90,12 +90,16 @@ function extractJson(text: string): any | null {
 }
 
 // ── Persistence path ─────────────────────────────────────────────────────
+// On Render the app bundle (/app) is read-only, so the old default of
+// <backend>/.data fails with EACCES on mkdir and disk persistence silently
+// dies. Honour an explicit DATA_DIR override, else fall back to the OS temp
+// dir (always writable). The read-model lives in memory regardless; this only
+// gives best-effort warm-restart persistence within an instance lifetime.
 let _dataDir: string
-try {
-  const __dirname = dirname(fileURLToPath(import.meta.url))
-  _dataDir = resolve(__dirname, '../../.data')
-} catch {
-  _dataDir = resolve(process.cwd(), '.data')
+if (process.env.DATA_DIR && process.env.DATA_DIR.trim()) {
+  _dataDir = resolve(process.env.DATA_DIR.trim())
+} else {
+  _dataDir = resolve(tmpdir(), 'moneyball-data')
 }
 
 export interface AgentEventServiceOptions {
