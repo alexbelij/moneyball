@@ -25,7 +25,7 @@ import { registerMatchRoutes } from './http/matchRoutes'
 import { registerVerifiabilityRoutes } from './http/verifiabilityRoutes'
 import { AgentEventService } from './agents/agentEventService'
 import { AgentRegistry } from './agents/agentRegistry'
-import { hasSeedBaseline, seedReadModel } from './agents/seedReadModel'
+import { seedReadModel } from './agents/seedReadModel'
 import { SleepService } from './agents/sleepService'
 import { FootballDataProvider } from './matches/footballDataProvider'
 import { ManualMatchProvider } from './matches/manualProvider'
@@ -132,20 +132,33 @@ async function main() {
   // manual re-seed ritual. Both are idempotent (dedup by predictionId / runId).
   // Bounded await: a hung MemWal relayer must never block the server from
   // listening — we fall back to the deterministic rebuild below regardless.
+  // Order matters and is deliberate:
+  //   1. Seed the deterministic fixture FIRST — pure in-memory, idempotent, and
+  //      NEVER touches MemWal reads. This guarantees C1 (Day 1 → Now) is
+  //      populated for ALL agents even when MemWal is unavailable. On a cold
+  //      start MemWal recall is both best-effort top-K AND rate-limited (429 on
+  //      the boot burst), so the demo baseline must not depend on it.
+  //   2. Best-effort hydrate from MemWal to ENRICH with durable live history.
+  //      It is additive (dedups by id/runId) — it can only add to the baseline,
+  //      never remove it.
+  //   3. Re-assert the baseline ~25s later, in case a slow/late hydrate or
+  //      worker churn raced the initial seed. Idempotent; cheap insurance.
+  try {
+    const r = await seedReadModel(publicEvents)
+    console.log('[boot.seed] deterministic baseline seeded:', r)
+  } catch (err) {
+    console.error('[boot.seed] baseline seed failed (non-fatal):', err)
+  }
   await Promise.race([
     publicEvents.hydrate(SEED_AGENTS).catch((err) => console.error('[boot.hydrate] failed (non-fatal):', err)),
     new Promise<void>((r) => setTimeout(r, 15000)),
   ])
-  try {
-    if (!(await hasSeedBaseline(publicEvents))) {
-      const r = await seedReadModel(publicEvents)
-      console.log('[boot.seed] read-model rebuilt from fixture:', r)
-    } else {
-      console.log('[boot.seed] read-model baseline already present — skipped rebuild')
-    }
-  } catch (err) {
-    console.error('[boot.seed] read-model rebuild failed (non-fatal):', err)
-  }
+  const reseedTimer = setTimeout(() => {
+    seedReadModel(publicEvents)
+      .then((r) => console.log('[boot.seed] baseline re-asserted post-hydrate:', r))
+      .catch((err) => console.error('[boot.seed] re-assert failed (non-fatal):', err))
+  }, 25000)
+  reseedTimer.unref?.()
 
   // T57: /health reports read-model readiness so a redeploy can be verified
   // without a manual re-seed. Backwards compatible: keeps { ok, ts }.
