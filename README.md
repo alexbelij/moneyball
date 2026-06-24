@@ -1,10 +1,10 @@
-<!-- README.md | v3.1.0 | 2026-06-21 | last verified: feat/pre-submission-hardening @ 3686089 -->
+<!-- README.md | v3.2.0 | 2026-06-24 | last verified: main @ e6a496b -->
 
 <div align="center">
 
 # 🕹️ Moneyball Cabinet
 
-**Five AI agents with persistent, evolving memory predict FIFA World Cup 2026 — inside an cinematic 16-bit-inspired pixel-art arcade cabinet. Zero databases. All state lives on Walrus mainnet.**
+**Five AI agents with persistent, evolving memory predict FIFA World Cup 2026 — inside a cinematic 16-bit-inspired pixel-art arcade cabinet. Zero databases. All state lives on Walrus mainnet.**
 
 [![CI](https://github.com/anna-stolbovskaja/moneyball/actions/workflows/ci.yml/badge.svg)](https://github.com/anna-stolbovskaja/moneyball/actions/workflows/ci.yml)
 [![npm: @moneyball-ai/memwal-utils](https://img.shields.io/npm/v/@moneyball-ai/memwal-utils?label=%40moneyball-ai%2Fmemwal-utils&color=cb3837)](https://www.npmjs.com/package/@moneyball-ai/memwal-utils)
@@ -15,11 +15,33 @@
 [![Tests](https://img.shields.io/badge/tests-567%20passing-brightgreen)](#tests)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
-[Live Demo](https://taken.wal.app) · [Architecture](docs/ARCHITECTURE.md) · [Memory Design](docs/memory-design.md) · [API Reference](docs/api.md) · [Demo Script](docs/demo-script.md)
+[**▶ Live Demo — taken.wal.app**](https://taken.wal.app) · [Architecture](docs/ARCHITECTURE.md) · [Memory Design](docs/memory-design.md) · [API Reference](docs/api.md) · [Demo Script](docs/demo-script.md)
 
-*Hackathon entry for [Walrus Memory World Cup](https://walrus.xyz) · Deadline: June 24, 2026*
+*Hackathon entry for the Walrus Memory World Cup · Deadline: June 24, 2026*
+
+![Moneyball Cabinet — the scouting room with all five agents](docs/screenshots/cabinet.png)
 
 </div>
+
+---
+
+## Contents
+
+[For Judges — Start Here](#for-judges--start-here) · [Why Moneyball Stands Out](#why-moneyball-stands-out) · [Judging Criteria Map](#judging-criteria-map) · [How Walrus Memory Is Used](#how-walrus-memory-is-used) · [Architecture](#architecture) · [The Five Agents](#the-five-agents) · [Data Sources](#data-sources--model-transparency) · [Published SDK](#published-sdk-moneyball-aimemwal-utils) · [MemWal SDK Feedback](#memwal-sdk-feedback) · [Quickstart](#quickstart) · [Deployment](#deployment) · [Demo](#demo) · [Team](#team) · [Security](#security) · [License](#license)
+
+---
+
+## For Judges — Start Here
+
+> **30-second orientation.** Everything below is live on Walrus mainnet — no local setup needed.
+
+1. **▶ Open the live demo:** **[taken.wal.app](https://taken.wal.app)** — click any agent to open its dossier. No wallet required; guest mode is full-featured.
+2. **🧠 See the Memory Moment** — open **Sofia Mendes → "Day1 vs Now"**. Her Brier score improved **0.722 → 0.547 (−0.175, lower = better)** after a memory-driven evolution, with the exact parameter deltas that produced it:
+
+   ![Memory Moment — Sofia Mendes, Day 1 vs Now: Brier 0.722 to 0.547](docs/screenshots/memory-moment.png)
+
+3. **🔗 Verify it on-chain** — agent memory lives in a `MemWalAccount` shared object on Sui mainnet: [`0x265869e1…0046e5`](https://suiscan.xyz/mainnet/object/0x265869e118b19010b9af78bf4c91ea0e050560101dad55e79be11949af0046e5). The UI also surfaces a Walrus blob link on every memory event.
+4. **📋 Map to the rubric** — the [Judging Criteria Map](#judging-criteria-map) below pre-fills your scorecard (C1 Memory · C2 Creativity · C3 Technical), each row anchored to evidence in this repo.
 
 ---
 
@@ -38,7 +60,7 @@ Most prediction apps wrap a single LLM in a chat interface. Moneyball is fundame
 - 🎫 **Retro pixel ticket generator** — shareable 8-bit match tickets with predictions, agent weights, and Walrus blob IDs for social virality.
 - 💾 **Crash-resilient write journal** — JSONL journal on disk ensures pending MemWal writes survive Render cold boots. No provenance gaps, even on ephemeral free-tier hosting.
 - 🔒 **HMAC-signed guest identity** — prevents IDOR spoofing without requiring wallet connection.
-- ✅ **562 automated tests** (356 FE + 206 BE) with CI design guards (`designDrift.test.ts` blocks emoji/gradients/border-radius; `contrastWcag.test.ts` enforces WCAG AA).
+- ✅ **567 automated tests** (356 FE + 211 BE) with CI design guards (`designDrift.test.ts` blocks emoji/gradients/border-radius; `contrastWcag.test.ts` enforces WCAG AA).
 
 ---
 
@@ -48,7 +70,7 @@ Most prediction apps wrap a single LLM in a chat interface. Moneyball is fundame
 |-----------|------------------------|----------|
 | **C1 · Memory Depth & Authenticity** | 5 agents run sleep/evolve cycles: Brier score + per-topic calibration → parameter drift. Day 1 ≠ Day 4. Every mutation is a Walrus blob with provenance badges (`[SEED]`/`[LIVE]`). User disagree history persists per Sui wallet. | [`docs/memory-design.md`](docs/memory-design.md) · [`GET /api/public/agents/:id/evolution`](docs/api.md) |
 | **C2 · Creativity & Flair** | 16-bit-inspired pixel-art arcade cabinet (Phaser 3). 5 animated agent personas with thought bubbles. Interactive props. Retro pixel ticket generator for social sharing. Strict design system — no gradients, no rounded corners, pixel-perfect. | [`docs/design-spec.md`](docs/design-spec.md) · [`tokens.ts`](apps/frontend/src/styles/tokens.ts) · [`RetroTicket.tsx`](apps/frontend/src/components/RetroTicket.tsx) |
-| **C3 · Technical Execution** | MemWal is the *sole* durable store — zero traditional databases. 562 automated tests. Deterministic evolution engine (no LLM in the prediction pipeline). Published npm SDK. HMAC-signed guest identity. Durable JSONL write journal survives cold boots. | [`packages/memwal-utils`](packages/memwal-utils/) · [CI pipeline](.github/workflows/ci.yml) · [`writeJournal.ts`](apps/backend/src/memory/writeJournal.ts) |
+| **C3 · Technical Execution** | MemWal is the *sole* durable store — zero traditional databases. 567 automated tests. Deterministic evolution engine (no LLM in the prediction pipeline). Published npm SDK. HMAC-signed guest identity. Durable JSONL write journal survives cold boots. | [`packages/memwal-utils`](packages/memwal-utils/) · [CI pipeline](.github/workflows/ci.yml) · [`writeJournal.ts`](apps/backend/src/memory/writeJournal.ts) |
 
 ---
 
@@ -87,6 +109,10 @@ flowchart LR
 
 > **Memory affects behavior, not just logs.** Three agents (Dr. Morgan, Viktor Kane, Sofia Mendes) have their decision thresholds shifted by evolved parameters — a loss streak measurably changes future picks. Scout Alvarez and Madame Pythia are intentionally unaffected: the scout's gut and the oracle's stars don't recalibrate.
 
+Each evolution is recorded as a versioned, dated event with the exact parameter deltas — surfaced in the in-app **Evolution** tab:
+
+![Evolution tab — Sofia Mendes v0 to v1, parameter deltas with dated narrative](docs/screenshots/evolution.png)
+
 ---
 
 ## Architecture
@@ -124,6 +150,10 @@ Full C4 diagrams: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**
 ---
 
 ## The Five Agents
+
+Click any agent in the cabinet to open its dossier — an 8-tab modal (Overview · Method · Predictions · Evolution · Day1 vs Now · Memory · Journal · Chat):
+
+![Agent dossier modal — Sofia Mendes overview with all eight tabs](docs/screenshots/agent-overview.png)
 
 Each agent uses a distinct, deterministic prediction model — no LLM calls in the pipeline. Agents marked with 🧬 have their picks shifted by memory evolution (T38):
 
@@ -208,7 +238,7 @@ We filed **13 issues** on [MystenLabs/MemWal](https://github.com/MystenLabs/MemW
 
 ## Quickstart
 
-> Last verified: `feat/pre-submission-hardening` @ `3686089` (2026-06-21)
+> Last verified: `main` @ `e6a496b` (2026-06-24) — 567 tests passing (211 backend + 356 frontend)
 
 ### Prerequisites
 
@@ -241,7 +271,7 @@ pnpm dev:frontend
 | `JWT_SECRET` | Yes | Sign/verify JWTs (>= 32 chars) |
 | `MEMWAL_KEY` | For MemWal | Ed25519 delegate key from [memory.walrus.xyz](https://memory.walrus.xyz) |
 | `MEMWAL_ACCOUNT_ID` | For MemWal | Account ID on the MemWal relayer |
-| `STORAGE_BACKEND` | No | `memwal` (default) or `file` for local dev |
+| `STORAGE_BACKEND` | No | `file` (default, local dev) or `memwal` for Walrus-backed persistence (set in production) |
 | `FOOTBALL_DATA_TOKEN` | For live matches | [football-data.org](https://www.football-data.org/) v4 API key |
 
 Full variable reference: [`apps/backend/.env.example`](apps/backend/.env.example)
@@ -258,7 +288,7 @@ pnpm -r typecheck    # all 5 packages
 # Frontend — 356 tests
 pnpm --filter @moneyball/frontend test
 
-# Backend — 206 tests
+# Backend — 211 tests
 pnpm --filter @moneyball/backend test
 
 # Sleep-worker — regressions + simulation
@@ -302,7 +332,7 @@ moneyball/
 │       ├── src/agents/            # AgentEventService, sleepService
 │       ├── src/memory/            # MemWalWriteQueue, writeJournal, UserSummaryStore
 │       ├── src/http/              # API routes, auth, rate limiting
-│       └── test/                  # 206 tests
+│       └── test/                  # 211 tests
 ├── packages/
 │   ├── shared/                    # Typed socket contract + schemas
 │   └── memwal-utils/              # Published npm package (write queue, KV, keys)
@@ -315,6 +345,17 @@ moneyball/
 ├── .github/workflows/ci.yml       # CI: typecheck + test + design guards
 └── render.yaml                    # Render deploy blueprint
 ```
+
+---
+
+## Team
+
+**Moneyball Cabinet** is built and submitted by a two-person team:
+
+- **Anna Stolbovskaja** — [@anna-stolbovskaja](https://github.com/anna-stolbovskaja). This repository is the team's primary working repo (the live deployment, CI, and full commit history all live here).
+- **alexbelij** — [@alexbelij](https://github.com/alexbelij), added as a collaborator on this repo.
+
+> Submitted as a **single entry** for the Walrus Memory World Cup. This repo is a fork within the team's own accounts — both members are credited above.
 
 ---
 
