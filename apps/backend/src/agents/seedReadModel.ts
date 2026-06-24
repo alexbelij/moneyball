@@ -59,16 +59,34 @@ export interface SeedResult {
 }
 
 /**
- * True once every seed agent already has its full 8-match prediction baseline.
- * Cheap guard so we skip the rebuild on a warm boot (the rebuild is idempotent
- * regardless, but this avoids re-touching the index for nothing).
+ * True once every seed agent already has its FULL demo baseline — prediction,
+ * resolved outcome AND seeded evolutions. Cheap guard so we skip the rebuild on
+ * a warm boot (the rebuild is idempotent regardless, but this avoids re-touching
+ * the index for nothing).
+ *
+ * Why check all three, not just predictions? On a cold start we first hydrate
+ * from MemWal, whose recall is best-effort top-K. It can restore the predictions
+ * (so a predictions-only guard returns true) while silently missing the seeded
+ * evolutions/outcomes — leaving EvolutionView empty and the C1 "Day 1 → Now"
+ * story blank. We therefore verify a sentinel from each event type per agent:
+ *   - the manual:seed-8 prediction,
+ *   - its resolved outcome,
+ *   - the per-agent noop sleep-cycle evolution (`seed:<agent>:noop`).
+ * If any is missing for any agent, we rebuild (idempotent, dedups by id/runId).
  */
 export async function hasSeedBaseline(svc: AgentEventService): Promise<boolean> {
   const sentinel = SEED_MATCHES[SEED_MATCHES.length - 1].id // manual:seed-8
   for (const agentId of SEED_AGENT_IDS) {
     const preds = await svc.listPredictions(agentId, 100)
-    const hasAll = preds.some((p) => p.matchId === sentinel && p.predictionId === `pred:${sentinel}:${agentId}`)
-    if (!hasAll) return false
+    const seedPred = preds.find(
+      (p) => p.matchId === sentinel && p.predictionId === `pred:${sentinel}:${agentId}`,
+    )
+    // Prediction must exist AND be resolved (outcome merged on read).
+    if (!seedPred || typeof seedPred.outcome?.correct !== 'boolean') return false
+
+    // The seeded sleep-cycle (noop) evolution proves the evolution wave landed.
+    const evo = await svc.listEvolution(agentId, 100)
+    if (!evo.some((e) => e.runId === `seed:${agentId}:noop`)) return false
   }
   return true
 }
