@@ -14,6 +14,8 @@ import React, { lazy, Suspense } from 'react'
 import { useSocket } from '@/hooks/useSocket'
 import { useUiPrefs } from '@/store/uiPrefs'
 import { useHashRoute } from '@/hooks/useHashRoute'
+import { useJudgeRoute } from '@/hooks/useJudgeRoute'
+import { JudgeOverlay } from '@/components/JudgeOverlay'
 import { HUD } from '@/components/HUD'
 import { AgentModal } from '@/components/AgentModal'
 import { NavMenu } from '@/components/NavMenu'
@@ -50,6 +52,7 @@ const PhaserGame = lazy(() =>
 export default function App() {
   useSocket()
   useHashRoute()
+  useJudgeRoute()
   const liteMode = useUiPrefs((s) => s.liteMode)
   const sceneReady = useSceneReady()
 
@@ -89,6 +92,7 @@ export default function App() {
         <AgentModal />
       </ErrorBoundary>
       <WalletFlowOverlay />
+      <JudgeOverlay />
       <AuthSync />
       <LiteModeToggle />
       <FontPanel />
