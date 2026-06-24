@@ -47,12 +47,27 @@ function prettyId(id: string): string {
   return id.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
-/** Latest substantive evolution → param diff entries (most recent first). */
-function latestDiffOf(items: EvolutionItem[]): Array<[string, number]> {
-  const withDiff = items.filter((e) => e.parameterDiff && Object.keys(e.parameterDiff).length > 0)
-  if (withDiff.length === 0) return []
-  const last = withDiff[withDiff.length - 1]
-  return Object.entries(last.parameterDiff ?? {}) as Array<[string, number]>
+/** Sort newest-first by createdAt (API order is not guaranteed). */
+function byNewest(items: EvolutionItem[]): EvolutionItem[] {
+  return [...items].sort((a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0))
+}
+
+/**
+ * Pick the single evolution we surface for an agent: the most recent one that
+ * actually moved parameters. The diff and the quote we render then come from
+ * the SAME record, so they can never contradict each other. Falls back to the
+ * most recent evolution of any kind (its summary, with no diff).
+ */
+function chooseEvolution(items: EvolutionItem[]): EvolutionItem | null {
+  if (!items || items.length === 0) return null
+  const sorted = byNewest(items)
+  const substantive = sorted.find((e) => e.parameterDiff && Object.keys(e.parameterDiff).length > 0)
+  return substantive ?? sorted[0]
+}
+
+function diffEntriesOf(ev: EvolutionItem | null): Array<[string, number]> {
+  if (!ev || !ev.parameterDiff) return []
+  return Object.entries(ev.parameterDiff) as Array<[string, number]>
 }
 
 export function JudgeOverlay() {
@@ -95,18 +110,25 @@ export function JudgeOverlay() {
         const nameById = new Map<string, AgentConfigItem>()
         for (const a of ag.agents ?? []) nameById.set(a.agentId, a)
 
-        // Latest param diffs per agent (best-effort, parallel, never blocks).
-        const diffs = await Promise.all(
+        // The evolution we surface per agent (best-effort, parallel, never blocks).
+        // Both the diff and the quote come from this same record so they always agree.
+        const chosen = await Promise.all(
           mm.agents.map((a) =>
             getAgentEvolution(a.agentId)
-              .then((r) => latestDiffOf(r.items))
-              .catch(() => [] as Array<[string, number]>),
+              .then((r) => chooseEvolution(r.items))
+              .catch(() => null as EvolutionItem | null),
           ),
         )
         if (cancelled) return
 
         const built: AgentRow[] = mm.agents.map((a, i) => {
           const meta = nameById.get(a.agentId)
+          const ev = chosen[i] ?? null
+          const diff = diffEntriesOf(ev)
+          // Quote and diff are from the same evolution record. Prefer that
+          // record's summary; only fall back to the moment summary if there
+          // is no evolution at all for this agent.
+          const quote = ev?.summary ?? a.lastEvolution ?? null
           return {
             agentId: a.agentId,
             name: meta?.name ?? prettyId(a.agentId),
@@ -119,8 +141,8 @@ export function JudgeOverlay() {
             substantiveEvolutions: a.substantiveEvolutions,
             walrusWrites: a.walrusWrites,
             mood: a.mood?.mood ?? 'neutral',
-            lastEvolution: a.lastEvolution,
-            latestDiff: diffs[i] ?? [],
+            lastEvolution: quote,
+            latestDiff: diff,
           }
         })
 
@@ -389,10 +411,10 @@ const S: Record<string, React.CSSProperties> = {
   statValue: { fontFamily: fonts.header, ...type.hdr },
   statLabel: { fontFamily: fonts.body, ...type.caption, color: text.faint },
   criteria: {
-    display: 'flex', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md,
+    display: 'flex', flexDirection: 'column', gap: spacing.sm, marginBottom: spacing.md,
   },
   critCard: {
-    flex: '1 1 220px', background: palette.surface, border: borders.rule, padding: spacing.sm,
+    width: '100%', background: palette.surface, border: borders.rule, padding: spacing.sm,
   },
   critHead: { display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 },
   critTag: {
