@@ -354,7 +354,7 @@ moneyball/
 **Moneyball Cabinet** is built and submitted by a two-person team:
 
 - **Anna Stolbovskaja** — [@anna-stolbovskaja](https://github.com/anna-stolbovskaja). This repository is the team's primary working repo (the live deployment, CI, and full commit history all live here).
-- **alexbelij** — [@alexbelij](https://github.com/alexbelij), added as a collaborator on this repo.
+- **Aleksandr Khrol** — [@alexbelij](https://github.com/alexbelij). Co-author and collaborator across engineering and the on-chain (Walrus / Sui) integration.
 
 > Submitted as a **single entry** for the Walrus Memory World Cup. This repo is a fork within the team's own accounts — both members are credited above.
 
