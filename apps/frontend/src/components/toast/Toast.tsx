@@ -163,6 +163,12 @@ export function Toast({ item, onDismiss, reduceMotion }: ToastProps) {
           alt={options.coach ?? 'system'}
           width={56}
           height={56}
+          // Guarantee an image always shows: if an agent avatar fails to load
+          // (network blip, cold start), fall back to the system avatar.
+          onError={(e) => {
+            const img = e.currentTarget
+            if (!img.src.endsWith('system.png')) img.src = AGENT_AVATARS.system
+          }}
           style={{
             imageRendering: 'pixelated',
             borderRadius: 0,

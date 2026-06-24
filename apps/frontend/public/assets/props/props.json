@@ -1,372 +1,160 @@
 {
- "base": "assets/backgrounds/room_bg_v02_table_clock_pennant.png",
- "note": "clock+pennant baked into base; table = table_occlusion.png per props_manifest.json",
- "props": [
-  {
-   "id": "board_left",
-   "src": "props/board_left.png",
-   "src_xy": [
-    22,
-    207
-   ],
-   "w": 155,
-   "h": 208,
-   "target_xy": [
-    22,
-    180
-   ],
-   "anchor": [
-    99,
-    388
-   ],
-   "interactive": true
-  },
-  {
-   "id": "board_main",
-   "src": "props/board_main.png",
-   "src_xy": [
-    507,
-    206
-   ],
-   "w": 716,
-   "h": 265,
-   "target_xy": [
-    507,
-    175
-   ],
-   "anchor": [
-    865,
-    440
-   ],
-   "interactive": true
-  },
-  {
-   "id": "digital_clock",
-   "src": "props/digital_clock.png",
-   "w": 96,
-   "h": 52,
-   "target_xy": [
-    794,
-    128
-   ],
-   "anchor": [
-    842,
-    180
-   ],
-   "interactive": false,
-   "screen_rect": [
-    10,
-    11,
-    76,
-    25
-   ],
-   "note": "wall LCD above board_main, covers baked plate (798,133,89x42); digits drawn at runtime by DigitalClock.ts (local time, 1Hz colon); hires: docs/reference/digital_clock_hires_v01.png"
-  },
-  {
-   "id": "board_scout",
-   "src": "props/board_scout.png",
-   "src_xy": [
-    1498,
-    211
-   ],
-   "w": 152,
-   "h": 222,
-   "target_xy": [
-    1498,
-    170
-   ],
-   "anchor": [
-    1574,
-    392
-   ],
-   "interactive": true
-  },
-  {
-   "id": "door",
-   "src": "props/door.png",
-   "src_xy": [
-    333,
-    238
-   ],
-   "w": 144,
-   "h": 334,
-   "target_xy": [
-    333,
-    172
-   ],
-   "anchor": [
-    405,
-    506
-   ],
-   "interactive": true
-  },
-  {
-   "id": "exit_sign",
-   "src": "props/exit_sign.png",
-   "src_xy": [
-    375,
-    196
-   ],
-   "w": 71,
-   "h": 29,
-   "target_xy": [
-    375,
-    130
-   ],
-   "anchor": [
-    410,
-    159
-   ],
-   "interactive": true,
-   "states": {
-    "off": "props/exit_sign_off.png",
-    "on": "props/exit_sign_on.png"
-   },
-   "_comment": "src = on-state by default; swap states in place, identical 71x29 canvases; hires: docs/reference/exit_sign_{off,on}_hires_v01.png"
-  },
-  {
-   "id": "light_switch",
-   "src": "props/light_switch.png",
-   "src_xy": [
-    306,
-    405
-   ],
-   "w": 16,
-   "h": 23,
-   "target_xy": [
-    306,
-    339
-   ],
-   "anchor": [
-    314,
-    362
-   ],
-   "interactive": true
-  },
-  {
-   "id": "dresser",
-   "src": "props/dresser.png",
-   "w": 275,
-   "h": 210,
-   "target_xy": [
-    10,
-    475
-   ],
-   "anchor": [
-    147,
-    685
-   ],
-   "interactive": false,
-   "_comment": "replaces stale dresser_set; placement per props_manifest.json (offset 10,475 anchorY 685)"
-  },
-  {
-   "id": "coffee_machine",
-   "src": "props/coffee_machine.png",
-   "src_xy": [
-    135,
-    393
-   ],
-   "w": 75,
-   "h": 103,
-   "target_xy": [
-    134,
-    338
-   ],
-   "anchor": [
-    171,
-    441
-   ],
-   "interactive": true
-  },
-  {
-   "id": "mug",
-   "src": "props/mug.png",
-   "w": 28,
-   "h": 28,
-   "target_xy": [
-    202,
-    496
-   ],
-   "anchor": [
-    216,
-    524
-   ],
-   "interactive": false,
-   "_comment": "hires: docs/reference/mug_hires_v01.png"
-  },
-  {
-   "id": "thermos",
-   "src": "props/thermos.png",
-   "w": 32,
-   "h": 71,
-   "target_xy": [
-    140,
-    437
-   ],
-   "anchor": [
-    156,
-    508
-   ],
-   "interactive": false,
-   "_comment": "hires: docs/reference/thermos_hires_v01.png; scale ref: mug=28px vs coffee_machine=103px"
-  },
-  {
-   "id": "plant",
-   "src": "props/plant.png",
-   "w": 61,
-   "h": 68,
-   "target_xy": [
-    50,
-    444
-   ],
-   "anchor": [
-    80,
-    512
-   ],
-   "interactive": false,
-   "note": "potted plant on dresser top; anchor=pot bottom center, validated vs dresser.png offset (10,475)"
-  },
-  {
-   "id": "trash_bin",
-   "src": "props/trash_bin.png",
-   "src_xy": [
-    303,
-    531
-   ],
-   "w": 66,
-   "h": 81,
-   "target_xy": [
-    300,
-    435
-   ],
-   "anchor": [
-    333,
-    516
-   ],
-   "interactive": false
-  },
-  {
-   "id": "tv_set",
-   "src": "props/tv_set.png",
-   "src_xy": [
-    1317,
-    371
-   ],
-   "w": 138,
-   "h": 250,
-   "target_xy": [
-    1325,
-    368
-   ],
-   "anchor": [
-    1394,
-    618
-   ],
-   "interactive": true,
-   "states": {
-    "_comment": "overlays composited at offset relative to tv_set sprite top-left; base sprite = static frame 0",
-    "overlay_offset": {
-     "x": 38,
-     "y": 14
+  "base": "assets/backgrounds/room_v4.webp",
+  "props": [
+    {
+      "id": "door",
+      "src": "props/door_close.png",
+      "w": 273,
+      "h": 553,
+      "target_xy": [
+        595,
+        438
+      ],
+      "anchor": [
+        731,
+        880
+      ],
+      "interactive": true,
+      "states": {
+        "closed": "props/door_close.png",
+        "open": "props/door_open.png"
+      },
+      "_comment": "click opens AboutDoor modal; open/close visual swap = phase 2"
     },
-    "overlay_size": {
-     "w": 88,
-     "h": 93
+    {
+      "id": "exit_sign",
+      "src": "props/exit_sign.png",
+      "w": 104,
+      "h": 51,
+      "target_xy": [
+        672,
+        375
+      ],
+      "anchor": [
+        724,
+        426
+      ],
+      "interactive": false,
+      "_comment": "decor; glow animation = phase 2"
     },
-    "screen_mask": "props/tv_screen_mask.png",
-    "off": {
-     "overlay": "props/tv_screen_off.png"
+    {
+      "id": "digital_clock",
+      "src": "props/digital_clock.png",
+      "w": 323,
+      "h": 217,
+      "target_xy": [
+        1529,
+        224
+      ],
+      "anchor": [
+        1691,
+        441
+      ],
+      "interactive": false,
+      "screen_rect": [
+        72,
+        80,
+        200,
+        68
+      ],
+      "_comment": "live 7-segment digits drawn at screen_rect (texture-local px), scaled with the housing"
     },
-    "static": {
-     "frames": [
-      null,
-      "props/tv_screen_static_f1.png",
-      "props/tv_screen_static_f2.png"
-     ],
-     "fps": 8,
-     "_comment": "frame 0 = base sprite (no overlay)"
+    {
+      "id": "plakat_3",
+      "src": "props/plakat_3.png",
+      "w": 236,
+      "h": 350,
+      "target_xy": [
+        253,
+        399
+      ],
+      "anchor": [
+        371,
+        749
+      ],
+      "interactive": true,
+      "_comment": "click -> Attack Patterns / SDK modal"
     },
-    "match": {
-     "_comment": "live: draw content into overlay rect on canvas, clip with screen_mask (destination-in), then fill LED green",
-     "led": {
-      "x": 111,
-      "y": 104,
-      "w": 2,
-      "h": 2,
-      "on": "#39c04a",
-      "off": "#c03030"
-     }
+    {
+      "id": "board_scout",
+      "src": "props/board_scout.png",
+      "w": 291,
+      "h": 426,
+      "target_xy": [
+        2149,
+        416
+      ],
+      "anchor": [
+        2295,
+        842
+      ],
+      "interactive": true,
+      "_comment": "click -> WalrusProof modal"
+    },
+    {
+      "id": "trash",
+      "src": "props/trash.png",
+      "w": 120,
+      "h": 103,
+      "target_xy": [
+        862,
+        905
+      ],
+      "anchor": [
+        405,
+        1209
+      ],
+      "interactive": true,
+      "_comment": "click -> Discarded Hypotheses modal"
+    },
+    {
+      "id": "board_left",
+      "src": "props/board_left.png",
+      "w": 325,
+      "h": 441,
+      "target_xy": [
+        912,
+        405
+      ],
+      "anchor": [
+        1075,
+        846
+      ],
+      "interactive": true,
+      "_comment": "click -> MemoryLab modal"
+    },
+    {
+      "id": "board_main",
+      "src": "props/board_main.png",
+      "w": 868,
+      "h": 456,
+      "target_xy": [
+        1254,
+        409
+      ],
+      "anchor": [
+        1688,
+        865
+      ],
+      "interactive": true,
+      "_comment": "click -> TacticsBoard modal"
+    },
+    {
+      "id": "tv_set",
+      "src": "props/tv_off.png",
+      "w": 253,
+      "h": 170,
+      "target_xy": [
+        2802,
+        666
+      ],
+      "anchor": [
+        2929,
+        836
+      ],
+      "interactive": false,
+      "_comment": "static off frame for now; broadcast frames (on/red/static) + animation = phase 2"
     }
-   }
-  },
-  {
-   "id": "clock_city_left",
-   "src": "props/clock_face.png",
-   "w": 53,
-   "h": 52,
-   "target_xy": [
-    721,
-    127
-   ],
-   "anchor": [
-    747,
-    179
-   ],
-   "interactive": false,
-   "tz": "Europe/London",
-   "label": "LONDON",
-   "hands": {
-    "_comment": "frontend draws hour/minute hands programmatically over sprite, under nothing (hub baked in sprite center)",
-    "center": [
-     26,
-     26
-    ],
-    "r_hour": 13,
-    "r_min": 19,
-    "width_hour": 3,
-    "width_min": 2,
-    "color": "#2a221a"
-   },
-   "_comment": "analog city clock left of baked digital clock (798-887,133-173); hires: docs/reference/clock_face_hires_v01.png"
-  },
-  {
-   "id": "clock_city_right",
-   "src": "props/clock_face.png",
-   "w": 53,
-   "h": 52,
-   "target_xy": [
-    911,
-    127
-   ],
-   "anchor": [
-    937,
-    179
-   ],
-   "interactive": false,
-   "tz": "America/New_York",
-   "label": "NEW YORK",
-   "hands": {
-    "_comment": "frontend draws hour/minute hands programmatically over sprite, under nothing (hub baked in sprite center)",
-    "center": [
-     26,
-     26
-    ],
-    "r_hour": 13,
-    "r_min": 19,
-    "width_hour": 3,
-    "width_min": 2,
-    "color": "#2a221a"
-   }
-  },
-  {
-   "id": "pennant_scouting",
-   "src": "props/pennant.png",
-   "w": 98,
-   "h": 175,
-   "target_xy": null,
-   "anchor": null,
-   "interactive": false,
-   "_comment": "spare sprite: scouting pennant (same design already baked into bg at ~(1255,170)); base for per-country club pennant variants (geo-IP idea, V2); hires: docs/reference/pennant_hires_v01.png"
-  }
- ]
+  ],
+  "note": "v4 ultrawide room (3394x1440). Overlay cutouts on painted bg. Coords fine-tuned by Anni via ?edit=1 editor (2026-06-24). Canonical interactive IDs restored so modal wiring stays intact: board_left=MemoryLab, board_main=TacticsBoard, board_scout=WalrusProof, door=AboutDoor."
 }

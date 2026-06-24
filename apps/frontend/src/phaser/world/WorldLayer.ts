@@ -45,8 +45,15 @@ export interface FocusableProp {
 
 export class WorldLayer extends Phaser.GameObjects.Container {
   /** Background-space size (from props_manifest scene block). */
-  private bgW = 1672
-  private bgH = 941
+  private bgW = 3394
+  private bgH = 1440
+
+  /** Cover-fit layout state (computed in cover(), used by parallax). */
+  private baseX = 0
+  private baseY = 0
+  private overflowX = 0
+  /** Current parallax offset, normalised [-1, 1] (mouse position from centre). */
+  private parallaxNX = 0
 
   private doc?: PropsDoc
   private tv?: TvSet
@@ -111,18 +118,31 @@ export class WorldLayer extends Phaser.GameObjects.Container {
   }
 
   /**
-   * Integer-scale fit with letterbox. For pixel art the scale factor is
-   * Math.floor when ≥ 1 (pixel-perfect), or plain contain when < 1 (small
-   * viewports). Center position floors to integer for crisp pixels.
+   * Cover-fit: the room always fills the full viewport height (and width),
+   * cropping the wider dimension instead of letterboxing. The horizontal
+   * overflow is exposed for a subtle mouse parallax so the user can peek
+   * toward the room's edges.
    */
   cover(viewW: number, viewH: number) {
-    const raw = Math.min(viewW / this.bgW, viewH / this.bgH)
-    const s = raw >= 1 ? Math.floor(raw) : raw
+    const s = Math.max(viewW / this.bgW, viewH / this.bgH)
     this.setScale(s)
-    this.setPosition(
-      Math.floor((viewW - this.bgW * s) / 2),
-      Math.floor((viewH - this.bgH * s) / 2),
-    )
+    const scaledW = this.bgW * s
+    const scaledH = this.bgH * s
+    this.baseX = Math.round((viewW - scaledW) / 2)
+    this.baseY = Math.round((viewH - scaledH) / 2)
+    this.overflowX = Math.max(0, (scaledW - viewW) / 2)
+    this.applyParallax(this.parallaxNX)
+  }
+
+  /**
+   * Horizontal parallax. `nx` is the mouse offset from centre in [-1, 1];
+   * moving the mouse right reveals the room's right side and vice-versa.
+   * Clamped to the available crop so the room edges never pull inside the view.
+   */
+  applyParallax(nx: number) {
+    this.parallaxNX = Math.max(-1, Math.min(1, nx))
+    const x = this.baseX - this.parallaxNX * this.overflowX
+    this.setPosition(Math.round(x), this.baseY)
   }
 
   /** Add an agent (bg-space coords already set on the sprite). */
@@ -168,6 +188,14 @@ export class WorldLayer extends Phaser.GameObjects.Container {
       if ((def.interactive || def.id === 'mug') && child instanceof PropSprite) {
         this.stateCtrl.register(def, child)
       }
+      // Ambient prop FX: EXIT sign flicker + a sweeping "glint" on the
+      // interactive magnetic boards to signal they're clickable.
+      if (child instanceof PropSprite) {
+        if (def.id === 'exit_sign') child.startSignFlicker()
+        if (def.id === 'board_left' || def.id === 'board_main' || def.id === 'board_scout') {
+          child.startGlint()
+        }
+      }
     }
 
     if (table) {
@@ -211,6 +239,11 @@ export class WorldLayer extends Phaser.GameObjects.Container {
         textureKey: texKey(def.src),
         screen: def.screenRect,
       })
+      // DigitalClock draws housing + digits at the texture's natural size.
+      // Scale the whole container to the authored display width so it matches
+      // the editor (and stays WYSIWYG). Digits scale with the container.
+      const texW = scene.textures.get(texKey(def.src)).getSourceImage().width
+      if (texW > 0 && def.w > 0) clock.setScale(def.w / texW)
       clock.setDepth(def.anchorY)
       return clock
     }

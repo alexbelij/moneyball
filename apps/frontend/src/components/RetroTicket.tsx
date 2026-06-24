@@ -166,7 +166,7 @@ export function RetroTicketCard({ data }: { data: RetroTicketData }) {
 
       {/* Pick + confidence */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <span style={{ ...typo.data, color: accents.gold, fontWeight: 700 }}>
+        <span style={{ ...typo.data, color: accents.gold, fontWeight: 400 }}>
           Pick: {data.pick}
         </span>
         <span style={{ ...typo.caption, color: text.muted }}>

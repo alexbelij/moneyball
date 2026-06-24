@@ -74,8 +74,40 @@ export class AmbientLayer extends Phaser.GameObjects.Container {
       return
     }
 
+    this.initBeams(scene)
     this.initPool(scene)
     this.initFlickers(scene)
+  }
+
+  /* ── Volumetric light beams ────────────────────────────────────────── */
+
+  /** Soft warm trapezoid of light under each lamp (ADD blend, slow pulse). */
+  private initBeams(scene: Phaser.Scene): void {
+    const cfg = AMBIENT_CONFIG
+    for (const cone of LIGHT_CONES) {
+      const g = scene.add.graphics()
+      g.fillStyle(cfg.beamColor, 1)
+      g.beginPath()
+      g.moveTo(cone.topLeft, cone.topY)
+      g.lineTo(cone.topRight, cone.topY)
+      g.lineTo(cone.bottomRight, cone.bottomY)
+      g.lineTo(cone.bottomLeft, cone.bottomY)
+      g.closePath()
+      g.fillPath()
+      g.setBlendMode(Phaser.BlendModes.ADD)
+      g.setAlpha(cfg.beamAlpha)
+      this.add(g)
+
+      scene.tweens.add({
+        targets: g,
+        alpha: { from: cfg.beamAlpha * cfg.beamPulseMin, to: cfg.beamAlpha * cfg.beamPulseMax },
+        duration: cfg.beamPulseMs,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+        delay: Math.random() * cfg.beamPulseMs,
+      })
+    }
   }
 
   /* ── Pool initialisation ───────────────────────────────────────────── */

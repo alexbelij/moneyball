@@ -42,7 +42,7 @@ export function WalletFlowOverlay() {
         }}
       >
         <div style={{
-          fontWeight: 700, marginBottom: 6,
+          fontWeight: 400, marginBottom: 6,
           fontFamily: fonts.header, ...typo.hdrXs,
           letterSpacing: '-0.5px', color: accents.gold,
         }}>

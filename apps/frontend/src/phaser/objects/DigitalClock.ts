@@ -24,9 +24,7 @@ export interface DigitalClockConfig {
 }
 
 const COLOR_LIT = 0xb9f0c9
-const COLOR_GLOW = 0x4f9a6a
 const COLOR_GHOST = 0x24372c
-const ALPHA_GLOW = 0.28
 const ALPHA_GHOST = 0.55
 
 export class DigitalClock extends Phaser.GameObjects.Container {
@@ -85,20 +83,17 @@ export class DigitalClock extends Phaser.GameObjects.Container {
     g.fillRect(sx + colon.x, sy + colon.topY, colon.size, colon.size)
     g.fillRect(sx + colon.x, sy + colon.botY, colon.size, colon.size)
 
-    // Soft glow pass (1px expanded), then lit segments
-    for (const pass of [0, 1] as const) {
-      const e = pass === 0 ? 1 : 0
-      g.fillStyle(pass === 0 ? COLOR_GLOW : COLOR_LIT, pass === 0 ? ALPHA_GLOW : 1)
-      for (let i = 0; i < 4; i++) {
-        const c = cells[i]
-        for (const r of segmentRects(digits[i], cell)) {
-          g.fillRect(sx + c.x + r.x - e, sy + c.y + r.y - e, r.w + 2 * e, r.h + 2 * e)
-        }
+    // Lit segments only (no 1px halo) so the digits read crisp/thin, not bold.
+    g.fillStyle(COLOR_LIT, 1)
+    for (let i = 0; i < 4; i++) {
+      const c = cells[i]
+      for (const r of segmentRects(digits[i], cell)) {
+        g.fillRect(sx + c.x + r.x, sy + c.y + r.y, r.w, r.h)
       }
-      if (colonOn) {
-        g.fillRect(sx + colon.x - e, sy + colon.topY - e, colon.size + 2 * e, colon.size + 2 * e)
-        g.fillRect(sx + colon.x - e, sy + colon.botY - e, colon.size + 2 * e, colon.size + 2 * e)
-      }
+    }
+    if (colonOn) {
+      g.fillRect(sx + colon.x, sy + colon.topY, colon.size, colon.size)
+      g.fillRect(sx + colon.x, sy + colon.botY, colon.size, colon.size)
     }
   }
 }

@@ -20,9 +20,17 @@ export function useHashRoute(): void {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    // 1) Initial hash -> store.
-    const initial = hashToSection(window.location.hash)
-    if (initial) useNavStore.getState().open(initial)
+    // 1) Reset on load: a reload must never leave a panel open (browser-
+    //    standard behaviour). Strip any section hash on mount instead of
+    //    re-opening it — the hash still reflects state during the session
+    //    (steps 2 & 3) for in-session back/forward, just not across reloads.
+    if (hashToSection(window.location.hash)) {
+      window.history.replaceState(
+        null,
+        '',
+        window.location.pathname + window.location.search,
+      )
+    }
 
     // 2) hashchange -> store.
     const onHashChange = () => {

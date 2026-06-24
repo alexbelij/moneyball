@@ -82,11 +82,17 @@ export const agentColors: Record<string, string> = {
  * ══════════════════════════════════════════════════════════════════════ */
 
 export const fonts = {
-  /** Sparingly — headers, HUD labels. */
-  header: '"Press Start 2P", monospace',
-  /** Body / data / tables. */
-  body:   '"VT323", "Press Start 2P", monospace',
+  /** Sparingly — headers, HUD labels. Driven by the FontPanel via
+   *  --mb-font-head so the chosen typeface also styles titles (falls back to
+   *  the "Press Start 2P" arcade default when the switcher is untouched). */
+  header: 'var(--mb-font-head, "Press Start 2P", monospace)',
+  /** Body / data / tables. Driven by the FontPanel via --mb-font-body
+   *  (falls back to the VT323 pixel stack when the switcher is untouched). */
+  body:   'var(--mb-font-body, "VT323", "Press Start 2P", monospace)',
 } as const
+
+/** Wrap a px size so the FontPanel size scale (--mb-font-scale) applies. */
+const z = (px: number) => `calc(${px}px * var(--mb-font-scale, 1))`
 
 /**
  * T49: Typography scale — fontSize + lineHeight pairs.
@@ -99,25 +105,25 @@ export const fonts = {
 export const type = {
   /* ── Header scale (Press Start 2P — short labels only) ────────── */
   /** Large header: 14px (used sparingly). */
-  hdrLg:    { fontSize: 22, lineHeight: '28px' },
+  hdrLg:    { fontSize: z(22), lineHeight: z(28) },
   /** Standard header (section titles, HUD labels). */
-  hdr:      { fontSize: 18, lineHeight: '24px' },
+  hdr:      { fontSize: z(18), lineHeight: z(24) },
   /** Small header (stat labels, tab badges). */
-  hdrSm:    { fontSize: 16, lineHeight: '22px' },
+  hdrSm:    { fontSize: z(16), lineHeight: z(22) },
   /** Table header (dense column headers). */
-  hdrXs:    { fontSize: 16, lineHeight: '22px' },
+  hdrXs:    { fontSize: z(16), lineHeight: z(22) },
 
   /* ── Body scale (VT323 — body, data, captions) ────────────────── */
   /** Large body text. */
-  bodyLg:   { fontSize: 22, lineHeight: '28px' },
+  bodyLg:   { fontSize: z(22), lineHeight: z(28) },
   /** Standard body / paragraphs. */
-  body:     { fontSize: 18, lineHeight: '24px' },
+  body:     { fontSize: z(18), lineHeight: z(24) },
   /** Data values / table cells. */
-  data:     { fontSize: 18, lineHeight: '22px' },
+  data:     { fontSize: z(18), lineHeight: z(22) },
   /** Smaller data / secondary. */
-  dataSm:   { fontSize: 16, lineHeight: '20px' },
+  dataSm:   { fontSize: z(16), lineHeight: z(20) },
   /** Captions / timestamps. */
-  caption:  { fontSize: 16, lineHeight: '22px' },
+  caption:  { fontSize: z(16), lineHeight: z(22) },
 
   /* ── SVG scale (chart axes, diagram labels — smaller is OK) ───── */
   /** SVG axis / tick labels. */

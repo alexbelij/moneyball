@@ -86,7 +86,7 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
       padding: 16, color: palette.paper, boxShadow: shadows.hard,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ ...typo.hdrSm, fontWeight: 700, fontFamily: fonts.header, letterSpacing: '-0.5px', color: accents.gold }}>SCOUT LEADERBOARD</div>
+        <div style={{ ...typo.hdrSm, fontWeight: 400, fontFamily: fonts.header, letterSpacing: '-0.5px', color: accents.gold }}>SCOUT LEADERBOARD</div>
         <PixelButton size="small" onClick={onClose} aria-label="Close leaderboard">CLOSE</PixelButton>
       </div>
 
@@ -126,7 +126,7 @@ export function StatsBoard({ onClose }: { onClose: () => void }) {
                     }}
                   >
                     <td style={td()}><RankMedal rank={i + 1} /></td>
-                    <td style={{ ...td(), fontWeight: 700, color: palette.wood900 }}>{r.name}</td>
+                    <td style={{ ...td(), fontWeight: 400, color: palette.wood900 }}>{r.name}</td>
                     <td style={td()}>{r.correct}–{r.resolved - r.correct}</td>
                     <td style={td()}>{acc === null ? '—' : `${acc}%`}</td>
                     <td style={td()}><StreakChip streak={r.streak} /></td>

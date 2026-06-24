@@ -248,7 +248,7 @@ const S: Record<string, React.CSSProperties> = {
   },
   barLabel: {
     fontFamily: fonts.body, ...type.dataSm, color: palette.bgBlack,
-    fontWeight: 'bold', textShadow: 'none',
+    fontWeight: 400, textShadow: 'none',
   },
   noPred: {
     fontFamily: fonts.body, ...type.caption, color: text.faint,

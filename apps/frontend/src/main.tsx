@@ -14,8 +14,21 @@ import { SuiProvider } from '@/sui/SuiProvider'
 import { initDevConsole } from '@/lib/devConsole'
 import { ToastProvider } from '@/components/toast/ToastProvider'
 import { ErrorBoundary } from '@/components/error/ErrorBoundary'
+import { PropEditor } from '@/editor/PropEditor'
 
 initDevConsole()
+
+// Dev tool: open the prop placement editor with ?edit=1 (drag/scale props on
+// the v4 background, then Export -> copy props.json from the console).
+if (new URLSearchParams(window.location.search).get('edit') === '1') {
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <PropEditor />
+      </ErrorBoundary>
+    </React.StrictMode>,
+  )
+} else {
 
 // Register service worker for PWA installability
 if ('serviceWorker' in navigator) {
@@ -26,13 +39,14 @@ if ('serviceWorker' in navigator) {
   })
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <SuiProvider>
-        <App />
-        <ToastProvider />
-      </SuiProvider>
-    </ErrorBoundary>
-  </React.StrictMode>,
-)
+  ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <SuiProvider>
+          <App />
+          <ToastProvider />
+        </SuiProvider>
+      </ErrorBoundary>
+    </React.StrictMode>,
+  )
+}

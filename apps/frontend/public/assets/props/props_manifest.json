@@ -1,48 +1,9 @@
 {
-  "_comment": "props_manifest.json | v0.1 | 2026-06-12 | sprite placement for y-sort renderer",
+  "_comment": "props_manifest.json | v0.2 | 2026-06-24 | v4 ultrawide room. Table removed per request; props placed via props.json + ?edit=1 editor.",
   "scene": {
-    "width": 1672,
-    "height": 941,
-    "background": "assets/backgrounds/room_bg_v02_table_clock_pennant.png"
+    "width": 3394,
+    "height": 1440,
+    "background": "assets/backgrounds/room_v4.webp"
   },
-  "props": {
-    "table": {
-      "sprite": "assets/props/table_occlusion.png",
-      "offset": {
-        "x": 40,
-        "y": 510
-      },
-      "size": {
-        "w": 1496,
-        "h": 197
-      },
-      "anchorY": 706,
-      "note": "Cut pixel-perfect from room_bg_v02; draw at exact offset. Background already contains the table; this sprite is for y-sort occlusion only.",
-      "collision": {
-        "x0": 40,
-        "y0": 510,
-        "x1": 1536,
-        "y1": 706
-      }
-    },
-    "dresser": {
-      "sprite": "assets/props/dresser.png",
-      "offset": {
-        "x": 10,
-        "y": 475
-      },
-      "size": {
-        "w": 275,
-        "h": 210
-      },
-      "anchorY": 685,
-      "note": "Cut from Anna's render (checkerboard chroma-keyed to real alpha). Scaled to match reference dresser in room_no_agents_reference. Hi-res source: dresser_hires.png (837x639).",
-      "collision": {
-        "x0": 10,
-        "y0": 560,
-        "x1": 285,
-        "y1": 685
-      }
-    }
-  }
+  "props": {}
 }

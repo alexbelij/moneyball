@@ -161,7 +161,17 @@ export function TacticsBoard() {
 
   useEffect(() => {
     const handler = ({ propId }: { propId: string }) => {
-      if (propId === 'board_main') setOpen(true)
+      if (propId === 'board_main') {
+        // Reset before showing so stale rows from a prior open never flash.
+        setError(null)
+        setAgentData([])
+        setMatches([])
+        setProfiles({})
+        setDataSource(null)
+        setAgentParams({})
+        setLoading(true)
+        setOpen(true)
+      }
     }
     GameEventBus.on('prop:click', handler)
     return () => { GameEventBus.off('prop:click', handler) }
@@ -355,7 +365,7 @@ interface MatchRow {
   hasDisagreement: boolean
 }
 
-type MatrixSort = 'match' | 'score' | 'consensus'
+type MatrixSort = 'match' | 'score' | 'consensus' | `agent:${string}`
 
 function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: MatchInfo[] }) {
   const [sortBy, setSortBy] = useState<MatrixSort>('match')
@@ -386,8 +396,17 @@ function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: Ma
       const sA = a.match.result ? a.match.result.homeScore + a.match.result.awayScore : -1
       const sB = b.match.result ? b.match.result.homeScore + b.match.result.awayScore : -1
       cmp = sA - sB
-    } else {
+    } else if (sortBy === 'consensus') {
       cmp = (a.consensus ?? '').localeCompare(b.consensus ?? '')
+    } else {
+      // agent:<id> — sort by that scout's pick (predicted first, then pick, then confidence)
+      const id = sortBy.slice('agent:'.length)
+      const ad = agentData.find((x) => x.agentId === id)
+      const pa = ad?.predMap.get(a.match.id)
+      const pb = ad?.predMap.get(b.match.id)
+      const rank = (p?: { pick: string }) => (p ? p.pick : '~')
+      cmp = rank(pa).localeCompare(rank(pb))
+      if (cmp === 0) cmp = (pb?.confidence ?? -1) - (pa?.confidence ?? -1)
     }
     return sortAsc ? cmp : -cmp
   })
@@ -411,8 +430,13 @@ function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: Ma
               <th style={{ ...S.th, ...S.matchCol, cursor: 'pointer' }} onClick={() => toggleSort('match')}>Match{sortIcon('match')}</th>
               <th style={{ ...S.th, ...S.scoreCol, cursor: 'pointer' }} onClick={() => toggleSort('score')}>Score{sortIcon('score')}</th>
               {agentData.map((a) => (
-                <th key={a.agentId} style={{ ...S.th, ...S.agentCol, borderBottom: `3px solid ${a.color}` }}>
-                  {AGENT_SHORT[a.agentId] ?? a.name}
+                <th
+                  key={a.agentId}
+                  style={{ ...S.th, ...S.agentCol, cursor: 'pointer', borderBottom: `3px solid ${a.color}` }}
+                  onClick={() => toggleSort(`agent:${a.agentId}`)}
+                  title={`Sort by ${AGENT_SHORT[a.agentId] ?? a.name}`}
+                >
+                  {AGENT_SHORT[a.agentId] ?? a.name}{sortIcon(`agent:${a.agentId}`)}
                 </th>
               ))}
               <th style={{ ...S.th, ...S.consensusCol, cursor: 'pointer' }} onClick={() => toggleSort('consensus')}>ALL{sortIcon('consensus')}</th>
@@ -439,7 +463,7 @@ function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: Ma
                     const correct = pred.outcome?.correct
                     return (
                       <td key={a.agentId} style={{
-                        ...S.td, ...S.agentCol, ...typo.data, fontFamily: fonts.body, fontWeight: 700,
+                        ...S.td, ...S.agentCol, ...typo.data, fontFamily: fonts.body, fontWeight: 400,
                         color: resolved ? (correct ? accents.green : accents.red) : palette.paper,
                         background: resolved ? (correct ? 'rgba(57,192,74,0.08)' : 'rgba(192,48,48,0.08)') : undefined,
                       }} title={pred.reasoning}>
@@ -453,7 +477,7 @@ function MatrixTab({ agentData, matches }: { agentData: AgentData[]; matches: Ma
                     )
                   })}
                   <td style={{
-                    ...S.td, ...S.consensusCol, ...typo.dataSm, fontFamily: fonts.body, fontWeight: 700,
+                    ...S.td, ...S.consensusCol, ...typo.dataSm, fontFamily: fonts.body, fontWeight: 400,
                     color: row.consensus ? accents.gold : text.faint,
                     borderLeft: `2px solid ${palette.wood700}`,
                   }}>
@@ -657,7 +681,7 @@ function RadarTab({ agentData }: { agentData: AgentData[] }) {
 
       {/* Stats table below radar */}
       <div style={{ width: '100%', overflowX: 'auto', marginTop: spacing.sm }}>
-        <table style={{ ...S.table, minWidth: 400 }}>
+        <table style={{ ...S.table }}>
           <thead>
             <tr style={S.thead}>
               <th style={{ ...S.th, textAlign: 'left', paddingLeft: spacing.sm }}>Scout</th>
@@ -785,7 +809,7 @@ function AgreementTab({ agentData }: { agentData: AgentData[] }) {
                       y={LABEL_H + i * CELL + CELL / 2 + 5}
                       textAnchor="middle"
                       fill={isDiag ? text.faint : (val > 0.5 ? palette.wood900 : palette.paper)}
-                      style={{ fontSize: isDiag ? typo.svgDot.fontSize : typo.dataSm.fontSize, fontFamily: fonts.body, fontWeight: 700 }}
+                      style={{ fontSize: isDiag ? typo.svgDot.fontSize : typo.dataSm.fontSize, fontFamily: fonts.body, fontWeight: 400 }}
                     >
                       {isDiag ? '—' : `${Math.round(val * 100)}%`}
                     </text>
@@ -1063,7 +1087,7 @@ function DossierTab({
           Five AI scouting agents predict FIFA World Cup 2026 match outcomes from an
           cinematic 16-bit-inspired pixel-art arcade cabinet. Each agent has a unique personality,
           methodology, and calibration parameters that <Em>evolve autonomously</Em> through
-          a nightly reflection → evolution pipeline.
+          an outcome-triggered reflection → evolution pipeline.
         </P>
         <P>
           All agent memory — predictions, evolution events, parameters — persists on
@@ -1252,8 +1276,9 @@ const S = {
 
   panel: {
     position: 'relative' as const,
-    width: 720,
-    maxWidth: '96vw',
+    width: 'fit-content' as const,
+    minWidth: 'min(720px, 92vw)',
+    maxWidth: '95vw',
     maxHeight: 'calc(100vh - 64px)',
     display: 'flex',
     flexDirection: 'column' as const,
@@ -1334,7 +1359,6 @@ const S = {
 
   table: {
     width: '100%',
-    minWidth: 520,
     borderCollapse: 'collapse' as const,
     fontFamily: fonts.body,
   },
@@ -1349,7 +1373,7 @@ const S = {
   },
 
   th: {
-    padding: '6px 6px',
+    padding: '6px 5px',
     ...typo.hdrXs,
     fontFamily: fonts.header,
     fontWeight: 400,
@@ -1359,9 +1383,9 @@ const S = {
     whiteSpace: 'nowrap' as const,
   } as React.CSSProperties,
 
-  matchCol: { textAlign: 'left' as const, minWidth: 110, paddingLeft: spacing.sm },
+  matchCol: { textAlign: 'left' as const, minWidth: 84, paddingLeft: spacing.sm, whiteSpace: 'nowrap' as const },
   scoreCol: { textAlign: 'center' as const, minWidth: 44 },
-  agentCol: { textAlign: 'center' as const, minWidth: 48 },
+  agentCol: { textAlign: 'center' as const, minWidth: 38 },
   consensusCol: { textAlign: 'center' as const, minWidth: 44 },
 
   row: { borderTop: borders.rule },

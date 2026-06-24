@@ -43,6 +43,7 @@ export class PropStateController {
   private exitSignState: ExitSignState = 'on'
   private lightState: LightState = 'on'
   private coffeeState: CoffeeState = 'idle'
+  private doorOpen = false
 
   /* Scene objects managed by controller */
   private dimOverlay?: Phaser.GameObjects.Rectangle
@@ -51,6 +52,7 @@ export class PropStateController {
   private brewTimer?: Phaser.Time.TimerEvent
 
   private onPropClick?: (p: { propId: string }) => void
+  private onSceneResume?: () => void
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene
@@ -78,11 +80,15 @@ export class PropStateController {
   start() {
     this.onPropClick = ({ propId }) => this.handleClick(propId)
     GameEventBus.on('prop:click', this.onPropClick)
+    // When any modal closes (scene resumes), make sure the door is shut again.
+    this.onSceneResume = () => this.closeDoor()
+    GameEventBus.on('scene:resume', this.onSceneResume)
   }
 
   /** Clean up listeners and timers. */
   destroy() {
     if (this.onPropClick) GameEventBus.off('prop:click', this.onPropClick)
+    if (this.onSceneResume) GameEventBus.off('scene:resume', this.onSceneResume)
     this.steamTimer?.remove(false)
     this.brewTimer?.remove(false)
     this.clearSteam()
@@ -98,6 +104,8 @@ export class PropStateController {
         return this.toggleLight()
       case 'coffee_machine':
         return this.brewCoffee()
+      case 'door':
+        return this.openDoor()
       // tv_set handled internally by TvSet class
       // board_main: TacticsBoard modal (T74)
       // board_left: MemoryLab modal (T75)
@@ -116,6 +124,27 @@ export class PropStateController {
     if (!def?.swapStates || !ref?.setTexture) return
     const src = def.swapStates[this.exitSignState]
     if (src) ref.setTexture(texKey(src))
+  }
+
+  /* ── Door (open while the About modal is up) ───────────────────── */
+
+  private openDoor() {
+    if (this.doorOpen) return
+    this.doorOpen = true
+    this.swapDoor('open')
+  }
+
+  private closeDoor() {
+    if (!this.doorOpen) return
+    this.doorOpen = false
+    this.swapDoor('closed')
+  }
+
+  private swapDoor(state: 'open' | 'closed') {
+    const def = this.propDefs.get('door')
+    const ref = this.propRefs.get('door')
+    const src = def?.swapStates?.[state]
+    if (src && ref?.setTexture) ref.setTexture(texKey(src))
   }
 
   /* ── Light switch ──────────────────────────────────────────────── */

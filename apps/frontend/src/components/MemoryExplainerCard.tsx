@@ -64,7 +64,7 @@ export function MemoryExplainerCard() {
 
       <Label>What memory actually changes</Label>
       <Paragraph>
-        After every match day, each agent sleeps and reflects. The sleep step
+        After enough match outcomes resolve, each agent sleeps and reflects. The sleep step
         runs a deterministic pipeline that adjusts a small set of numeric
         parameters -- never a full rewrite, always a bounded nudge derived from
         the gap between the prediction and the real outcome.
@@ -100,14 +100,14 @@ export function MemoryExplainerCard() {
         '2. Event read       -- load predictions + outcomes since last sleep',
         '3. Error analysis   -- compute per-prediction Brier error (predicted - actual)^2',
         '4. Parameter nudge  -- for each parameter, compute gradient from error correlation',
-        '                       and apply bounded step (max +/-0.15 per sleep)',
+        '                       and apply bounded step (max +/-0.05 per param; 0.1 total/sleep)',
         '5. Persist          -- write new AgentParams + evolution event to MemWal',
         '6. Read-model sync  -- backend picks up the evolution and updates counts',
       ].join('\n')}</CodeBlock>
 
       <Paragraph>
         The nudge magnitude is bounded: no single sleep can move <code style={{ fontFamily: fonts.body, color: text.dim }}>confidenceBias</code> more
-        than 0.15 in either direction. This prevents catastrophic forgetting and ensures
+        than 0.05 in either direction (0.1 total budget across all parameters). This prevents catastrophic forgetting and ensures
         smooth, auditable evolution trajectories.
       </Paragraph>
 

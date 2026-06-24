@@ -162,7 +162,14 @@ export function MemoryLab() {
   /* ── Open on board_left click ──────────────────────────────────── */
   useEffect(() => {
     const handler = ({ propId }: { propId: string }) => {
-      if (propId === 'board_left') setOpen(true)
+      if (propId === 'board_left') {
+        // Reset before showing so stale rows from a prior open never flash.
+        setError(null)
+        setAgentData([])
+        setExpandedAgent(null)
+        setLoading(true)
+        setOpen(true)
+      }
     }
     GameEventBus.on('prop:click', handler)
     return () => { GameEventBus.off('prop:click', handler) }
@@ -400,6 +407,7 @@ const S: Record<string, React.CSSProperties> = {
     position: 'relative',
     width: 'min(90vw, 720px)',
     maxHeight: '86vh',
+    minHeight: 'min(68vh, 440px)',
     overflowY: 'auto',
     background: palette.wood900,
     border: borders.standard,

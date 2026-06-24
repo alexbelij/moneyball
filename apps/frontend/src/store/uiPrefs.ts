@@ -6,8 +6,37 @@
 
 import { create } from 'zustand'
 import { subscribeWithSelector } from 'zustand/middleware'
+import {
+  applyFontVars,
+  DEFAULT_FONT,
+  DEFAULT_SCALE,
+  FONT_STACKS,
+  type FontChoice,
+} from '@/styles/uiFont'
 
 const STORAGE_KEY = 'moneyball.liteMode'
+const FONT_KEY = 'moneyball.fontChoice'
+const FONT_SCALE_KEY = 'moneyball.fontScale'
+
+function readFontChoice(): FontChoice {
+  try {
+    const raw = localStorage.getItem(FONT_KEY)
+    if (raw && raw in FONT_STACKS) return raw as FontChoice
+  } catch {
+    /* localStorage may be unavailable */
+  }
+  return DEFAULT_FONT
+}
+
+function readFontScale(): number {
+  try {
+    const raw = Number(localStorage.getItem(FONT_SCALE_KEY))
+    if (raw >= 0.8 && raw <= 1.6) return raw
+  } catch {
+    /* localStorage may be unavailable */
+  }
+  return DEFAULT_SCALE
+}
 
 function detectDefaultLiteMode(): boolean {
   // Prefer lite mode when WebGL is unavailable
@@ -47,9 +76,21 @@ interface UiPrefsState {
   liteMode: boolean
   toggleLiteMode: () => void
   setLiteMode: (value: boolean) => void
+  /** Body font choice (header stays Press Start 2P). */
+  fontChoice: FontChoice
+  setFontChoice: (value: FontChoice) => void
+  /** Global UI text size multiplier (drives --mb-font-scale). */
+  fontScale: number
+  setFontScale: (value: number) => void
 }
 
 const initialValue = readStoredValue() ?? detectDefaultLiteMode()
+const initialFont = readFontChoice()
+const initialScale = readFontScale()
+
+// Apply persisted font prefs to the document immediately on module load so the
+// first paint already uses the chosen font/size (no flash to default).
+applyFontVars(initialFont, initialScale)
 
 export const useUiPrefs = create<UiPrefsState>()(
   subscribeWithSelector((set) => ({
@@ -66,6 +107,30 @@ export const useUiPrefs = create<UiPrefsState>()(
       set(() => {
         persistValue(value)
         return { liteMode: value }
+      }),
+
+    fontChoice: initialFont,
+    setFontChoice: (value: FontChoice) =>
+      set((s) => {
+        try {
+          localStorage.setItem(FONT_KEY, value)
+        } catch {
+          /* ignore */
+        }
+        applyFontVars(value, s.fontScale)
+        return { fontChoice: value }
+      }),
+
+    fontScale: initialScale,
+    setFontScale: (value: number) =>
+      set((s) => {
+        try {
+          localStorage.setItem(FONT_SCALE_KEY, String(value))
+        } catch {
+          /* ignore */
+        }
+        applyFontVars(s.fontChoice, value)
+        return { fontScale: value }
       }),
   })),
 )

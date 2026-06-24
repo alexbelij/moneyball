@@ -19,9 +19,9 @@ import {
 
 /* ── Constants ───────────────────────────────────────────────────────── */
 
-const BG_W = 1672
-const BG_H = 941
-const BG_SRC = '/assets/backgrounds/room_bg_v02_table_clock_pennant.png'
+const BG_W = 3394
+const BG_H = 1440
+const BG_SRC = '/assets/backgrounds/room_v4.webp'
 const PROPS_JSON_URL = '/assets/props/props.json'
 const LS_KEY = 'moneyball-editor-state'
 

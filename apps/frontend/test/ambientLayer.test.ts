@@ -102,12 +102,12 @@ describe('LIGHT_CONES', () => {
     expect(LIGHT_CONES[1].id).toBe('right')
   })
 
-  it('cones are within background bounds (1672x941)', () => {
+  it('cones are within background bounds (3394x1440)', () => {
     for (const cone of LIGHT_CONES) {
       expect(cone.topLeft).toBeGreaterThanOrEqual(0)
-      expect(cone.bottomRight).toBeLessThanOrEqual(1672)
+      expect(cone.bottomRight).toBeLessThanOrEqual(3394)
       expect(cone.topY).toBeGreaterThanOrEqual(0)
-      expect(cone.bottomY).toBeLessThanOrEqual(941)
+      expect(cone.bottomY).toBeLessThanOrEqual(1440)
     }
   })
 
@@ -131,9 +131,9 @@ describe('LIGHT_CONES', () => {
 /* ── Config sanity checks ────────────────────────────────────────────── */
 
 describe('AMBIENT_CONFIG', () => {
-  it('particle count is reasonable (<=30)', () => {
+  it('particle count is reasonable (<=60)', () => {
     expect(AMBIENT_CONFIG.maxParticles).toBeGreaterThan(0)
-    expect(AMBIENT_CONFIG.maxParticles).toBeLessThanOrEqual(30)
+    expect(AMBIENT_CONFIG.maxParticles).toBeLessThanOrEqual(60)
   })
 
   it('speed range is valid', () => {

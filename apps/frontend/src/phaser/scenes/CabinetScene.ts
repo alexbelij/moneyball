@@ -14,12 +14,14 @@
 
 import Phaser from 'phaser'
 import { useGameStore } from '@/store/gameStore'
-import { AgentSprite } from '@/phaser/sprites/AgentSprite'
+import { AgentSprite, avatarIdleKey, avatarTalkKey } from '@/phaser/sprites/AgentSprite'
 import { GameEventBus } from '@/events/GameEventBus'
 import { WorldLayer, type FocusableProp } from '@/phaser/world/WorldLayer'
 import { AmbientLayer } from '@/phaser/world/AmbientLayer'
 import { getAgentThoughts, type AgentThoughtStates } from '@/lib/api'
 import { mapStatusToThoughtState, thoughtForCycle } from '@/lib/thoughtCycle'
+import { useUiPrefs } from '@/store/uiPrefs'
+import { phaserFont } from '@/styles/uiFont'
 
 export class CabinetScene extends Phaser.Scene {
   private sprites = new Map<string, AgentSprite>()
@@ -29,6 +31,7 @@ export class CabinetScene extends Phaser.Scene {
 
   private unsubAgents?: () => void
   private unsubWallet?: () => void
+  private unsubFont?: () => void
   private syncTimer?: Phaser.Time.TimerEvent
 
   private pendingThoughts = new Map<string, { text: string; duration?: number }>()
@@ -50,12 +53,65 @@ export class CabinetScene extends Phaser.Scene {
   private focusIndex = -1
   private interactiveList: readonly FocusableProp[] = []
 
+  /* Mouse parallax (smoothed toward the pointer's horizontal position) */
+  private parallaxTarget = 0
+  private parallaxCur = 0
+  private static readonly PARALLAX_AMOUNT = 0.4 // fraction of crop revealed at edges (subtle)
+
   constructor() {
     super({ key: 'CabinetScene' })
   }
 
+  /** Fixed cabinet roster — their on-floor character art is preloaded here so
+   *  AgentSprite can render real pixel-art (falls back to a rect otherwise). */
+  private static readonly ROSTER = [
+    'dr_morgan', 'scout_alvarez', 'viktor_kane', 'sofia_mendes', 'madame_pythia',
+  ] as const
+
+  /** v4 floor positions (bg-space 3394x1440). The backend world:state still
+   *  uses old 1672x941 coords, so we override on the frontend to stand the
+   *  agents across the open floor in front of the boards. Tune as needed. */
+  private static readonly FLOOR_POS: Record<string, { x: number; y: number }> = {
+    dr_morgan: { x: 1180, y: 1210 },
+    scout_alvarez: { x: 1520, y: 1240 },
+    viktor_kane: { x: 1860, y: 1205 },
+    sofia_mendes: { x: 2200, y: 1245 },
+    madame_pythia: { x: 2520, y: 1210 },
+  }
+
+  /** Real-world heights (cm) per agent, used to size avatars relative to the
+   *  door. Men 175-185, women 170-175 (per art + design direction). */
+  private static readonly AGENT_HEIGHT_CM: Record<string, number> = {
+    dr_morgan: 178, // male
+    scout_alvarez: 182, // male
+    viktor_kane: 180, // male
+    sofia_mendes: 174, // female
+    madame_pythia: 172, // female
+  }
+
+  // Door scale reference (bg-space): the door prop is 553px tall and reads as a
+  // ~207cm doorway -> 2.67 px/cm at the door's depth (its floor contact y).
+  private static readonly DOOR_PX = 553
+  private static readonly DOOR_CM = 207
+  private static readonly DOOR_BASE_Y = 991 // door target_xy.y(438) + h(553)
+  // Gentle floor perspective: objects shrink with distance (smaller y), so add
+  // a small upscale as agents move toward the viewer (larger y).
+  private static readonly PERSP_K = 0.0007
+
+  /** Door-relative on-floor display height (bg-space px) for an agent. */
+  private avatarHeightPx(agentId: string, y: number): number {
+    const cm = CabinetScene.AGENT_HEIGHT_CM[agentId] ?? 175
+    const pxPerCm = CabinetScene.DOOR_PX / CabinetScene.DOOR_CM
+    const persp = 1 + (y - CabinetScene.DOOR_BASE_Y) * CabinetScene.PERSP_K
+    return cm * pxPerCm * persp
+  }
+
   preload() {
     WorldLayer.preloadManifests(this)
+    for (const id of CabinetScene.ROSTER) {
+      this.load.image(avatarIdleKey(id), `/assets/avatars/room/${id}_idle.png`)
+      this.load.image(avatarTalkKey(id), `/assets/avatars/room/${id}_talk.png`)
+    }
   }
 
   create() {
@@ -79,6 +135,13 @@ export class CabinetScene extends Phaser.Scene {
     this.fitWorld()
     this.scale.on('resize', () => this.fitWorld())
 
+    // Mouse parallax: track the pointer's horizontal offset from centre.
+    this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      const w = this.scale.width || 1
+      const nx = (p.x / w - 0.5) * 2 // [-1, 1]
+      this.parallaxTarget = nx * CabinetScene.PARALLAX_AMOUNT
+    })
+
     // Subscribe FIRST (avoid missing first world:state)
     this.unsubAgents = useGameStore.subscribe(
       (s) => s.agents,
@@ -89,6 +152,15 @@ export class CabinetScene extends Phaser.Scene {
     this.unsubWallet = useGameStore.subscribe(
       (s) => s.ui.isWalletFlowActive,
       () => this.refreshPause(),
+    )
+
+    // Live-update canvas text font when the FontPanel choice changes.
+    this.unsubFont = useUiPrefs.subscribe(
+      (s) => s.fontChoice,
+      (choice) => {
+        const family = phaserFont(choice)
+        for (const sp of this.sprites.values()) sp.setBodyFont(family)
+      },
     )
 
     // Immediate sync
@@ -149,6 +221,13 @@ export class CabinetScene extends Phaser.Scene {
   update(time: number, delta: number) {
     // T25: update ambient particles + flicker each frame
     this.ambient?.update(time, delta)
+
+    // Smooth the parallax toward the pointer target (frame-rate independent).
+    if (this.world) {
+      const k = 1 - Math.exp(-delta / 140)
+      this.parallaxCur += (this.parallaxTarget - this.parallaxCur) * k
+      this.world.applyParallax(this.parallaxCur)
+    }
   }
 
   shutdown() {
@@ -162,6 +241,7 @@ export class CabinetScene extends Phaser.Scene {
     this.thoughtCycleTimer?.remove(false)
     this.unsubAgents?.()
     this.unsubWallet?.()
+    this.unsubFont?.()
   }
 
   private prefersReducedMotion(): boolean {
@@ -267,7 +347,10 @@ export class CabinetScene extends Phaser.Scene {
     const agents = Object.values(useGameStore.getState().agents)
     for (const a of agents) {
       if (this.sprites.has(a.agentId)) continue
-      const sp = new AgentSprite(this, a)
+      const pos = CabinetScene.FLOOR_POS[a.agentId]
+      const h = this.avatarHeightPx(a.agentId, pos ? pos.y : a.position.y)
+      const sp = new AgentSprite(this, a, h)
+      if (pos) sp.setPosition(pos.x, pos.y)
       this.sprites.set(a.agentId, sp)
       this.world.addAgent(sp)
     }

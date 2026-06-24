@@ -29,9 +29,12 @@ import { TacticsBoard } from '@/components/TacticsBoard'
 import { MemoryLab } from '@/components/MemoryLab'
 import { WalrusProof } from '@/components/WalrusProof'
 import { AboutDoor } from '@/components/AboutDoor'
+import { DiscardedHypotheses } from '@/components/DiscardedHypotheses'
+import { AttackPatterns } from '@/components/AttackPatterns'
 import { MatchTV } from '@/components/MatchTV'
 import { LiteDashboard } from '@/components/LiteDashboard'
 import { LiteModeToggle } from '@/components/LiteModeToggle'
+import { FontPanel } from '@/components/FontPanel'
 import { OfflineBanner } from '@/components/OfflineBanner'
 
 import { PortraitGuard } from '@/components/PortraitGuard'
@@ -77,6 +80,8 @@ export default function App() {
       {!liteMode && <MemoryLab />}
       {!liteMode && <WalrusProof />}
       {!liteMode && <AboutDoor />}
+      {!liteMode && <DiscardedHypotheses />}
+      {!liteMode && <AttackPatterns />}
       {!liteMode && <MatchTV />}
 
       {/* Shared overlays (both modes) */}
@@ -86,6 +91,7 @@ export default function App() {
       <WalletFlowOverlay />
       <AuthSync />
       <LiteModeToggle />
+      <FontPanel />
       <OfflineBanner />
       <OnboardingOverlay />
       {config.debugWallet ? <WalletDebugPanel /> : null}

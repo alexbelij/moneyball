@@ -25,10 +25,10 @@ const MODAL_TITLE_ID = 'about-door-title'
 
 const AGENTS = [
   { id: 'dr_morgan', name: 'Dr. Morgan', role: 'Statistician', emoji: 'dr_morgan' },
-  { id: 'scout_alvarez', name: 'Scout Alvarez', role: 'Traditional Scout', emoji: 'scout_alvarez' },
+  { id: 'scout_alvarez', name: 'Scout Alvarez', role: 'Intuitionist / Traditional Scout', emoji: 'scout_alvarez' },
   { id: 'viktor_kane', name: 'Viktor Kane', role: 'Contrarian', emoji: 'viktor_kane' },
   { id: 'sofia_mendes', name: 'Sofia Mendes', role: 'Market Analyst', emoji: 'sofia_mendes' },
-  { id: 'madame_pythia', name: 'Madame Pythia', role: 'Mystic Analyst', emoji: 'madame_pythia' },
+  { id: 'madame_pythia', name: 'Madame Pythia', role: 'Tarot / Numerology Analyst', emoji: 'madame_pythia' },
 ]
 
 const TECH_STACK = [
@@ -37,11 +37,11 @@ const TECH_STACK = [
   { label: 'Memory', value: 'Walrus Memory (MemWal) on Sui mainnet' },
   { label: 'Storage', value: 'Walrus decentralised blob store' },
   { label: 'Encryption', value: 'SEAL threshold encryption' },
-  { label: 'Auth', value: 'Sui wallet (zkLogin) + guest mode' },
+  { label: 'Auth', value: 'Sui wallet sign-in (personal message signature) + guest mode' },
 ]
 
 const LINKS = [
-  { label: 'GitHub', url: 'https://github.com/anna-stolbovskaja/moneyball', icon: '□' },
+  { label: 'GitHub', url: 'https://github.com/anna-stolbovskaja/moneyball', icon: 'github' },
   { label: 'Live App', url: 'https://taken.wal.app', icon: 'link' },
   { label: 'Walrus Memory', url: 'https://memory.walrus.xyz', icon: 'walrus' },
   { label: 'Walrus Session 4', url: 'https://www.deepsurge.xyz/hackathons/cbe3390c-88c1-48c6-a86d-5c1edb4b6d17', icon: 'hackathon' },
@@ -104,7 +104,7 @@ export function AboutDoor() {
               where five AI agents with distinct personalities predict FIFA World Cup 2026
               match outcomes. Each agent uses its own methodology, learns from results through
               a self-learning loop (sleep → reflect → evolve), and records every decision
-              permanently on the Walrus blockchain.
+              permanently on the Walrus decentralised storage network.
             </p>
             <p style={S.description}>
               Disagree with an agent? Tell them. They will roast you back.
@@ -123,7 +123,7 @@ export function AboutDoor() {
                     borderLeft: `3px solid ${agentColors[a.id] ?? accents.gold}`,
                   }}
                 >
-                  <span style={S.agentEmoji}>{a.emoji}</span>
+                  <span style={S.agentEmoji}><PixelIcon name={a.emoji} size={22} color={agentColors[a.id] ?? accents.gold} /></span>
                   <div>
                     <div style={S.agentName}>{a.name}</div>
                     <div style={S.agentRole}>{a.role}</div>
@@ -150,7 +150,7 @@ export function AboutDoor() {
           <div style={S.section}>
             <h3 style={S.sectionTitle}>Hackathon</h3>
             <p style={S.description}>
-              Built for the <strong style={{ color: accents.gold }}>Walrus Session 4</strong> hackathon.
+              Built for the <strong style={{ color: accents.gold }}>Walrus Memory World Cup</strong> hackathon.
               Deadline: June 24, 2026. The challenge: build an application that leverages
               Walrus Memory for persistent, verifiable AI agent state.
             </p>
@@ -168,7 +168,7 @@ export function AboutDoor() {
                   rel="noopener noreferrer"
                   style={S.linkCard}
                 >
-                  <span style={S.linkIcon}>{l.icon}</span>
+                  <span style={S.linkIcon}><PixelIcon name={l.icon} size={16} color={accents.gold} /></span>
                   <span style={S.linkLabel}>{l.label}</span>
                 </a>
               ))}

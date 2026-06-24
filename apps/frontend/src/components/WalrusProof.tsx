@@ -84,7 +84,16 @@ export function WalrusProof() {
   /* ── Open on board_scout click ─────────────────────────────────── */
   useEffect(() => {
     const handler = ({ propId }: { propId: string }) => {
-      if (propId === 'board_scout') setOpen(true)
+      if (propId === 'board_scout') {
+        // Reset before showing so the previous session's data never flashes
+        // (and the panel doesn't briefly balloon to full height on stale rows).
+        setError(null)
+        setRecentWrites([])
+        setTotalPredictions(0)
+        setTotalEvolutions(0)
+        setLoading(true)
+        setOpen(true)
+      }
     }
     GameEventBus.on('prop:click', handler)
     return () => { GameEventBus.off('prop:click', handler) }
@@ -183,8 +192,8 @@ export function WalrusProof() {
 # 1. Check MemWal account on Sui
 open ${accountObjectUrl ?? `https://suiscan.xyz/mainnet/object/${accountIdDisplay}`}
 
-# 2. Recall agent memories via MemWal API
-curl -X POST https://relayer.memory.walrus.xyz/recall \\
+# 2. Recall agent memories via MemWal API (requires signed MemWal auth headers)
+curl -X POST https://relayer.memory.walrus.xyz/api/recall \\
   -H "Content-Type: application/json" \\
   -d '{
     "query": "prediction",
@@ -357,6 +366,7 @@ const S: Record<string, React.CSSProperties> = {
     position: 'relative',
     width: 'min(90vw, 720px)',
     maxHeight: '86vh',
+    minHeight: 'min(68vh, 440px)',
     overflowY: 'auto',
     background: palette.wood900,
     border: borders.standard,

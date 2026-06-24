@@ -123,7 +123,7 @@ export function AgentJournal({ agentId }: { agentId: string }) {
                   color: entry.sentiment === 'positive' ? accents.green
                     : entry.sentiment === 'negative' ? accents.red
                     : accents.gold,
-                  fontWeight: 700,
+                  fontWeight: 400,
                 }}>
                   {entry.headline}
                 </div>

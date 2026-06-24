@@ -18,17 +18,40 @@ export function PhaserGame() {
   useEffect(() => {
     if (!ref.current || gameRef.current) return
 
-    gameRef.current = new Phaser.Game({
+    // Render the canvas backing store at the device pixel ratio (capped at 2)
+    // so text on posters and the room art stay crisp on Retina / when zoomed,
+    // then display it at the logical CSS size. Fixes the "floating/blurry"
+    // look on HiDPI screens.
+    const dpr = () => Math.min(window.devicePixelRatio || 1, 2)
+
+    const game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: ref.current,
-      width: '100%',
-      height: '100%',
+      width: window.innerWidth * dpr(),
+      height: window.innerHeight * dpr(),
       backgroundColor: '#000000',
       pixelArt: true,
       roundPixels: true,
-      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+      scale: { mode: Phaser.Scale.NONE, autoCenter: Phaser.Scale.NO_CENTER },
       scene: [CabinetScene],
     })
+    gameRef.current = game
+
+    // Display the high-res canvas at the logical viewport size.
+    const styleCanvas = () => {
+      const c = game.canvas
+      if (!c) return
+      c.style.width = '100%'
+      c.style.height = '100%'
+      c.style.imageRendering = 'pixelated'
+    }
+    styleCanvas()
+
+    const onResize = () => {
+      game.scale.resize(window.innerWidth * dpr(), window.innerHeight * dpr())
+      styleCanvas()
+    }
+    window.addEventListener('resize', onResize)
 
     // Subscribe to wallet flow flag and sleep/wake loop
     const unsub = useGameStore.subscribe(
@@ -51,6 +74,7 @@ export function PhaserGame() {
 
     return () => {
       unsub()
+      window.removeEventListener('resize', onResize)
       gameRef.current?.destroy(true)
       gameRef.current = null
       sleepingRef.current = false

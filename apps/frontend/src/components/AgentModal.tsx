@@ -77,7 +77,7 @@ const S_HEADER_ROW: React.CSSProperties = {
 }
 
 const S_TITLE: React.CSSProperties = {
-  ...typo.hdr, fontWeight: 700, fontFamily: fonts.header,
+  ...typo.hdr, fontWeight: 400, fontFamily: fonts.header,
   color: accents.gold, letterSpacing: '-0.5px',
 }
 
@@ -125,7 +125,7 @@ const S_FORMULA_PRE: React.CSSProperties = {
   whiteSpace: 'pre-wrap', wordBreak: 'break-word',
 }
 
-const S_RULE_NAME: React.CSSProperties = { ...typo.dataSm, color: accents.gold, fontWeight: 700 }
+const S_RULE_NAME: React.CSSProperties = { ...typo.dataSm, color: accents.gold, fontWeight: 400 }
 const S_RULE_LOGIC: React.CSSProperties = { ...typo.caption, color: text.dim, marginTop: 2 }
 const S_RULE_EFFECT: React.CSSProperties = { ...typo.caption, color: accents.green, marginTop: 2, fontFamily: 'monospace' }
 
@@ -160,7 +160,7 @@ const S_PRED_MATCH: React.CSSProperties = { color: text.dim }
 const S_PRED_BODY: React.CSSProperties = { marginTop: 4, ...typo.body }
 const S_PRED_REASONING: React.CSSProperties = { marginTop: 4, ...typo.dataSm, color: text.muted }
 
-const S_EVO_HEADLINE: React.CSSProperties = { ...typo.dataSm, color: accents.gold, fontWeight: 700 }
+const S_EVO_HEADLINE: React.CSSProperties = { ...typo.dataSm, color: accents.gold, fontWeight: 400 }
 const S_EVO_DIFF_BLOCK: React.CSSProperties = { marginTop: 8, ...typo.caption, fontFamily: 'monospace' }
 
 const S_BRIER_ROW: React.CSSProperties = {
@@ -232,6 +232,12 @@ export function AgentModal() {
   const viewer = useAuthStore((s) => s.viewer)
   const isAdmin = viewer?.role === 'admin'
 
+  // Derived id usable by hooks below; '' while the modal is closed. All hooks
+  // MUST run unconditionally (no early return before them) — otherwise the
+  // closed→open transition renders more hooks than before and React throws
+  // error #310 (which previously crashed the dossier on every agent click).
+  const agentId = agent?.agentId ?? ''
+
   const [tab, setTab] = useState<Tab>('overview')
 
   const trapRef = useFocusTrap<HTMLDivElement>({ onClose: close, active: !!agent })
@@ -250,12 +256,10 @@ export function AgentModal() {
     return () => { GameEventBus.emit('scene:resume', undefined) }
   }, [agent])
 
-  if (!agent) return null
-  const agentId = agent.agentId
-
   /* T67: useAsyncAction guards all three buttons */
   const roastAction = useAsyncAction(
     useCallback(async () => {
+      if (!agentId) return
       const r = await roast(agentId)
       GameEventBus.emit('thought:show', { agentId, text: r.text, duration: 3500 })
     }, [agentId]),
@@ -264,6 +268,7 @@ export function AgentModal() {
 
   const disagreeAction = useAsyncAction(
     useCallback(async () => {
+      if (!agentId) return
       await disagree(agentId)
       const r = await roast(agentId)
       GameEventBus.emit('thought:show', { agentId, text: r.text, duration: 3500 })
@@ -273,6 +278,7 @@ export function AgentModal() {
 
   const dayPlusOneAction = useAsyncAction(
     useCallback(async () => {
+      if (!agentId) return
       await adminDayPlusOne(agentId)
       const r = await roast(agentId)
       GameEventBus.emit('thought:show', { agentId, text: `[Day+1] ${r.text}`, duration: 4000 })
@@ -281,6 +287,9 @@ export function AgentModal() {
   )
 
   const busy = roastAction.pending || disagreeAction.pending || dayPlusOneAction.pending
+
+  // Safe to bail now — every hook above has already run unconditionally.
+  if (!agent) return null
 
   return (
     <div
@@ -560,7 +569,7 @@ const PredictionRow = memo(function PredictionRow({ p }: { p: PredictionItem }) 
     <div style={CARD}>
       <div style={S_PRED_HEADER}>
         <span style={S_PRED_MATCH}>{p.matchId}</span>
-        <span style={{ color: badgeColor, fontWeight: 700 }} aria-label={p.outcome ? (p.outcome.correct ? 'Correct' : 'Incorrect') : 'Pending'}>{badge}</span>
+        <span style={{ color: badgeColor, fontWeight: 400 }} aria-label={p.outcome ? (p.outcome.correct ? 'Correct' : 'Incorrect') : 'Pending'}>{badge}</span>
       </div>
       <div style={S_PRED_BODY}>
         Pick <b>{p.pick}</b> · confidence <b>{Math.round(p.confidence * 100)}%</b>
@@ -673,7 +682,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
               <div style={S_BRIER_VALUE}>{diff.brierLate!.toFixed(3)}</div>
             </div>
             <div style={{
-              marginLeft: 'auto', ...typo.body, fontWeight: 700,
+              marginLeft: 'auto', ...typo.body, fontWeight: 400,
               color: brierDeltaColor,
             }}>
               {diff.brierDelta < 0 ? '' : '+'}{diff.brierDelta.toFixed(3)}
@@ -703,7 +712,7 @@ function BeforeAfterTab({ agentId }: { agentId: string }) {
               <span style={S_RIGHT_MUTED}>{d.day1.toFixed(2)}</span>
               <span style={S_RIGHT_PAPER}>{d.dayN.toFixed(2)}</span>
               <span style={{
-                textAlign: 'right', fontWeight: 700,
+                textAlign: 'right', fontWeight: 400,
                 color: d.direction === 'up' ? accents.green : d.direction === 'down' ? accents.red : text.muted,
               }}>
                 {d.delta >= 0 ? '+' : ''}{d.delta.toFixed(3)}
